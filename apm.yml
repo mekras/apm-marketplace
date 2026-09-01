@@ -9,8 +9,6 @@ marketplace:
   owner:
     name: mekras
     url: https://github.com/mekras
-  build:
-    tagPattern: "{version}"
   outputs:
     claude: {}
     codex: {}
@@ -19,4 +17,5 @@ marketplace:
       description: "Переносимые навыки русского языка для агентов ИИ"
       source: ./packages/ai-russian-language
       version: "2.1.5"
+      tag_pattern: "{name}--v{version}"
       category: Productivity
