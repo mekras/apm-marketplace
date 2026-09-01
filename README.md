@@ -26,3 +26,19 @@ apm install ai-russian-language@mekras --target codex
 ```bash
 apm install ai-russian-language@mekras --target claude
 ```
+
+### project-knowledge-corpus
+
+Навыки для создания, сопровождения и применения корпуса знаний проекта.
+
+Установка для Codex:
+
+```bash
+apm install project-knowledge-corpus@mekras --target codex
+```
+
+Установка для Claude:
+
+```bash
+apm install project-knowledge-corpus@mekras --target claude
+```

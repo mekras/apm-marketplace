@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-validation"
+  short_description: "Проверка целостности, полноты и противоречий корпуса знаний"
+  default_prompt: "Используй $kc-validation, чтобы проверить корпус знаний проекта."
+
+policy:
+  allow_implicit_invocation: true

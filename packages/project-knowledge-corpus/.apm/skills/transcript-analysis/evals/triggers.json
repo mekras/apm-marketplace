@@ -1,0 +1,65 @@
+{
+  "skill_name": "transcript-analysis",
+  "cases": [
+    {
+      "id": "transcript-analysis-positive-clean-transcript",
+      "prompt": "Разбери эту сырую расшифровку встречи: убери мусор распознавания, расставь абзацы и заголовки.",
+      "should_trigger": true,
+      "rationale": "Нужно отредактировать сырую стенограмму без пересказа."
+    },
+    {
+      "id": "transcript-analysis-positive-video-autotranscript",
+      "prompt": "Вот автотранскрипт видео. Сделай из него читабельный текст, сохрани порядок мыслей и не сокращай.",
+      "should_trigger": true,
+      "rationale": "Запрос явно касается очистки автотранскрипта с сохранением исходного смысла."
+    },
+    {
+      "id": "transcript-analysis-positive-interview",
+      "prompt": "Почисти расшифровку интервью: там повторы, оговорки и неправильно распознанные термины.",
+      "should_trigger": true,
+      "rationale": "Нужно очистить расшифровку речи и исправить явные ошибки."
+    },
+    {
+      "id": "transcript-analysis-positive-lecture-sections",
+      "prompt": "Разбей стенограмму лекции на смысловые разделы с заголовками и нормальными абзацами.",
+      "should_trigger": true,
+      "rationale": "Нужно структурировать стенограмму лекции."
+    },
+    {
+      "id": "transcript-analysis-positive-publication-explicit",
+      "prompt": "Из этой стенограммы подготовь публикацию по правилам проекта, но сначала очисти расшифровку.",
+      "should_trigger": true,
+      "rationale": "Запрос начинается с обработки стенограммы и явно просит производный режим."
+    },
+    {
+      "id": "transcript-analysis-negative-general-summary",
+      "prompt": "Кратко перескажи статью и выдели три главные мысли.",
+      "should_trigger": false,
+      "rationale": "Это пересказ статьи, а не работа со стенограммой или расшифровкой речи."
+    },
+    {
+      "id": "transcript-analysis-negative-meeting-protocol",
+      "prompt": "Составь протокол встречи по уже готовым заметкам: решения, ответственные и сроки.",
+      "should_trigger": false,
+      "rationale": "Нужно оформить протокол по заметкам, а не очистить стенограмму."
+    },
+    {
+      "id": "transcript-analysis-negative-podcast-plan",
+      "prompt": "Придумай план выпуска подкаста про безопасность данных.",
+      "should_trigger": false,
+      "rationale": "Это создание плана, не анализ существующей расшифровки."
+    },
+    {
+      "id": "transcript-analysis-negative-russian-copyedit",
+      "prompt": "Отредактируй русский текст объявления и убери канцелярит.",
+      "should_trigger": false,
+      "rationale": "Это обычная редактура русского текста, не стенограмма."
+    },
+    {
+      "id": "transcript-analysis-negative-subtitles",
+      "prompt": "Сдвинь таймкоды в SRT-файле на 2 секунды вперёд.",
+      "should_trigger": false,
+      "rationale": "Это техническая правка субтитров, а не смысловая очистка стенограммы."
+    }
+  ]
+}

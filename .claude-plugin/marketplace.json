@@ -19,6 +19,13 @@
       "version": "2.3.21",
       "category": "Productivity",
       "source": "./packages/ai-agent-supervisor"
+    },
+    {
+      "name": "project-knowledge-corpus",
+      "description": "Коллекция навыков для создания, сопровождения и применения корпуса знаний проекта",
+      "version": "0.19.7",
+      "category": "Productivity",
+      "source": "./packages/project-knowledge-corpus"
     }
   ]
 }

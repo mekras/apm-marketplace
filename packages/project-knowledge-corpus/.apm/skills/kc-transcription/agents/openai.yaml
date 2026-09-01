@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-transcription"
+  short_description: "Получение сырой расшифровки из локального медиа"
+  default_prompt: "Используй $kc-transcription, чтобы получить и проверить сырой transcript.txt из локального аудио или видео."
+
+policy:
+  allow_implicit_invocation: true

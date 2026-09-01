@@ -1,0 +1,18 @@
+# Скопируйте образец в локальный файл, имя которого содержит .local.
+adapters:
+  # codex: /absolute/path/to/adapter
+
+models:
+  inspector: adapter:inspector-model
+  answerer: adapter:answer-model
+  judge: adapter:judge-model
+
+timeout: 900
+closed_book: true
+
+permissions:
+  # Это ручные подтверждения, а не автоматическая проверка политик источников.
+  # Подтвердите после проверки access, allowed_use, copy_policy и изоляции
+  # выбранных адаптеров.
+  corpus_access_approved: false
+  source_evidence_to_judge_approved: false

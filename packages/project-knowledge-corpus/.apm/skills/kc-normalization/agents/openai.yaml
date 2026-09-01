@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-normalization"
+  short_description: "Нормализация первичных данных без подмены исходника"
+  default_prompt: "Используй $kc-normalization, чтобы подготовить нормализованный слой первичных данных."
+
+policy:
+  allow_implicit_invocation: true

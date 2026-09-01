@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-setup"
+  short_description: "Настройка проекта на использование корпуса знаний"
+  default_prompt: "Используй $kc-setup, чтобы настроить или перенастроить корпус знаний проекта, включая AGENTS.md, проверку структуры корпуса и финальное Git-состояние по правилам проекта."
+
+policy:
+  allow_implicit_invocation: true

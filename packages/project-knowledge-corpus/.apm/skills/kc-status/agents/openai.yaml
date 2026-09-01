@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-status"
+  short_description: "Сводка состояния корпуса знаний"
+  default_prompt: "Используй $kc-status, чтобы кратко показать состояние корпуса знаний по его слоям и стадиям."
+
+policy:
+  allow_implicit_invocation: true

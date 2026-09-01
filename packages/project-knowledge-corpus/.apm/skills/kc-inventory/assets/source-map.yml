@@ -1,0 +1,45 @@
+# Шаблон source-map для длинного источника.
+# Скопируйте файл в data/<source>/source-map.yml после начала нормализации.
+
+source_map_version: 1
+source_id: SOURCE-ID
+long_source: true
+updated_at: YYYY-MM-DD
+
+extraction_passport:
+  format: pdf
+  file_size_bytes: 1234567
+  content_hash:
+  content_hash_absence_reason:
+  metadata_source: exiftool
+  extraction_tool: pdftotext
+  extraction_status: normalized_fragments_ready
+  publication_safety: "В tracked-слое хранятся только карта, метаданные и разрешённые фрагменты."
+
+structure:
+  units:
+    - id: chapter-01
+      title: "Глава 1"
+      type: chapter
+      order: 1
+      locator:
+        pages: "1-12"
+
+# На ранней стадии нормализации можно оставить причину отсутствия карты охвата
+# вместо coverage.units. После перехода к statements_extracted карта охвата
+# должна быть заполнена по всем structure.units.
+coverage_absence_reason:
+coverage:
+  units:
+    - unit_id: chapter-01
+      status: postponed # extracted | no_significant_content | postponed
+      reason: "Фрагмент ещё не проверен человеком."
+      artifacts:
+        - book/chapter-01/normalized.md
+      statements:
+        - book/chapter-01/statements.yml#SOURCE-ID-001
+
+quality_limitations: []
+publication_limitations: []
+local_inputs:
+  - source.local.pdf

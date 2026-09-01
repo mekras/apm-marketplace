@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-analysis"
+  short_description: "Анализ утверждений корпуса знаний для проектных действий"
+  default_prompt: "Используй $kc-analysis, чтобы сопоставить утверждения корпуса знаний и подготовить выводы."
+
+policy:
+  allow_implicit_invocation: true

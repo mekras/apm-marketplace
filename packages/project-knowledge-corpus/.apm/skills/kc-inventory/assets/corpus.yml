@@ -1,0 +1,131 @@
+contract_version: 2
+
+# Профиль помогает выбрать стартовый набор правил, но эффективная политика
+# всегда записывается явно. Для закрытого внутреннего корпуса используйте
+# restricted_internal и настройте действия по тем же полям.
+project_profile: public
+
+action_policy:
+  acquire: allow_with_source_constraints
+  process: allow
+  retain_uncertain: retain_with_quality_metadata
+  retain_sensitive: project_storage_rules
+  tracked_storage: public_safe_only
+  external_disclosure: publication_review
+  delete: owner_decision
+  irreversible_transform: owner_decision
+  secrets_in_tracked_storage: prohibit
+
+tracked_data:
+  root: data
+  concepts: concepts.yml
+  source_pattern: data/<source>/source.yml
+  source_map_pattern: data/<source>/source-map.yml
+  source_unit_pattern: data/<source>/<units>/<unit>/item.yml
+  statement_pattern: data/<source>/<units>/<unit>/statements.yml
+  derived_statement_pattern: analysis/<analysis>/derived-statements.yml
+
+# Неотслеживаемый материал держится не в отдельной папке, а файлом с маркером
+# в имени прямо рядом с владельцем — единицей источника или карточкой источника:
+# постоянное сырьё — *.local.* (например запись.local.mp4), временный рабочий
+# файл — *.tmp.*. Каталог, который нельзя свести к файлу (клон внешнего
+# корпуса), именуй с суффиксом .local (external-corpus.local/). Материал единицы
+# кладётся в её папку, материал уровня источника — прямо в data/<source>/.
+# Отдельной папки локального слоя (local/, .local/) в раскладке нет: папка
+# источника видна и сама служит местом ручной выкладки. Маркеры local и tmp
+# зарезервированы: обычные отслеживаемые файлы и каталоги так называть нельзя.
+local_data:
+  gitignore_rules: ["*.local.*", "*.local", "*.tmp.*"]
+  local_file_pattern: "*.local.*"
+  local_dir_pattern: "*.local"
+  temporary_file_pattern: "*.tmp.*"
+
+artifact_storage:
+  tracked:
+    - "source-map.yml для длинного источника: паспорт извлечения, структура, карта охвата, ограничения и ссылки на фрагменты."
+    - "Нормализованные тексты и стенограммы, если их можно хранить в проекте."
+    - "Небольшие полезные вложения источника, если они нужны в исходном виде."
+  local_or_temporary:
+    - "Тяжёлые медиафайлы."
+    - "Полные книги, полные текстовые выгрузки и рабочие файлы OCR или извлечения текста без права публикации."
+    - "Файлы с неясными правами или режимом доступа."
+    - "Временные загрузки и промежуточные технические файлы."
+  external_reference:
+    - "Источники, которые нельзя или неразумно копировать в корпус."
+    - "Сайты без разрешающей лицензии, материалы с запретом массовой загрузки и часто меняющиеся базы знаний."
+
+storage_strategies:
+  full_copy: "Полный первичный слой можно хранить и сверять в корпусе."
+  local_only: "Сырьё хранится вне Git; в корпусе остаются метаданные и разрешённые производные артефакты."
+  index_only: "В Git хранится только индекс единиц; получение и нормализация выполняются точечно по запросу."
+  external_reference: "Корпус хранит внешний локатор, условия доступа и ограничения без локальной копии."
+
+retrieval_modes:
+  synced: "Материал синхронизируется проектной командой или адаптером."
+  on_demand: "Материал получается точечно для выбранной единицы источника."
+  external_reference: "Агент обращается к первоисточнику по проектному правилу без локальной копии."
+  blocked: "Получение заблокировано до решения человека или появления доступа."
+
+copy_policies:
+  full_copy_allowed: "Полную копию можно хранить в корпусе."
+  fragments_only: "Можно хранить только выбранные фрагменты с проверкой ограничений."
+  metadata_only: "Можно хранить только метаданные, локаторы и ограничения."
+  no_bulk_copy: "Нельзя делать массовую копию; разрешено только точечное обращение."
+  local_only: "Материал можно хранить только вне отслеживаемого слоя."
+
+access_policy:
+  source_default_field: access.default
+  item_field: access
+  format: free_text
+  rules:
+    - "У источника должен быть текст доступа по умолчанию."
+    - "У каждой единицы источника должен быть текстовый доступ."
+    - "Не заменять текст доступа кодами вроде public/private."
+
+source_units:
+  website:
+    unit: page
+    path_pattern: data/<source>/pages/<slug>
+  forum:
+    unit: topic_or_message
+    path_pattern: data/<source>/threads/<id>
+  document:
+    unit: file_or_section
+    path_pattern: data/<source>/documents/<slug>
+  book:
+    unit: page_chapter_or_fragment
+    path_pattern: data/<source>/book/<slug>
+  channel:
+    unit: post
+    path_pattern: data/<source>/posts/post-<number>
+  interview:
+    unit: recording_or_fragment
+    path_pattern: data/<source>/records/<slug>
+  other:
+    unit: item
+    path_pattern: data/<source>/items/<slug>
+
+indexes:
+  sources: catalog.yml
+  items: index/items.yml
+  statements: index/statements.yml
+
+workflow_stages:
+  - indexed
+  - needs_fetch
+  - fetched
+  - needs_transcript
+  - raw_transcribed
+  - normalized
+  - statements_extracted
+  - source_checked
+  - blocked
+  - rejected
+
+sensitive_data_policy:
+  rules:
+    - "Не добавлять в Git токены, cookies, сессии, пароли и закрытые ссылки."
+    - "Хранить пути в отслеживаемых файлах только в репо-относительном виде."
+    - "Тяжёлые медиа и другие рабочие файлы хранить рядом с их владельцем маркером имени: постоянное сырьё — *.local.*, временный файл — *.tmp.*, каталог-клон — *.local."
+    - "Не добавлять в Git полные локальные книги, полные текстовые выгрузки и личные абсолютные пути без явного разрешения."
+    - "Не переносить сведения в проект-потребитель без проверки источника, области применения, актуальности и режима доступа."

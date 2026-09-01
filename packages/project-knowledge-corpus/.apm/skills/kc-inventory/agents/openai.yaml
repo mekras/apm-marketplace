@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-inventory"
+  short_description: "Учёт, индексы и техническая синхронизация источников проекта"
+  default_prompt: "Используй $kc-inventory, чтобы проверить или обновить учёт, индексы и техническую синхронизацию внешних источников проекта."
+
+policy:
+  allow_implicit_invocation: true

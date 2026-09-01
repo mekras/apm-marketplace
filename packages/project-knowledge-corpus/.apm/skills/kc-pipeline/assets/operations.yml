@@ -1,0 +1,110 @@
+# Необязательные настройки операционного контура корпуса.
+# Скопируйте в проект, например в knowledge/operations.yml, и укажите путь
+# параметром --operations средства run-corpus-operations.py.
+
+operations_version: 1
+
+# Отчёт описывает конкретный запуск, поэтому должен находиться вне Git.
+report:
+  path: .local/reports/corpus-operations.md
+
+# Состояние полного прохода переживает отдельный сеанс агента.
+run_state:
+  path: .local/state/corpus-pipeline.json
+
+# Человеку показываются группы решений, а не каждая затронутая запись.
+# Полный хвост всё равно сохраняется в состоянии прохода.
+human_attention:
+  max_active_groups: 20
+
+# Имена подготовленных артефактов единицы. Их наличие переводит единицу
+# из очереди нормализации в очередь извлечения утверждений.
+normalized_artifacts:
+  - normalized.md
+  - message.md
+  - stenogram.txt
+
+# Команды являются проектными деталями. Средство запуска не выполняет их без
+# явного параметра --run-commands. argv передаётся без оболочки.
+stages:
+  source_sync:
+    commands:
+      - id: example-source-sync
+        argv:
+          - python3
+          - tools/sync-example-source.py
+        working_directory: .
+        write_paths:
+          - knowledge/data/example-source
+        required: true
+  # Для --run-pipeline добавьте исполнители по именам очередей:
+  # content_selection, fetch, transcribe, normalize, statements,
+  # traceability, semantic_review, strong_review, corroboration, source_check,
+  # concepts, impact_audit, apply_changes и corpus_validation.
+  # Исполнитель первичного контура должен изменить машиночитаемую очередь.
+  # Успешный исполнитель глобальной стадии закрывает её в состоянии прохода.
+  # Отсутствие команды не останавливает агентный kc-pipeline: агент обрабатывает
+  # ограниченный содержательный пакет профильным навыком и снова строит очередь.
+  # paused_resources оставляйте для недоступности команды и агента по ресурсу.
+  # Для тяжёлой стадии можно объявить минимальный резерв и пиковый расход диска:
+  # resources:
+  #   min_free_disk_bytes: 2147483648
+  #   estimated_peak_disk_bytes: 10737418240
+  # task_contract: compound_media означает возобновляемую последовательность
+  # получения, расшифровки, проверки и очистки временного медиа.
+  normalize:
+    commands:
+      - id: example-normalize
+        argv:
+          - python3
+          - tools/normalize-corpus-queue.py
+        working_directory: .
+        write_paths:
+          - knowledge/data
+        required: true
+  concepts:
+    commands:
+      - id: example-concepts
+        argv: [python3, tools/update-corpus-concepts.py]
+        working_directory: .
+        write_paths: [knowledge]
+        required: true
+  impact_audit:
+    commands:
+      - id: example-impact-audit
+        argv: [python3, tools/audit-corpus-impact.py]
+        working_directory: .
+        write_paths: [knowledge, docs, src, tests]
+        required: true
+  apply_changes:
+    commands:
+      - id: example-apply-safe-changes
+        argv: [python3, tools/apply-corpus-impact.py]
+        working_directory: .
+        write_paths: [docs, src, tests]
+        required: true
+  corpus_validation:
+    commands:
+      - id: example-corpus-validation
+        argv: [python3, tools/validate-project-corpus.py]
+        working_directory: .
+        write_paths: [knowledge]
+        required: true
+
+# Реестр исполняемых адаптеров. Имя совпадает с полем adapter в source.yml.
+# Команда получает только безопасные подстановки {source_id}, {source_dir} и
+# {locator}, а в stdout печатает один JSON-объект по договору адаптера.
+# Не храните здесь токены, cookies, пароли и закрытые адреса.
+adapters:
+  builtin.local-file:
+    argv: [python3, tools/adapter-local-file.py, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}"]
+    working_directory: .
+    write_paths: [knowledge/data]
+  project.web-index:
+    argv: [python3, tools/adapter-web-index.py, --source-id, "{source_id}", --locator, "{locator}"]
+    working_directory: .
+    write_paths: [knowledge/data]
+
+# Для предзапусковой проверки можно передать отдельный файл:
+# --operational-check --operational-policy knowledge/operational-check.yml.
+# Само правило хранит только вид находки, путь и причину, но не значение секрета.

@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-retrieval-evaluation"
+  short_description: "Оценка поиска важных утверждений через корпус"
+  default_prompt: "Используй $kc-retrieval-evaluation, чтобы проверить доступность знаний корпуса для модели."
+
+policy:
+  allow_implicit_invocation: true

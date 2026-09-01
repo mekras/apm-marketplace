@@ -1,0 +1,29 @@
+name: project-knowledge-corpus
+version: 0.19.7
+description: Коллекция навыков для создания, сопровождения и применения корпуса знаний
+  проекта
+author: mekras
+license: MIT
+targets:
+- claude
+- codex
+type: skill
+includes: auto
+dependencies:
+  apm: []
+  mcp: []
+scripts:
+  tests: sh -c 'set -e; export PYTHONDONTWRITEBYTECODE=1; target="${APM_EVAL_PATH:-.apm/skills}"; python3 tools/validate-skill-descriptions.py
+    "$target"; python3 tools/validate-hidden-unicode.py; python3 tools/validate-trigger-evals.py
+    "$target" --require-all; python3 tools/validate-skill-result-evals.py "$target";
+    python3 tools/test-run-skill-evals.py; python3 tools/test-apm-lock-artifacts.py;
+    python3 tools/validate-apm-lock-artifacts.py; python3 tools/validate-portable-corpus-references.py;
+    python3 tools/test-corpus-layout-validator.py; python3 tools/test-corpus-operations.py;
+    python3 tools/test-corpus-statements.py; python3 tools/test-transcription-contract.py;
+    python3 tools/test-knowledge-evaluation.py; python3 tools/test-run-execution-class.py;
+    python3 .agents/skills/ai-setup-apm/scripts/eval-tools/check-eval-tools-drift.py .agents/skills/ai-setup-apm/scripts/eval-tools
+    .'
+  evals: python3 tools/run-skill-evals.py "${APM_EVAL_PATH:-.apm/skills}"
+devDependencies:
+  apm:
+  - mekras/ai-dev-team#^0.22.1

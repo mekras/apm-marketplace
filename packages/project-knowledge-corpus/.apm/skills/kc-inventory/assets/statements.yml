@@ -1,0 +1,37 @@
+# Шаблон утверждений единицы источника.
+# Скопируйте файл в data/<source>/<units>/<unit>/statements.yml.
+
+statement_contract_version: 2
+source_id: SOURCE-ID
+item_id: SOURCE-ID-ITEM
+statements:
+  - id: SOURCE-ID-001
+    source_id: SOURCE-ID
+    item_id: SOURCE-ID-ITEM
+    kind: fact # fact | observation | inference | limitation
+    text: "Краткое проверяемое утверждение без расширения смысла источника."
+    excerpt: "Короткий проверяемый фрагмент источника."
+    artifact: message.md
+    checked_at: YYYY-MM-DD
+    checked_by:
+    scope:
+      applies_to: []
+      does_not_apply_to: []
+    processing_status:
+      extraction: complete
+      traceability: passed # pending | passed | failed | blocked
+      semantic_review: pending # pending | passed | failed | blocked
+      strong_review: not_required # not_required | pending | passed | blocked
+      corroboration_check: pending # pending | complete | blocked
+    source_role: primary # primary | secondary | user_generated | unknown
+    evidence_strength: unknown # strong | moderate | weak | unknown
+    confidence: high # Уверенность в точности извлечения: high | medium | low
+    temporal_status: unknown # current | aging | historical | unknown
+    corroboration: single_source # single_source | independently_confirmed | conflict | not_applicable
+    limitations: []
+    open_questions: []
+    # Только для настоящего blocked после автоматических попыток:
+    # blocker_code: owner_decision_required
+    # action_required: "Принять точное решение владельца."
+    # automatic_attempts:
+    #   - "Неизвестное сохранено явно."

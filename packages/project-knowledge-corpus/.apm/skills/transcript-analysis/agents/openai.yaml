@@ -1,0 +1,4 @@
+interface:
+  display_name: "transcript-analysis"
+  short_description: "Разбор и чистка стенограмм"
+  default_prompt: "Используй $transcript-analysis, чтобы разобрать стенограмму без пересказа."

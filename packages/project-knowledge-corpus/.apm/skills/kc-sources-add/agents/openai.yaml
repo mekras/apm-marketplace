@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-sources-add"
+  short_description: "Добавление источника с ограничениями и стратегией хранения"
+  default_prompt: "Используй $kc-sources-add, чтобы добавить новый источник в корпус знаний проекта и зафиксировать стратегию хранения."
+
+policy:
+  allow_implicit_invocation: true

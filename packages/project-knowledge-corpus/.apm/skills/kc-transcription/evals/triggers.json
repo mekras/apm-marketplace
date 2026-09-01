@@ -1,0 +1,41 @@
+{
+  "skill_name": "kc-transcription",
+  "cases": [
+    {
+      "id": "kc-transcription-positive-media",
+      "prompt": "Получи сырой transcript.txt из локальной записи встречи, проверь место и память перед запуском, а затем подготовь текст к редактуре.",
+      "should_trigger": true,
+      "rationale": "Нужно получить расшифровку из локального медиа до её редактуры."
+    },
+    {
+      "id": "kc-transcription-positive-resource-blocker",
+      "prompt": "Расшифруй локальное видео, но сначала проверь ресурсы; если памяти не хватает, сохрани понятный блокер и не создавай пустой transcript.txt.",
+      "should_trigger": true,
+      "rationale": "Запрос относится к предзапусковой проверке и результату расшифровки."
+    },
+    {
+      "id": "kc-transcription-positive-cleanup",
+      "prompt": "После успешной расшифровки удали только временный recording.tmp.mp4 и оставь transcript.txt для повторной проверки.",
+      "should_trigger": true,
+      "rationale": "Нужна безопасная очистка временного медиа после появления сырой расшифровки."
+    },
+    {
+      "id": "kc-transcription-negative-edit",
+      "prompt": "Почисти готовую расшифровку: исправь мусор распознавания, разбей на абзацы и не меняй смысл.",
+      "should_trigger": false,
+      "rationale": "Это редактура существующей стенограммы, её покрывает transcript-analysis."
+    },
+    {
+      "id": "kc-transcription-negative-fetch",
+      "prompt": "Скачай видео из внешнего источника и оформи происхождение файла в корпусе.",
+      "should_trigger": false,
+      "rationale": "Это получение первичного материала, а не преобразование локального медиа в текст."
+    },
+    {
+      "id": "kc-transcription-negative-pipeline",
+      "prompt": "Продолжи весь конвейер по источнику: получи запись, расшифруй, нормализуй и извлеки утверждения.",
+      "should_trigger": false,
+      "rationale": "Это координация нескольких стадий, её покрывает kc-pipeline."
+    }
+  ]
+}

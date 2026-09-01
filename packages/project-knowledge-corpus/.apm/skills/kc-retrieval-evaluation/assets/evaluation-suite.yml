@@ -1,0 +1,11 @@
+suite_version: 1
+id: example-suite
+description: "Замените описание областью и пользовательской задачей проверки."
+cases:
+  - id: example-001
+    status: candidate
+    source:
+      artifact: data/example/documents/guide/normalized.md
+      line_start: 1
+      line_end: 10
+      sha256: 0000000000000000000000000000000000000000000000000000000000000000

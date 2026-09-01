@@ -1,0 +1,47 @@
+{
+  "skill_name": "kc-retrieval-evaluation",
+  "cases": [
+    {
+      "id": "kc-retrieval-evaluation-positive-model-findability",
+      "prompt": "Проверь, сможет ли выбранная модель находить важные утверждения через наш корпус знаний.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка доступности знаний корпуса для модели."
+    },
+    {
+      "id": "kc-retrieval-evaluation-positive-source-probes",
+      "prompt": "Построй по первоисточникам независимый набор вопросов и измерь качество ответов через корпус.",
+      "should_trigger": true,
+      "rationale": "Нужно построить источник-ориентированную выборку и провести модельный прогон."
+    },
+    {
+      "id": "kc-retrieval-evaluation-positive-compare-models",
+      "prompt": "Сравни две модели по тому, как они находят знания корпуса и отвечают на перефразированные вопросы.",
+      "should_trigger": true,
+      "rationale": "Нужно сравнить модели по пользовательской доступности знаний."
+    },
+    {
+      "id": "kc-retrieval-evaluation-positive-diagnose-answer",
+      "prompt": "Разбери неудовлетворительный ответ через корпус: утверждение не извлечено, не найдено или искажено?",
+      "should_trigger": true,
+      "rationale": "Нужна послойная диагностика потери утверждения."
+    },
+    {
+      "id": "kc-retrieval-evaluation-negative-layout",
+      "prompt": "Проверь структуру корпуса, обязательные поля и битые ссылки на артефакты.",
+      "should_trigger": false,
+      "rationale": "Это формальная проверка корпуса через kc-validation."
+    },
+    {
+      "id": "kc-retrieval-evaluation-negative-extract",
+      "prompt": "Извлеки из этой главы все проверяемые утверждения и обнови карту охвата.",
+      "should_trigger": false,
+      "rationale": "Это извлечение утверждений через kc-statements."
+    },
+    {
+      "id": "kc-retrieval-evaluation-negative-skill-evals",
+      "prompt": "Запусти сценарии результата для проверки навыка kc-validation.",
+      "should_trigger": false,
+      "rationale": "Это проверка навыка коллекции, а не доступности знаний пользовательского корпуса."
+    }
+  ]
+}

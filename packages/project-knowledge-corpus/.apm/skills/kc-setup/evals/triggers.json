@@ -1,0 +1,59 @@
+{
+  "skill_name": "kc-setup",
+  "cases": [
+    {
+      "id": "kc-setup-positive-agents-md",
+      "prompt": "Настрой проект на использование корпуса знаний: добавь в AGENTS.md указание использовать корпус при разработке.",
+      "should_trigger": true,
+      "rationale": "Пользователь просит настроить проект через AGENTS.md."
+    },
+    {
+      "id": "kc-setup-positive-no-corpus",
+      "prompt": "В проекте ещё нет корпуса знаний. Подключи его к агентским инструкциям и спроси, как назвать папку, предложив вариант по умолчанию.",
+      "should_trigger": true,
+      "rationale": "Нужна первичная настройка корпуса в проекте с выбором папки."
+    },
+    {
+      "id": "kc-setup-positive-existing-corpus",
+      "prompt": "В проекте уже есть корпус знаний. Проверь его, обнови устаревшую структуру и зафиксируй в AGENTS.md, что агенты должны использовать корпус.",
+      "should_trigger": true,
+      "rationale": "Нужна настройка проекта с проверкой существующего корпуса."
+    },
+    {
+      "id": "kc-setup-positive-repair-agents",
+      "prompt": "AGENTS.md упоминает старую папку knowledge-base, а корпус теперь лежит в knowledge. Обнови инструкции агентов и проверь корпус.",
+      "should_trigger": true,
+      "rationale": "Запрос касается синхронизации AGENTS.md с фактическим корпусом знаний."
+    },
+    {
+      "id": "kc-setup-positive-profile-skills-project-corpus",
+      "prompt": "Настрой AGENTS.md так, чтобы профильные навыки проверяли корпус знаний проекта и предлагали менять способ работы с источниками.",
+      "should_trigger": true,
+      "rationale": "Запрос касается настройки проекта и правил применения корпуса профильными навыками."
+    },
+    {
+      "id": "kc-setup-negative-add-source",
+      "prompt": "Добавь новый сайт как источник в существующий корпус знаний и опиши способ получения данных.",
+      "should_trigger": false,
+      "rationale": "Это добавление источника, его покрывает kc-sources-add."
+    },
+    {
+      "id": "kc-setup-negative-validation-only",
+      "prompt": "Проверь корпус знаний на целостность, полноту обработки источников и внутренние противоречия.",
+      "should_trigger": false,
+      "rationale": "Это чистая проверка корпуса без настройки AGENTS.md, её покрывает kc-validation."
+    },
+    {
+      "id": "kc-setup-negative-status",
+      "prompt": "Дай краткую сводку: какие источники корпуса обработаны, что ждёт следующего этапа и где блокеры.",
+      "should_trigger": false,
+      "rationale": "Это сводка состояния корпуса, её покрывает kc-status."
+    },
+    {
+      "id": "kc-setup-negative-agents-general",
+      "prompt": "Проверь AGENTS.md на конфликтные команды, дубли README и перегрузку контекста.",
+      "should_trigger": false,
+      "rationale": "Это общий аудит AGENTS.md, а не настройка корпуса знаний."
+    }
+  ]
+}

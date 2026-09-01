@@ -1,0 +1,59 @@
+{
+  "skill_name": "kc-normalization",
+  "cases": [
+    {
+      "id": "kc-normalization-positive-markdown",
+      "prompt": "Нормализуй сохранённый HTML-снимок в Markdown, сохрани связь с первичным материалом и отметь сомнительные места.",
+      "should_trigger": true,
+      "rationale": "Пользователь просит создать нормализованное представление первичных данных."
+    },
+    {
+      "id": "kc-normalization-positive-transcript",
+      "prompt": "Подготовь нормализованный текст из сырой расшифровки для последующего извлечения утверждений.",
+      "should_trigger": true,
+      "rationale": "Запрос касается подготовки первичного материала к следующему этапу."
+    },
+    {
+      "id": "kc-normalization-positive-local-book-fragment",
+      "prompt": "Из локальной текстовой выгрузки DjVu подготовь нормализованный фрагмент по выбранным страницам, сохрани ограничения публикации и не публикуй полный текст.",
+      "should_trigger": true,
+      "rationale": "Запрос касается нормализации выбранного фрагмента локальной книги."
+    },
+    {
+      "id": "kc-normalization-positive-source-map",
+      "prompt": "Нормализуй длинный стандарт в PDF: обнови структуру источника, зафиксируй инструмент извлечения и создай source-map.yml без полной текстовой выгрузки в Git.",
+      "should_trigger": true,
+      "rationale": "Запрос касается нормализации длинного источника с обязательным source-map.yml."
+    },
+    {
+      "id": "kc-normalization-negative-intake",
+      "prompt": "Сначала реши, можно ли принять этот файл в корпус знаний и хранить его в Git.",
+      "should_trigger": false,
+      "rationale": "Это фиксация исходного материала и проверка ограничений хранения."
+    },
+    {
+      "id": "kc-normalization-negative-extraction",
+      "prompt": "Извлеки проверяемые утверждения из нормализованного текста.",
+      "should_trigger": false,
+      "rationale": "Это следующий этап извлечения утверждений."
+    },
+    {
+      "id": "kc-normalization-boundary-transcript-analysis",
+      "prompt": "Почисти стенограмму встречи для чтения: убери мусор распознавания, расставь абзацы и заголовки, но не делай проектную обвязку.",
+      "should_trigger": false,
+      "rationale": "Это локальная редактура стенограммы, её должен покрывать transcript-analysis."
+    },
+    {
+      "id": "kc-normalization-boundary-kc-transcription",
+      "prompt": "Из локального recording.tmp.mp4 получи сырой transcript.txt, сначала проверь место и память, но текст пока не редактируй.",
+      "should_trigger": false,
+      "rationale": "Это получение расшифровки, его покрывает kc-transcription."
+    },
+    {
+      "id": "kc-normalization-boundary-pipeline",
+      "prompt": "Продолжи конвейер по текущему источнику и сам выбери, нужно ли сейчас нормализовать, извлечь утверждения или проверить влияние.",
+      "should_trigger": false,
+      "rationale": "Это координация нескольких стадий, её должен покрывать kc-pipeline."
+    }
+  ]
+}

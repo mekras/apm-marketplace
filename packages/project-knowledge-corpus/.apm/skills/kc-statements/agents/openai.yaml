@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-statements"
+  short_description: "Извлечение проверяемых утверждений из данных корпуса"
+  default_prompt: "Используй $kc-statements, чтобы извлечь проверяемые утверждения из первичных или нормализованных данных."
+
+policy:
+  allow_implicit_invocation: true

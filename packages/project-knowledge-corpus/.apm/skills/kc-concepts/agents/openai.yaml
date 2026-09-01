@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-concepts"
+  short_description: "Канонический понятийный аппарат продукта в корпусе"
+  default_prompt: "Используй $kc-concepts, чтобы создать или обновить понятийный аппарат продукта."
+
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,22 @@
+# Необязательный профиль исполнителя расшифровки для проекта-потребителя.
+transcription_version: 1
+
+# Имя, версия и параметры движка фиксируются для повторной проверки, но не
+# становятся требованием переносимого навыка.
+engine:
+  id: project.whisperx
+  version: local
+  argv: [python3, tools/transcribe-media.py, --input, "{media_path}", --output, "{transcript_path}"]
+  working_directory: .
+  write_paths: [knowledge/data]
+
+preflight:
+  min_free_space: 2G
+  min_free_memory: 2G
+  max_parallel_jobs: 1
+  cpu_priority: low
+  io_priority: idle
+
+result:
+  raw_transcript: transcript.txt
+  metadata: transcription.yml

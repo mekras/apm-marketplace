@@ -1,0 +1,40 @@
+# Шаблон производных утверждений анализа.
+# Скопируйте файл в analysis/<analysis>/derived-statements.yml.
+
+analysis_id: NIGHT
+title: "Распределение времени начала работы штабов"
+derived_statements:
+  - id: DRV-NIGHT-001
+    status: candidate # candidate | confirmed | blocked | rejected
+    kind: observation # observation | inference | limitation; fact недопустим
+    text: "В исследованной выборке большинство штабов начало работу ночью."
+    derived_from:
+      statement_ids: []
+      item_ids: []
+      artifacts:
+        - path: data/example-source/exports/searches.csv
+          content_hash: "sha256:..."
+      external_references: []
+      # - corpus_source_id: EXT
+      #   statement_id: EXT-001
+      #   revision: "commit-or-version"
+    derivation:
+      type: aggregation # aggregation | logical | interpretive | mixed
+      method: "Подсчитать долю записей со временем начала от 22:00 до 06:00."
+      artifact: analysis/night-starts/calculate.sql
+      parameters:
+        period: "2025-01-01/2025-12-31"
+        timezone: local
+        night_interval: "22:00-06:00"
+    result:
+      population_size: 428
+      matching_count: 271
+      ratio: 0.633
+    checked_at: YYYY-MM-DD
+    checked_by:
+    scope:
+      applies_to: ["Выборка с известным временем начала штаба"]
+      does_not_apply_to: ["Продолжительность поисков"]
+    limitations:
+      - "Время начала штаба не показывает, какая часть поиска прошла ночью."
+    open_questions: []

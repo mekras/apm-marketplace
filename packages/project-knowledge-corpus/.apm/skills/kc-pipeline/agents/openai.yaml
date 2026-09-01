@@ -1,0 +1,7 @@
+interface:
+  display_name: "kc-pipeline"
+  short_description: "Конвейер, адаптеры и операции первичных данных"
+  default_prompt: "Используй $kc-pipeline, чтобы организовать или продолжить конвейер первичных данных проекта, запустить зарегистрированный адаптер, построить очереди или восстановить производные индексы."
+
+policy:
+  allow_implicit_invocation: true
