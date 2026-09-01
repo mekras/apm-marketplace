@@ -1,0 +1,53 @@
+{
+  "skill_name": "ai-setup-project",
+  "cases": [
+    {
+      "id": "ai-setup-project-positive-setup",
+      "prompt": "Настрой проект под правильную работу агентов.",
+      "should_trigger": true,
+      "rationale": "Прямой запрос на корневую настройку проекта под агентов."
+    },
+    {
+      "id": "ai-setup-project-positive-bring-to-rules",
+      "prompt": "Приведи проект к правилам работы с ИИ и подготовь стартовые файлы.",
+      "should_trigger": true,
+      "rationale": "Широкая настройка проекта, которую ведёт корневой навык."
+    },
+    {
+      "id": "ai-setup-project-positive-reconfigure",
+      "prompt": "Перенастрой проект под актуальные правила работы агентов.",
+      "should_trigger": true,
+      "rationale": "Повторная настройка проекта по шагам с подтверждением; политика подагентов проверяется только при явном запросе, отсутствии решения или истечении проектного срока."
+    },
+    {
+      "id": "ai-setup-project-negative-apm-packaging",
+      "prompt": "Настрой apm.yml и состав публикуемого пакета APM.",
+      "should_trigger": false,
+      "rationale": "Это упаковка коллекции APM, профильный навык ai-setup-apm."
+    },
+    {
+      "id": "ai-setup-project-negative-subagents",
+      "prompt": "Спроектируй политику подагентов: роли, модели и лимиты.",
+      "should_trigger": false,
+      "rationale": "Это политика подагентов, профильный навык ai-setup-subagents."
+    },
+    {
+      "id": "ai-setup-project-negative-hooks",
+      "prompt": "Настрой хук проверки сообщения коммита на событии Git.",
+      "should_trigger": false,
+      "rationale": "Это настройка хука, профильный навык ai-setup-hooks."
+    },
+    {
+      "id": "ai-setup-project-negative-agents-md",
+      "prompt": "Перепиши AGENTS.md, чтобы убрать конфликт инструкций.",
+      "should_trigger": false,
+      "rationale": "Это сопровождение машинных инструкций, профильный навык."
+    },
+    {
+      "id": "ai-setup-project-edge-readme",
+      "prompt": "Подготовь README и опиши требования к продукту.",
+      "should_trigger": false,
+      "rationale": "Этим коллекция не владеет; навык перенаправляет в соседние навыки или клиентские инструкции."
+    }
+  ]
+}

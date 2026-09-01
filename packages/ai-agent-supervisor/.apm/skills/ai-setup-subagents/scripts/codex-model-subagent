@@ -1,0 +1,126 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  codex-model-subagent <model> <name> <prompt>
+
+Runs a bounded Codex child process on the selected model and stores JSONL
+telemetry plus the final message under /tmp by default.
+
+The command succeeds when Codex completed a turn and wrote a non-empty final
+message. If the Codex process then returns a non-zero status, the command
+reports completed_with_process_error and still succeeds; inspect stderr before
+accepting a result for a high-risk task.
+
+Environment:
+  CODEX_SUBAGENT_OUT_DIR     Output directory, default /tmp/<repo-name>-subagents
+  CODEX_SUBAGENT_SANDBOX     read-only or workspace-write, default read-only
+  CODEX_SUBAGENT_USAGE_LINE  Print one-line usage summary, default 1
+EOF
+}
+
+has_completed_turn() {
+  python3 - "$1" <<'PY'
+import json
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as source:
+        for line in source:
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") == "turn.completed":
+                raise SystemExit(0)
+except OSError:
+    pass
+raise SystemExit(1)
+PY
+}
+
+if [[ $# -lt 3 ]]; then
+  usage >&2
+  exit 2
+fi
+
+model="$1"
+name="$2"
+shift 2
+
+if [[ -z "$model" || "$model" =~ [[:space:]] ]]; then
+  echo "Invalid subagent model: $model" >&2
+  exit 2
+fi
+
+case "$name" in
+  *[!A-Za-z0-9._-]*|'')
+    echo "Invalid subagent name: $name" >&2
+    exit 2
+    ;;
+esac
+
+repo_root="$(git rev-parse --show-toplevel)"
+repo_name="$(basename "$repo_root")"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+out_dir="${CODEX_SUBAGENT_OUT_DIR:-/tmp/${repo_name}-subagents}"
+sandbox="${CODEX_SUBAGENT_SANDBOX:-read-only}"
+case "$sandbox" in
+  read-only|workspace-write)
+    ;;
+  *)
+    echo "Unsupported CODEX_SUBAGENT_SANDBOX: $sandbox" >&2
+    exit 2
+    ;;
+esac
+mkdir -p "$out_dir"
+
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+safe_model="${model//[^A-Za-z0-9._-]/_}"
+jsonl="$out_dir/${timestamp}-${safe_model}-${name}.jsonl"
+final="$out_dir/${timestamp}-${safe_model}-${name}.final.txt"
+stderr="$out_dir/${timestamp}-${safe_model}-${name}.stderr.txt"
+
+set +e
+codex exec \
+  --json \
+  --color never \
+  -C "$repo_root" \
+  -m "$model" \
+  -s "$sandbox" \
+  -o "$final" \
+  "$*" > "$jsonl" 2> "$stderr"
+process_exit_code=$?
+set -e
+
+if has_completed_turn "$jsonl" && [[ -s "$final" ]]; then
+  if [[ "$process_exit_code" -eq 0 ]]; then
+    status="completed"
+  else
+    status="completed_with_process_error"
+  fi
+else
+  status="failed"
+fi
+
+if [[ "${CODEX_SUBAGENT_USAGE_LINE:-1}" != "0" ]]; then
+  usage_report="$repo_root/tools/codex-usage-report"
+  if [[ ! -x "$usage_report" ]]; then
+    usage_report="$script_dir/codex-usage-report"
+  fi
+  "$usage_report" --line "$jsonl"
+fi
+
+printf 'status=%s\n' "$status"
+printf 'process_exit_code=%s\n' "$process_exit_code"
+printf 'jsonl=%s\nfinal=%s\n' "$jsonl" "$final"
+printf 'stderr=%s\n' "$stderr"
+
+if [[ "$status" == "failed" ]]; then
+  if [[ "$process_exit_code" -ne 0 ]]; then
+    exit "$process_exit_code"
+  fi
+  exit 1
+fi

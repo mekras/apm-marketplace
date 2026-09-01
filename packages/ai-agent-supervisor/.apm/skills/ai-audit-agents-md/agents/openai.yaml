@@ -1,0 +1,4 @@
+interface:
+  display_name: "ai-audit-agents-md"
+  short_description: "Проверка качества AGENTS.md"
+  default_prompt: "Используй ai-audit-agents-md для проверки AGENTS.md и цепочки соседних инструкций."

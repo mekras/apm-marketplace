@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+"""Запустить роль из локальной политики с явной моделью и минимальным вводом."""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import subprocess
+import sys
+import time
+import tomllib
+import uuid
+from pathlib import Path
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("role")
+    parser.add_argument("--config", type=Path, default=Path("subagents.local.toml"))
+    parser.add_argument("--input", action="append", default=[])
+    parser.add_argument("--out", type=Path, default=Path(".codex/subagents"))
+    parser.add_argument(
+        "--obligation",
+        help="идентификатор обязательства профильной роли, которое обслуживает запуск",
+    )
+    args = parser.parse_args()
+
+    data = tomllib.loads(args.config.read_text(encoding="utf-8"))
+    role = (data.get("roles") or {}).get(args.role)
+    if not isinstance(role, dict):
+        parser.error(f"роль {args.role} не найдена")
+    model, effort, sandbox, adapter = (
+        role.get(key) for key in ("model", "effort", "sandbox", "adapter")
+    )
+    if not all(
+        isinstance(value, str) and value for value in (model, effort, sandbox, adapter)
+    ):
+        parser.error("у роли обязательны model, effort, sandbox, adapter")
+
+    files = []
+    for name in args.input:
+        path = Path(name).resolve()
+        if not path.is_file():
+            parser.error(f"входной файл не найден: {name}")
+        files.append(str(path))
+    prompt = json.dumps(
+        {
+            "role": args.role,
+            "contract": role.get("contract", {}),
+            "inputs": files,
+            "task": sys.stdin.read(),
+        },
+        ensure_ascii=False,
+    )
+
+    args.out.mkdir(parents=True, exist_ok=True)
+    started = time.time()
+    prefix = f"{int(started)}-{args.role}"
+    final = args.out / f"{prefix}.final.txt"
+    log = args.out / f"{prefix}.json"
+    journal = args.out / f"{prefix}.jsonl"
+    completed = subprocess.run(
+        [adapter, model, effort, sandbox],
+        input=prompt,
+        text=True,
+        capture_output=True,
+        env={**os.environ, "CODEX_ROLE_LOG": str(journal)},
+        check=False,
+    )
+    final.write_text(completed.stdout, encoding="utf-8")
+
+    try:
+        header = json.loads(completed.stdout.splitlines()[0])
+    except (IndexError, json.JSONDecodeError):
+        header = {}
+    actual_model = header.get("model") if isinstance(header, dict) else None
+    record = {
+        "run_id": str(uuid.uuid4()),
+        "role": args.role,
+        "assigned_model": model,
+        "actual_model": actual_model,
+        "model_matches": actual_model == model,
+        "usage": header.get("usage") if isinstance(header, dict) else None,
+        "effort": effort,
+        "sandbox": sandbox,
+        "inputs": files,
+        "final": str(final),
+        "result_path": str(final),
+        "result_available": final.is_file(),
+        "journal": str(journal),
+        "seconds": round(time.time() - started, 3),
+        "returncode": completed.returncode,
+        "contract": role.get("contract", {}),
+    }
+    if args.obligation is not None:
+        record["obligation_id"] = args.obligation
+    log.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
+    if completed.returncode or not record["model_matches"]:
+        print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
+        return 1
+    print(json.dumps(record, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

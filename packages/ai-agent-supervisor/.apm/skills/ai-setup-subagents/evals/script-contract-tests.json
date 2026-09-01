@@ -1,0 +1,391 @@
+{
+  "version": 2,
+  "operations": [
+    {
+      "id": "evaluate-model-selection",
+      "script": "scripts/evaluate-model-selection.py",
+      "command_prefix": [],
+      "inputs": []
+    }
+  ],
+  "cases": [
+    {
+      "id": "evaluate-complete-model-matrix",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/complete.json",
+        "--output",
+        "{fixture}/report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["confirmed", "candidate-a"],
+        "files": [
+          {
+            "path": "report.json",
+            "json": true,
+            "contains": "\"policy_action\": \"owner_decision_required\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-incomplete-model-matrix",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/invalid.json",
+        "--output",
+        "{fixture}/invalid-report.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": ["contract_sha256"]
+      }
+    },
+    {
+      "id": "report-insufficient-without-full-cost",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [r.pop('total_cost_units',None) for r in d['runs']]; json.dump(d,open(p+'/without-total.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/without-total.json",
+        "--output",
+        "{fixture}/without-total-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "without-total-report.json",
+            "json": true,
+            "contains": "полная стоимость не задана"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-refuted-by-cost",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); d['settings']['refutation_savings_percent']=70; d['settings']['confirmation_savings_percent']=80; json.dump(d,open(p+'/cost-refuted.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/cost-refuted.json",
+        "--output",
+        "{fixture}/cost-refuted-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["refuted"],
+        "files": [
+          {
+            "path": "cost-refuted-report.json",
+            "json": true,
+            "contains": "экономия полной стоимости ниже порога опровержения"
+          }
+        ]
+      }
+    },
+    {
+      "id": "exclude-by-quality-interval",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [(r.update({'critical_defect':False})) for r in d['runs'] if r['candidate_id']=='candidate-b']; json.dump(d,open(p+'/quality-elimination.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/quality-elimination.json",
+        "--output",
+        "{fixture}/quality-elimination-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "quality-elimination-report.json",
+            "json": true,
+            "contains": "quality_interval"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-no-sequential-candidate",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [(r.update({'critical_defect':True})) for r in d['runs'] if r['candidate_id']=='candidate-a' and r['case_id']=='normal-1']; json.dump(d,open(p+'/no-candidate.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/no-candidate.json",
+        "--output",
+        "{fixture}/no-candidate-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "no-candidate-report.json",
+            "json": true,
+            "contains": "все кандидаты исключены"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-no-holdout-baseline",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [(r.update({'critical_defect':True})) for r in d['runs'] if r['case_id'].startswith('holdout-')]; json.dump(d,open(p+'/no-baseline.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/no-baseline.json",
+        "--output",
+        "{fixture}/no-baseline-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "no-baseline-report.json",
+            "json": true,
+            "contains": "у всех кандидатов есть критические дефекты"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-only-one-eligible-candidate",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [c['eligibility'].update({'within_budget':False}) for c in d['candidates'] if c['id']=='candidate-b']; json.dump(d,open(p+'/one-eligible.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/one-eligible.json",
+        "--output",
+        "{fixture}/one-eligible-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "one-eligible-report.json",
+            "json": true,
+            "contains": "для сравнения нужны минимум два"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-critical-defect-refutation",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [(r.update({'accepted_without_revision':True,'critical_defect':False,'total_cost_units':1})) for r in d['runs'] if r['candidate_id']=='candidate-b' and not r['case_id'].startswith('holdout-')]; [(r.update({'critical_defect':True})) for r in d['runs'] if r['candidate_id']=='candidate-b' and r['case_id'].startswith('holdout-')]; json.dump(d,open(p+'/critical-refuted.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/critical-refuted.json",
+        "--output",
+        "{fixture}/critical-refuted-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["refuted", "candidate-b"],
+        "files": [
+          {
+            "path": "critical-refuted-report.json",
+            "json": true,
+            "contains": "дополнительный критический дефект"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-quality-refutation",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); hold=[r for r in d['runs'] if r['case_id'].startswith('holdout-')]; [(r.update({'accepted_without_revision':r['candidate_id']=='candidate-b','critical_defect':False})) for r in hold]; seeds={(r['candidate_id'],r['case_id']):r for r in hold}.values(); d['runs'] += [dict(r,repeat=n) for r in seeds for n in range(3,31)]; json.dump(d,open(p+'/quality-refuted.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/quality-refuted.json",
+        "--output",
+        "{fixture}/quality-refuted-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["refuted"],
+        "files": [
+          {
+            "path": "quality-refuted-report.json",
+            "json": true,
+            "contains": "нижняя граница отставания превысила"
+          }
+        ]
+      }
+    },
+    {
+      "id": "report-insufficient-quality-and-review-time",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); hold=[r for r in d['runs'] if r['case_id'].startswith('holdout-')]; [(r.update({'accepted_without_revision':True,'critical_defect':False,'review_seconds':10})) for r in hold if r['candidate_id']=='candidate-b']; a=[r for r in hold if r['candidate_id']=='candidate-a']; [(r.update({'review_seconds':20})) for r in a]; a[0]['accepted_without_revision']=False; json.dump(d,open(p+'/review-insufficient.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/review-insufficient.json",
+        "--output",
+        "{fixture}/review-insufficient-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "review-insufficient-report.json",
+            "json": true,
+            "contains": "время родительской проверки ухудшилось"
+          }
+        ]
+      }
+    },
+    {
+      "id": "reject-same-input-and-output",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/complete.json",
+        "--output",
+        "{fixture}/complete.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": ["вход и выход должны быть разными файлами"]
+      }
+    },
+    {
+      "id": "report-insufficient-holdout-volume",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); d['settings']['required_holdout_runs_per_candidate']=5; json.dump(d,open(p+'/small-holdout.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/small-holdout.json",
+        "--output",
+        "{fixture}/small-holdout-report.json"
+      ],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [
+          {
+            "path": "small-holdout-report.json",
+            "json": true,
+            "contains": "объём отложенной выборки меньше заданного"
+          }
+        ]
+      }
+    }
+  ]
+}

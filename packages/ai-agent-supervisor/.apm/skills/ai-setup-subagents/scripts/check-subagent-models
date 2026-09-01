@@ -1,0 +1,158 @@
+#!/usr/bin/env python3
+"""Проверить доступность моделей подагентов через переносимые адаптеры."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shlex
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+
+
+INFRASTRUCTURE_MARKERS = (
+    "failed to refresh available models",
+    "timeout waiting for child process",
+    "reconnecting",
+    "connection reset",
+    "connection refused",
+    "network is unreachable",
+)
+
+
+def parse_model(value: str) -> tuple[str, str]:
+    if ":" not in value:
+        raise ValueError("ожидается запись адаптер:модель")
+    adapter, model = value.split(":", 1)
+    if not adapter or not model:
+        raise ValueError("ожидается непустая запись адаптер:модель")
+    return adapter, model
+
+
+def load_config(path: Path) -> tuple[dict[str, list[str]], list[str]]:
+    with path.open("rb") as source:
+        data = tomllib.load(source)
+    adapters = data.get("adapters", {})
+    models = data.get("models", [])
+    if not isinstance(adapters, dict):
+        raise ValueError("раздел adapters должен быть таблицей TOML")
+    if not isinstance(models, list) or not all(isinstance(item, str) for item in models):
+        raise ValueError("models должен быть массивом строк адаптер:модель")
+    parsed: dict[str, list[str]] = {}
+    for name, command in adapters.items():
+        if isinstance(command, str):
+            parsed[name] = shlex.split(command)
+        elif isinstance(command, list) and all(isinstance(item, str) for item in command):
+            parsed[name] = command
+        else:
+            raise ValueError(f"adapters.{name} должен быть строкой или массивом строк")
+        if not parsed[name]:
+            raise ValueError(f"adapters.{name} не должен быть пустым")
+    return parsed, models
+
+
+def infrastructure_reason(stderr: str, stdout: str) -> str | None:
+    """Вернуть сбой среды, который нельзя приписывать модели."""
+    output = f"{stderr}\n{stdout}".casefold()
+    if any(marker in output for marker in INFRASTRUCTURE_MARKERS):
+        return "сбой среды Codex или сети: " + (stderr.strip() or stdout.strip())
+    return None
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Проверить модели подагентов через адаптеры <команда> <модель>."
+    )
+    parser.add_argument("--config", type=Path, help="локальный файл TOML с adapters и models")
+    parser.add_argument(
+        "--adapter",
+        action="append",
+        default=[],
+        metavar="ИМЯ=КОМАНДА",
+        help="добавить адаптер; команда разбирается как аргументы оболочки",
+    )
+    parser.add_argument(
+        "--model",
+        action="append",
+        default=[],
+        metavar="АДАПТЕР:МОДЕЛЬ",
+        help="проверить модель через указанный адаптер",
+    )
+    parser.add_argument("--timeout", type=int, default=60, help="тайм-аут одного запуска в секундах")
+    parser.add_argument("--json", action="store_true", help="вывести результат в JSON")
+    args = parser.parse_args()
+
+    if args.timeout <= 0:
+        parser.error("--timeout должен быть положительным")
+
+    adapters: dict[str, list[str]] = {}
+    models: list[str] = []
+    try:
+        if args.config:
+            loaded_adapters, loaded_models = load_config(args.config)
+            adapters.update(loaded_adapters)
+            models.extend(loaded_models)
+        for value in args.adapter:
+            if "=" not in value:
+                raise ValueError("--adapter ожидает ИМЯ=КОМАНДА")
+            name, command = value.split("=", 1)
+            parsed = shlex.split(command)
+            if not name or not parsed:
+                raise ValueError("--adapter ожидает непустые имя и команду")
+            adapters[name] = parsed
+        models.extend(args.model)
+        unique_models = list(dict.fromkeys(models))
+        if not unique_models:
+            raise ValueError("не указаны модели для проверки")
+    except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
+        print(f"Ошибка настройки проверки: {error}", file=sys.stderr)
+        return 2
+
+    results = []
+    for spec in unique_models:
+        try:
+            adapter_name, model = parse_model(spec)
+        except ValueError as error:
+            results.append({"model": spec, "status": "unverified", "reason": str(error)})
+            continue
+        command = adapters.get(adapter_name)
+        if not command:
+            results.append({"model": spec, "status": "unverified", "reason": f"не найден адаптер {adapter_name}"})
+            continue
+        try:
+            completed = subprocess.run(
+                [*command, model],
+                input="Ответь ровно: OK\n",
+                text=True,
+                capture_output=True,
+                timeout=args.timeout,
+                check=False,
+            )
+        except FileNotFoundError:
+            results.append({"model": spec, "status": "unverified", "reason": f"команда адаптера не найдена: {command[0]}"})
+            continue
+        except subprocess.TimeoutExpired:
+            results.append({"model": spec, "status": "unverified", "reason": f"тайм-аут {args.timeout} с"})
+            continue
+        if completed.returncode == 0 and completed.stdout.strip():
+            results.append({"model": spec, "status": "available", "reason": "адаптер вернул непустой ответ"})
+        else:
+            infrastructure = infrastructure_reason(completed.stderr, completed.stdout)
+            if infrastructure:
+                results.append({"model": spec, "status": "unverified", "reason": infrastructure})
+            else:
+                reason = completed.stderr.strip() or f"адаптер завершился с кодом {completed.returncode}"
+                results.append({"model": spec, "status": "unavailable", "reason": reason})
+
+    if args.json:
+        print(json.dumps({"models": results}, ensure_ascii=False))
+    else:
+        for result in results:
+            print(f"{result['model']}: {result['status']} — {result['reason']}")
+    return 0 if all(result["status"] == "available" for result in results) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

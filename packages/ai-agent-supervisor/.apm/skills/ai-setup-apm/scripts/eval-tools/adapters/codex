@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Пример адаптера модели для run-skill-evals.py.
+#
+# Контракт адаптера (переносимый, не привязан к Codex):
+#   - вызов: <адаптер> <модель>;
+#   - промпт читается со стандартного ввода;
+#   - текст ответа модели пишется в стандартный вывод;
+#   - код выхода 0 — успех, любой другой — транспортная ошибка вызова модели.
+#
+# Средство запуска само вкладывает требование вернуть JSON в текст промпта и
+# разбирает JSON из ответа. Адаптеру достаточно вернуть текст модели как есть.
+#
+# Это пример для Codex CLI. Под другую модель напишите свой адаптер по тому же
+# контракту и укажите его в локальных настройках evals.
+set -euo pipefail
+
+if [[ $# -lt 1 || -z "${1:-}" ]]; then
+  echo "Использование: codex <модель>; промпт на stdin, ответ на stdout." >&2
+  exit 2
+fi
+
+model="$1"
+prompt="$(cat)"
+
+final="$(mktemp)"
+trap 'rm -f "$final"' EXIT
+
+workdir="${APM_EVAL_WORKSPACE:-}"
+if [[ -n "$workdir" ]]; then
+  sandbox="workspace-write"
+else
+  workdir="$(mktemp -d)"
+  trap 'rm -f "$final"; rm -rf "$workdir"' EXIT
+  sandbox="read-only"
+fi
+
+# Codex печатает в stdout служебные события, поэтому финальный ответ модели
+# забираем из отдельного файла через --output-last-message.
+(
+cd "$workdir"
+codex exec \
+  --ignore-user-config \
+  --ephemeral \
+  --skip-git-repo-check \
+  --color never \
+  --sandbox "$sandbox" \
+  --model "$model" \
+  --output-last-message "$final" \
+  - >/dev/null <<EOF
+$prompt
+EOF
+)
+
+cat "$final"

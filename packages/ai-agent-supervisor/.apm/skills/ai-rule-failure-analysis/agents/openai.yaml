@@ -1,0 +1,4 @@
+interface:
+  display_name: "ai-rule-failure-analysis"
+  short_description: "Разбор нарушения правил агентом как дефекта правил или контроля"
+  default_prompt: "Используй ai-rule-failure-analysis, если нужно разобрать, почему агент не выполнил правила и как снизить риск повторения."

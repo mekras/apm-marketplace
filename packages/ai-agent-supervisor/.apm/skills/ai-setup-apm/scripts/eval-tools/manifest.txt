@@ -1,0 +1,25 @@
+# Манифест оснастки модельных прогонов: источник в пакете -> назначение в целевом проекте.
+# Поля через '|': путь в пакете | путь от корня проекта | режим.
+# Единый источник отображения для install-eval-tools и check-eval-tools-drift.py.
+# Строки-комментарии начинаются с '#', пустые строки игнорируются.
+run-skill-evals.py|tools/run-skill-evals.py|644
+run-collection-checks.py|tools/run-collection-checks.py|644
+run-apm-safe.py|tools/run-apm-safe.py|644
+test-run-skill-evals.py|tools/test-run-skill-evals.py|644
+test-run-fixture-checks.py|tools/test-run-fixture-checks.py|644
+test-run-apm-safe.py|tools/test-run-apm-safe.py|644
+test-validate-python-artifacts.py|tools/test-validate-python-artifacts.py|644
+test-validate-python-syntax.py|tools/test-validate-python-syntax.py|644
+validate-hidden-unicode.py|tools/validate-hidden-unicode.py|644
+validate-python-artifacts.py|tools/validate-python-artifacts.py|644
+validate-python-syntax.py|tools/validate-python-syntax.py|644
+validate-skill-descriptions.py|tools/validate-skill-descriptions.py|644
+validate-trigger-evals.py|tools/validate-trigger-evals.py|644
+validate-skill-result-evals.py|tools/validate-skill-result-evals.py|644
+validate-skill-portability.py|tools/validate-skill-portability.py|644
+run-skill-script-contract-tests.py|tools/run-skill-script-contract-tests.py|644
+validate-fixture-evals.py|tools/validate-fixture-evals.py|644
+run-fixture-checks.py|tools/run-fixture-checks.py|644
+adapters/codex|tools/adapters/codex|755
+adapters/claude|tools/adapters/claude|755
+evals.sample.yml|evals.sample.yml|644

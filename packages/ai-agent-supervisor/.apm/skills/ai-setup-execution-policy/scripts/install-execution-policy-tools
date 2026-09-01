@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  install-execution-policy-tools [project-root]
+
+Copies the portable execution-policy checker and configuration samples into
+<project-root>/tools. The user core is created only by an explicit later command.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+project_root="${1:-$(git rev-parse --show-toplevel)}"
+target_dir="$project_root/tools"
+
+mkdir -p "$target_dir"
+install -m 0755 "$script_dir/execution-policy" "$target_dir/execution-policy"
+install -m 0644 "$script_dir/../assets/execution-policy.user.toml.sample" \
+  "$target_dir/execution-policy.user.toml.sample"
+install -m 0644 "$script_dir/../assets/execution-policy.project.toml.sample" \
+  "$target_dir/execution-policy.project.toml.sample"
+install -m 0644 "$script_dir/../assets/handoff.md.template" \
+  "$target_dir/handoff.md.template"
+
+printf 'installed=%s\n' "$target_dir"

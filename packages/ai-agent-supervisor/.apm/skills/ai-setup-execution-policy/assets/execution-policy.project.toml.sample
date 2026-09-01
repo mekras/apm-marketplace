@@ -1,0 +1,11 @@
+schema_version = 1
+
+[[task_classes]]
+id = "проверяемая-задача"
+reference_route = "эталонный-маршрут"
+candidate_route = "кандидатный-маршрут"
+automatic = false
+root_task = false
+acceptance_criteria = ["критерий-приёмки"]
+required_evidence = ["результат-проверки"]
+handoff_method = "новая-сессия-с-пакетом"

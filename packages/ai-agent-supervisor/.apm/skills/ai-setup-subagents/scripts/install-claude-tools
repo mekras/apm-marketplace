@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage:
+  install-claude-tools [project-root]
+
+Copies Claude-specific subagent tools and the portable execution-class runner
+into <project-root>/tools.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+project_root="${1:-$(git rev-parse --show-toplevel)}"
+"$script_dir/install-subagent-tools" "$project_root"
+target_dir="$project_root/tools"
+
+mkdir -p "$target_dir/adapters"
+install -m 0755 "$script_dir/adapters/claude-role" "$target_dir/adapters/claude-role"
+
+printf 'installed=%s\n' "$target_dir"

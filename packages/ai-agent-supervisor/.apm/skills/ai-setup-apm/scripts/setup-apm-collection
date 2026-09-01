@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""Create a minimal APM skill collection manifest without external packages."""
+
+from __future__ import annotations
+
+import argparse
+import os
+import shutil
+import sys
+from pathlib import Path
+
+
+DEFAULT_TESTS = "python tools/run-collection-checks.py"
+DEFAULT_EVALS = "python tools/run-skill-evals.py"
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Create apm.yml for a new skills collection.",
+    )
+    parser.add_argument("project_root", nargs="?", default=".", type=Path)
+    parser.add_argument("--name")
+    parser.add_argument("--description", default="Skill collection")
+    parser.add_argument("--target", action="append")
+    parser.add_argument("--skills-source", default=".apm/skills")
+    parser.add_argument("--test-command")
+    return parser.parse_args()
+
+
+def quoted(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
+def install_eval_tools(root: Path) -> None:
+    """Install the collection checks shipped beside this setup script."""
+    source_root = Path(__file__).resolve().parent / "eval-tools"
+    manifest = source_root / "manifest.txt"
+    if not manifest.is_file():
+        raise RuntimeError(f"Не найден манифест оснастки: {manifest}")
+
+    for line_number, line in enumerate(
+        manifest.read_text(encoding="utf-8").splitlines(),
+        start=1,
+    ):
+        if not line or line.startswith("#"):
+            continue
+        try:
+            source, destination, mode = line.split("|")
+            file_mode = int(mode, 8)
+        except ValueError as exc:
+            raise RuntimeError(
+                f"Некорректная строка манифеста {manifest}:{line_number}",
+            ) from exc
+        source_path = source_root / source
+        destination_relative = Path(destination)
+        destination_path = root / destination_relative
+        if not source_path.is_file():
+            raise RuntimeError(f"Не найден источник оснастки: {source_path}")
+        if destination_relative.is_absolute() or ".." in destination_relative.parts:
+            raise RuntimeError(
+                f"Некорректное назначение оснастки: {destination}",
+            )
+        destination_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source_path, destination_path)
+        os.chmod(destination_path, file_mode)
+
+
+def create_manifest(root: Path, args: argparse.Namespace) -> str:
+    targets = args.target or ["codex"]
+    target_lines = "\n".join(f"  - {quoted(target)}" for target in targets)
+    command = args.test_command or DEFAULT_TESTS
+    return (
+        f"name: {quoted(args.name or root.name)}\n"
+        "version: \"0.1.0\"\n"
+        f"description: {quoted(args.description)}\n"
+        "targets:\n"
+        f"{target_lines}\n"
+        "type: \"skill\"\n"
+        "includes: auto\n"
+        "dependencies:\n"
+        "  apm: []\n"
+        "  mcp: []\n"
+        "scripts:\n"
+        f"  tests: {quoted(command)}\n"
+        f"  evals: {quoted(DEFAULT_EVALS)}\n"
+    )
+
+
+def main() -> int:
+    args = parse_args()
+    root = args.project_root.resolve()
+    manifest = root / "apm.yml"
+    if manifest.exists():
+        print(
+            "apm.yml уже существует. Измените его по процедуре навыка и "
+            "проверьте доступным YAML-валидатором. Скрипт намеренно не разбирает "
+            "существующий YAML без внешней зависимости.",
+            file=sys.stderr,
+        )
+        return 2
+    source = Path(args.skills_source)
+    source = source if source.is_absolute() else root / source
+    source.mkdir(parents=True, exist_ok=True)
+    try:
+        install_eval_tools(root)
+    except (OSError, RuntimeError) as exc:
+        print(exc, file=sys.stderr)
+        return 1
+    manifest.write_text(create_manifest(root, args), encoding="utf-8")
+    print(f"manifest={manifest}")
+    print(f"skills_source={source.resolve()}")
+    print(f"installed_tools={root / 'tools'}")
+    print(f"tests={args.test_command or DEFAULT_TESTS}")
+    print(f"evals={DEFAULT_EVALS}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Адаптер Codex: ``list`` возвращает каталог, иначе проверяет модель.
+set -euo pipefail
+
+if [[ "${1:-}" == "list" ]]; then
+  exec python3 - <<'PY'
+import json, subprocess, sys
+
+server = subprocess.Popen(["codex", "app-server"], stdin=subprocess.PIPE,
+                          stdout=subprocess.PIPE, text=True)
+def send(message):
+    server.stdin.write(json.dumps(message) + "\n"); server.stdin.flush()
+def receive(request_id):
+    while True:
+        line = server.stdout.readline()
+        if not line: raise RuntimeError("App Server завершился до ответа")
+        message = json.loads(line)
+        if message.get("id") == request_id:
+            if "error" in message: raise RuntimeError(str(message["error"]))
+            return message["result"]
+send({"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "discover-subagent-models", "version": "1"}}})
+receive(1)
+send({"method": "initialized", "params": {}})
+cursor = None; models = []
+while True:
+    params = {"includeHidden": True, "limit": 100}
+    if cursor: params["cursor"] = cursor
+    send({"id": 2, "method": "model/list", "params": params})
+    page = receive(2); models.extend(page.get("data", [])); cursor = page.get("nextCursor")
+    if not cursor: break
+server.terminate(); server.wait(timeout=3)
+print(json.dumps({"harness": "codex", "status": "available", "models": models}, ensure_ascii=False))
+PY
+fi
+
+if [[ $# -ne 1 || -z "${1:-}" ]]; then
+  echo "Использование: codex <модель>; запрос на stdin." >&2
+  exit 2
+fi
+
+model="$1"
+prompt="$(cat)"
+final="$(mktemp)"
+trap 'rm -f "$final"' EXIT
+
+codex exec \
+  --ephemeral \
+  --strict-config \
+  --skip-git-repo-check \
+  --color never \
+  --sandbox read-only \
+  --model "$model" \
+  --output-last-message "$final" \
+  - >/dev/null <<EOF
+$prompt
+EOF
+
+cat "$final"

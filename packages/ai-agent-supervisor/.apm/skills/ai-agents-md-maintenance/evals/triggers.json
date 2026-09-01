@@ -1,0 +1,47 @@
+{
+  "skill_name": "ai-agents-md-maintenance",
+  "cases": [
+    {
+      "id": "ai-agents-md-maintenance-positive-create-root-file",
+      "prompt": "Создай AGENTS.md для этого репозитория так, чтобы агент понимал команды, ограничения и порядок работы.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо требует создания AGENTS.md как машинной инструкции."
+    },
+    {
+      "id": "ai-agents-md-maintenance-positive-update-existing-file",
+      "prompt": "Обнови AGENTS.md после изменения структуры проекта и убери устаревшие команды.",
+      "should_trigger": true,
+      "rationale": "Запрос требует сопровождения существующего AGENTS.md."
+    },
+    {
+      "id": "ai-agents-md-maintenance-positive-split-nested-instructions",
+      "prompt": "Раздели большой AGENTS.md на корневой и вложенные инструкции для packages/api и packages/web.",
+      "should_trigger": true,
+      "rationale": "Навык покрывает разделение инструкций по области действия."
+    },
+    {
+      "id": "ai-agents-md-maintenance-positive-fix-agent-failures",
+      "prompt": "Агент постоянно запускает не те тесты; поправь AGENTS.md, чтобы это больше не повторялось.",
+      "should_trigger": true,
+      "rationale": "Запрос связывает изменение AGENTS.md с реальным провалом применения."
+    },
+    {
+      "id": "ai-agents-md-maintenance-negative-review-only",
+      "prompt": "Проверь AGENTS.md на конфликтность и перегрузку, но ничего пока не меняй.",
+      "should_trigger": false,
+      "rationale": "Чистую проверку без редактирования должен покрывать ai-audit-agents-md."
+    },
+    {
+      "id": "ai-agents-md-maintenance-negative-readme-only",
+      "prompt": "Перепиши README.md для новых пользователей и добавь пример установки.",
+      "should_trigger": false,
+      "rationale": "Запрос касается human-oriented документации, а не машинных инструкций."
+    },
+    {
+      "id": "ai-agents-md-maintenance-negative-code-task",
+      "prompt": "Исправь ошибку в CLI и добавь unit-тест на новый аргумент.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к изменению кода и тестов, а не к сопровождению AGENTS.md."
+    }
+  ]
+}

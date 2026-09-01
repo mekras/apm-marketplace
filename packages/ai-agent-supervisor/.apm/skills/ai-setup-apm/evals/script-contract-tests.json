@@ -1,0 +1,62 @@
+{
+  "version": 2,
+  "operations": [
+    {
+      "id": "validate-git-boundary",
+      "script": "scripts/validate-apm-git-boundary.py",
+      "command_prefix": [],
+      "inputs": []
+    }
+  ],
+  "cases": [
+    {
+      "id": "accept-empty-git-project",
+      "script": "scripts/validate-apm-git-boundary.py",
+      "fixture": "evals/script-fixtures/empty-project",
+      "covers": [
+        "validate-git-boundary"
+      ],
+      "prepare": [
+        [
+          "git",
+          "init",
+          "--quiet",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "{fixture}"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "Отслеживаемых Git проекций зависимостей APM не найдено."
+        ]
+      }
+    },
+    {
+      "id": "reject-missing-project",
+      "script": "scripts/validate-apm-git-boundary.py",
+      "fixture": "evals/script-fixtures/empty-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "{fixture}/missing-project"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "не найден каталог проекта"
+        ]
+      }
+    }
+  ],
+  "unexercised_functions": [
+    {
+      "script": "scripts/validate-apm-git-boundary.py",
+      "function": "package_owners",
+      "reason": "Функция вызывает внешнюю команду apm, которую нельзя воспроизвести внутри переносимой фикстуры; поведение проверяется в целевых проектах штатным запуском apm."
+    }
+  ]
+}

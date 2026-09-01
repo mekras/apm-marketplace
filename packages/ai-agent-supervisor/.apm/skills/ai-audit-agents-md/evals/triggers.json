@@ -1,0 +1,71 @@
+{
+  "skill_name": "ai-audit-agents-md",
+  "cases": [
+    {
+      "id": "ai-audit-agents-md-positive-single-file-check",
+      "prompt": "Проверь AGENTS.md в этом репозитории на минимальность, конфликтность и машинную пригодность.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо просит проверку AGENTS.md по критериям, которые покрывает навык."
+    },
+    {
+      "id": "ai-audit-agents-md-positive-nested-instructions",
+      "prompt": "Нужно оценить корневой AGENTS.md и вложенные инструкции, понять иерархию и найти конфликты.",
+      "should_trigger": true,
+      "rationale": "Навык предназначен для проверки цепочки AGENTS.md и соседних инструкций."
+    },
+    {
+      "id": "ai-audit-agents-md-positive-before-edit",
+      "prompt": "Перед тем как переписывать AGENTS.md, подготовь замечания по структуре, детерминизму и перегрузке.",
+      "should_trigger": true,
+      "rationale": "Навык применяется для замечаний перед изменением AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agents-md-positive-machine-entry-vs-readme",
+      "prompt": "Проверь, не смешивает ли AGENTS.md машинные инструкции с README: много обзора проекта, истории и вводного текста для человека.",
+      "should_trigger": true,
+      "rationale": "Запрос проверяет границу между машинным входом AGENTS.md и пользовательским README, поэтому относится к специализированной проверке AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agents-md-positive-codex-scope-order",
+      "prompt": "В проекте несколько AGENTS.md. Восстанови порядок применения от корня к текущему каталогу и найди конфликтующие override-правила.",
+      "should_trigger": true,
+      "rationale": "Запрос требует восстановить иерархию и порядок применения нескольких файлов инструкций."
+    },
+    {
+      "id": "ai-audit-agents-md-positive-context-cost",
+      "prompt": "Оцени AGENTS.md на раздувание контекста: длинные обзоры дерева, повторы и правила, которые не меняют поведение агента.",
+      "should_trigger": true,
+      "rationale": "Навык проверяет минимальную достаточность и стоимость контекста AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agents-md-negative-readme-review",
+      "prompt": "Проверь README.md на понятность для человека и предложи улучшения структуры.",
+      "should_trigger": false,
+      "rationale": "Запрос сосредоточен на README.md, а не на машинных инструкциях AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agents-md-negative-general-doc-audit",
+      "prompt": "Сделай общий аудит всей документации проекта и предложи план улучшений.",
+      "should_trigger": false,
+      "rationale": "Это более широкая задача по документации, не специализированная проверка AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agents-md-negative-code-change",
+      "prompt": "Исправь тесты и обнови Python-скрипт в tools.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к коду и не требует навыка проверки AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agents-md-negative-maintenance-edit",
+      "prompt": "Перепиши AGENTS.md: сократи общие разделы, вынеси правила по каталогам и сразу внеси изменения.",
+      "should_trigger": false,
+      "rationale": "Запрос требует изменения AGENTS.md; сначала нужен ai-agents-md-maintenance, а аудит может быть независимым контролем результата."
+    },
+    {
+      "id": "ai-audit-agents-md-negative-copilot-only",
+      "prompt": "Проверь .github/copilot-instructions.md и .cursor/rules на дубли и противоречия.",
+      "should_trigger": false,
+      "rationale": "Запрос касается соседних инструкционных файлов без фокуса на AGENTS.md; это ближе к общему аудиту правил проекта."
+    }
+  ]
+}

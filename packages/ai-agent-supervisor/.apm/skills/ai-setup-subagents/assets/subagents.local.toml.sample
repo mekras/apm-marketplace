@@ -1,0 +1,39 @@
+# Локальная политика подагентов. Не добавляйте рабочий файл в Git.
+# Идентификатор модели берите только из нативного каталога активной оснастки.
+
+[policy_review]
+# Состояния: "configured" или "creation_declined".
+# state = "configured"
+# interval_days = 30
+# Дата последней успешной проверки в формате YYYY-MM-DD.
+# last_checked_at = "YYYY-MM-DD"
+
+[adapters]
+# codex = ["tools/adapters/codex-subagents"]
+# claude = ["tools/adapters/claude-subagents"]
+
+# models = ["codex:название-модели", "claude:название-модели"]
+
+[execution_classes.cheap_readonly_research]
+# Контракт класса не зависит от оснастки и не содержит модель.
+# writes = false
+# result = "status, items, evidence, confidence, risk, open_questions, escalation_needed"
+# stop = "неоднозначность, конфликтующие свидетельства, недостающий контекст или выход за границу"
+
+[targets.codex.execution_classes.cheap_readonly_research]
+# model = "точный-идентификатор-из-каталога-codex"
+# effort = "low"
+# sandbox = "read-only"
+# adapter = ["tools/adapters/codex-role"]
+
+[targets.claude.execution_classes.cheap_readonly_research]
+# model = "точный-идентификатор-или-псевдоним-claude"
+# actual_model_prefix = "идентификатор-фактически-допустимого-семейства-"
+# effort = "low"
+# sandbox = "read-only"
+# adapter = ["tools/adapters/claude-role"]
+
+# Для точного идентификатора `actual_model_prefix` не нужен. Если оснастка
+# принимает псевдоним, укажите префикс фактического идентификатора, который
+# разрешено считать соответствием. Не добавляйте в образец модели, лимиты или
+# классы конкретного проекта.

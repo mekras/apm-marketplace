@@ -1,0 +1,125 @@
+{
+  "skill_name": "ai-setup-apm",
+  "cases": [
+    {
+      "id": "ai-setup-apm-positive-new-collection",
+      "prompt": "Настрой этот репозиторий как коллекцию APM с исходниками в .apm/skills и добавь команду apm run tests.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо требует настроить проект как коллекцию APM и добавить запуск тестов через apm run tests."
+    },
+    {
+      "id": "ai-setup-apm-positive-fix-root-skills-layout",
+      "prompt": "Похоже, пакет APM хранит навыки в корневом skills/, а документация требует .apm/skills. Разберись и исправь структуру.",
+      "should_trigger": true,
+      "rationale": "Нужно проверить и исправить структуру исходников пакета APM для коллекции навыков."
+    },
+    {
+      "id": "ai-setup-apm-positive-update-manifest-tests",
+      "prompt": "В apm.yml уже есть name и version, но нет scripts.tests. Обнови настройки так, чтобы apm run tests запускал проверки коллекции навыков.",
+      "should_trigger": true,
+      "rationale": "Нужно обновить существующий манифест APM и добавить команду tests."
+    },
+    {
+      "id": "ai-setup-apm-positive-audit-package",
+      "prompt": "Проверь, готов ли наш пакет skills к публикации через APM: манифест, audit, pack и тесты.",
+      "should_trigger": true,
+      "rationale": "Запрос касается проверки пакета APM с коллекцией навыков и процесса выпуска."
+    },
+    {
+      "id": "ai-setup-apm-positive-fix-apm-run-tests",
+      "prompt": "apm run tests не запускает проверки навыков. Найди причину и исправь настройки APM.",
+      "should_trigger": true,
+      "rationale": "Нужно диагностировать и исправить команду tests в настройках APM для коллекции."
+    },
+    {
+      "id": "ai-setup-apm-positive-fix-project-broad-request",
+      "prompt": "Исправь этот проект, используя .apm/skills/ai-setup-apm.",
+      "should_trigger": true,
+      "rationale": "Широкий запрос всё равно требует полного применения навыка настройки коллекции APM, а не локальной правки первого найденного симптома."
+    },
+    {
+      "id": "ai-setup-apm-positive-selective-apm-tests",
+      "prompt": "Тесты коллекции APM идут слишком долго. Обнови scripts.tests так, чтобы можно было запускать один навык или один сценарий без потери полного запуска по умолчанию.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить настройку scripts.tests и тестовый цикл APM для коллекции навыков."
+    },
+    {
+      "id": "ai-setup-apm-positive-description-budget-tests",
+      "prompt": "Добавь в apm run tests проверку бюджета description у навыков коллекции.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить scripts.tests и инфраструктуру APM-проверок коллекции навыков."
+    },
+    {
+      "id": "ai-setup-apm-positive-hidden-unicode-tests",
+      "prompt": "apm install --verbose показывает Hidden characters in source files. Надо, чтобы коллекция ловила это через apm run tests.",
+      "should_trigger": true,
+      "rationale": "Нужно добавить детерминированную проверку скрытых Unicode-символов в scripts.tests коллекции APM."
+    },
+    {
+      "id": "ai-setup-apm-positive-skills-only-compile-question",
+      "prompt": "У нас пакет только со skills. Нужно ли добавлять apm compile в обязательный тестовый цикл?",
+      "should_trigger": true,
+      "rationale": "Вопрос касается выбора проверок APM для коллекции только из skills."
+    },
+    {
+      "id": "ai-setup-apm-positive-consumer-audit-drift",
+      "prompt": "В проекте-потребителе apm audit показывает drift по развёрнутым навыкам. Разберись, что значат предупреждения и как привести установку в порядок.",
+      "should_trigger": true,
+      "rationale": "Это диагностика зависимостей и установки проекта-потребителя APM, которую ведёт ветка «Проект-потребитель» навыка."
+    },
+    {
+      "id": "ai-setup-apm-positive-prevent-python-cache-drift",
+      "prompt": "После запуска Python-проверки из .agents/skills apm audit --ci нашёл __pycache__. Исправь причину, чтобы установленная копия навыка больше не создавала дрейф.",
+      "should_trigger": true,
+      "rationale": "Нужно исправить повторяемую причину дрейфа в установленной APM-коллекции, а не только удалить один производный файл."
+    },
+    {
+      "id": "ai-setup-apm-positive-skill-source-self-application",
+      "prompt": "Измени процедуру навыка в .apm/skills/example/SKILL.md, проверь его Python-скрипты и переустанови локальную коллекцию APM.",
+      "should_trigger": true,
+      "rationale": "Изменение навыка требует ai-skill-development, а работа с исходным деревом .apm и самоприменением коллекции одновременно требует ai-setup-apm."
+    },
+    {
+      "id": "ai-setup-apm-positive-consumer-recover-broken-release",
+      "prompt": "После обновления APM audit не проходит: выпуск требует файл, которого в пакете нет. Восстанови установку безопасно.",
+      "should_trigger": true,
+      "rationale": "Нужно диагностировать и безопасно пересоздать повреждённое состояние зависимостей APM либо доказать дефект выпуска."
+    },
+    {
+      "id": "ai-setup-apm-positive-consumer-lockfile-vs-manifest",
+      "prompt": "В apm.yml одна прямая зависимость, а в apm.lock.yaml ещё несколько пакетов. Думаю перенести их все в dependencies.apm. Проверь, нужно ли это.",
+      "should_trigger": true,
+      "rationale": "Вопрос о соотношении прямых зависимостей apm.yml и разрешённого графа apm.lock.yaml относится к диагностике проекта-потребителя APM."
+    },
+    {
+      "id": "ai-setup-apm-negative-install-package",
+      "prompt": "Установи пакет github.com/example/team-skills через apm install и проверь, что навыки доступны.",
+      "should_trigger": false,
+      "rationale": "Это потребительская установка чужого пакета APM, а не настройка проекта как коллекции."
+    },
+    {
+      "id": "ai-setup-apm-negative-consumer-devdependency",
+      "prompt": "В проекте есть apm.yml и devDependencies.apm на example-org/example-skills. Настрой подключение агента и правила проекта, но сам проект не публикует .apm/skills.",
+      "should_trigger": false,
+      "rationale": "Это настройка клиентского контура проекта (подключение агента, правила), которую навык возвращает в ai-setup-project, ai-agents-md-maintenance или клиентские инструкции, а не диагностика зависимостей APM."
+    },
+    {
+      "id": "ai-setup-apm-negative-ordinary-tests",
+      "prompt": "Запусти тесты проекта и кратко перескажи результат.",
+      "should_trigger": false,
+      "rationale": "Нужно выполнить тесты, а не настраивать манифест APM или коллекцию навыков."
+    },
+    {
+      "id": "ai-setup-apm-negative-skill-authoring",
+      "prompt": "Создай новый навык для проверки договоров и добавь evals/triggers.json.",
+      "should_trigger": false,
+      "rationale": "Это разработка отдельного навыка, а не настройка проекта как коллекции APM."
+    },
+    {
+      "id": "ai-setup-apm-negative-subagent-routing",
+      "prompt": "Настрой дешёвых подагентов для поиска по репозиторию и сильного ревьюера для правил.",
+      "should_trigger": false,
+      "rationale": "Это маршрутизация подагентов и моделей, а не упаковка коллекции через APM."
+    }
+  ]
+}

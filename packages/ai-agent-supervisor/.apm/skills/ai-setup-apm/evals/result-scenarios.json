@@ -1,0 +1,1098 @@
+{
+  "skill_name": "ai-setup-apm",
+  "cases": [
+    {
+      "id": "ai-setup-apm-result-create-manifest-with-tests",
+      "prompt": "В репозитории есть каталог .apm/skills/ и валидаторы tools/validate-skill-descriptions.py, tools/validate-trigger-evals.py, tools/validate-skill-result-evals.py, tools/run-skill-evals.py, но нет apm.yml. Настрой проект как коллекцию APM и добавь apm run tests.",
+      "input_files": [
+        {
+          "path": ".apm/skills/example-skill/SKILL.md",
+          "purpose": "пример публикуемого навыка"
+        },
+        {
+          "path": "tools/validate-skill-descriptions.py",
+          "purpose": "валидатор бюджета description"
+        },
+        {
+          "path": "tools/validate-trigger-evals.py",
+          "purpose": "валидатор проверок срабатывания"
+        },
+        {
+          "path": "tools/validate-skill-result-evals.py",
+          "purpose": "валидатор сценариев результата"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "запуск тестов навыков"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "назван созданный apm.yml",
+          "показано, что type выбран для коллекции .apm/skills",
+          "показано, что includes разворачивает локальное дерево .apm",
+          "названа команда scripts.tests для apm run tests, включая проверку скрытых Unicode-символов и бюджет description",
+          "перечислены выполненные проверки или причины, почему часть проверок не запускалась"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "репозиторий с .apm/skills не имеет манифеста APM и поэтому не оформлен как пакет коллекции.",
+            "expected_conclusion": "нужно создать минимальный apm.yml для публикации коллекции навыков",
+            "acceptable_fix_direction": "создать манифест с именем, версией, type skill, targets, includes auto, dependencies и scripts.tests с валидатором budget description"
+          },
+          {
+            "severity": "high",
+            "observed_problem": "локальные навыки оформлены как исходники APM, но манифест не включает их через includes.",
+            "expected_conclusion": "обычная коллекция с .apm/skills должна иметь includes: auto или явный список путей .apm/skills",
+            "acceptable_fix_direction": "добавить includes: auto в новый манифест или проверить существующий явный includes"
+          },
+          {
+            "severity": "high",
+            "observed_problem": "команда apm run tests не настроена и не может служить повторяемой проверкой коллекции.",
+            "expected_conclusion": "scripts.tests должен запускать реальные тесты коллекции, включая проверку скрытых Unicode-символов и бюджет description, а не заглушку или несуществующие файлы",
+            "acceptable_fix_direction": "записать команду, которая вызывает найденные валидаторы скрытых Unicode-символов, бюджета description и сценариев навыков"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом без применения навыка, где агент ограничился README или общими советами по APM.",
+        "expected_failure": "Такой ответ не создаёт apm.yml с scripts.tests и не доказывает, что apm run tests связан с реальными проверками коллекции."
+      },
+      "oracle": {
+        "success_criteria": [
+          "создан или обновлён apm.yml",
+          "исходники навыков размещены или ожидаются в .apm/skills",
+          "includes задан как auto или явно включает .apm/skills",
+          "scripts.tests содержит команду для существующих тестов коллекции, проверку скрытых Unicode-символов и проверку бюджета description",
+          "результат объясняет, какие проверки подтвердили настройку"
+        ],
+        "failure_indicators": [
+          "ответ ограничен описанием APM без изменения настроек",
+          "ответ закрепляет корневой skills/ как основной источник APM-пакета без объяснения совместимой схемы",
+          "includes отсутствует в новом манифесте для .apm/skills",
+          "scripts.tests отсутствует или указывает на несуществующую команду",
+          "результат навязывает hooks или commands как основной переносимый путь без причины"
+        ]
+      },
+      "application_evidence": [
+        "diff содержит apm.yml или изменение его scripts.tests",
+        "diff содержит .apm/skills или отчёт явно проверяет существующее дерево .apm/skills",
+        "diff apm.yml содержит includes auto или обоснованный явный includes",
+        "отчёт называет итоговую команду apm run tests",
+        "отчёт связывает проверку с существующими валидаторами или явно созданным тестовым скриптом"
+      ],
+      "evaluation_surface": "изменение артефактов APM и качество результата настройки",
+      "assertions": [
+        "Результат создаёт или обновляет манифест APM в корне проекта.",
+        "Результат использует .apm/skills как исходное дерево коллекции навыков.",
+        "Команда scripts.tests запускает тесты коллекции, проверку скрытых Unicode-символов и проверку бюджета description, а не пустую заглушку.",
+        "Отчёт отделяет выполненные проверки от проверок, которые остались недоступны."
+      ],
+      "must_not": [
+        "не считать README заменой apm.yml",
+        "не принимать корневой skills/ за обычное исходное дерево APM-пакета без .apm/skills",
+        "не записывать команду tests на отсутствующие файлы",
+        "не добавлять конкретные модели в переносимый манифест"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-update-existing-manifest-preserve-metadata",
+      "prompt": "В проекте уже есть apm.yml с name, version, author, license и dependencies, но нет includes и scripts.tests. Обнови его для коллекции .apm/skills/**, не перезаписывая метаданные пакета.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "существующий манифест APM",
+          "content": "name: example-collection\nversion: 0.2.3\ndescription: Пример коллекции навыков\nauthor: example-team\nlicense: MIT\ntarget:\n- codex\ntype: skill\ndependencies:\n  apm:\n  - example-org/example-analysis#^0.4.0\n  mcp: []\n"
+        },
+        {
+          "path": ".apm/skills/example-skill/SKILL.md",
+          "purpose": "пример публикуемого навыка",
+          "content": "---\nname: example-skill\ndescription: Пример навыка для коллекции.\n---\n\n# example-skill\n\nКороткий пример публикуемого навыка.\n"
+        },
+        {
+          "path": "tools/validate-skill-descriptions.py",
+          "purpose": "существующий валидатор бюджета description",
+          "content": "#!/usr/bin/env python3\n\"\"\"Validate skill description budgets.\"\"\"\n"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "существующая команда тестов коллекции",
+          "content": "#!/usr/bin/env python3\n\"\"\"Run skill evals for the collection.\"\"\"\n"
+        },
+        {
+          "path": "tools/validate-trigger-evals.py",
+          "purpose": "существующий валидатор проверок срабатывания",
+          "content": "#!/usr/bin/env python3\n\"\"\"Validate trigger eval files.\"\"\"\n"
+        },
+        {
+          "path": "tools/validate-skill-result-evals.py",
+          "purpose": "существующий валидатор сценариев результата",
+          "content": "#!/usr/bin/env python3\n\"\"\"Validate result scenario files.\"\"\"\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названы сохранённые поля существующего apm.yml",
+          "показано добавление includes или проверка явного includes",
+          "показано добавление или обновление scripts.tests с проверкой бюджета description",
+          "объяснено, почему apm compile не стал обязательным для пакета только из .apm/skills",
+          "перечислены проверки манифеста и тестовой команды"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "существующий манифест APM не содержит scripts.tests с проверкой бюджета description, поэтому стандартная команда проверки коллекции неполна.",
+            "expected_conclusion": "нужно добавить scripts.tests, сохранив существующие метаданные",
+            "acceptable_fix_direction": "обновить только недостающую секцию scripts или поле tests"
+          },
+          {
+            "severity": "high",
+            "observed_problem": "существующий манифест APM не содержит includes при локальном дереве .apm/skills, поэтому установка пакета может не разворачивать локальные примитивы.",
+            "expected_conclusion": "нужно добавить includes: auto или проверить явный список includes, не меняя метаданные пакета",
+            "acceptable_fix_direction": "добавить includes: auto, если includes отсутствует"
+          },
+          {
+            "severity": "medium",
+            "observed_problem": "пакет только из .apm/skills ошибочно получает обязательный шаг apm compile или commands, зависящие от целевой среды, вместо переносимой настройки scripts.tests.",
+            "expected_conclusion": "для коллекции только из .apm/skills compile не является обязательным, а scripts.tests достаточно для apm run tests",
+            "acceptable_fix_direction": "не добавлять compile в обязательный тестовый цикл без instructions и не подменять переносимую настройку hooks/commands"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент перегенерировал весь манифест по шаблону.",
+        "expected_failure": "Такой ответ теряет существующие name, version, author, license или dependencies и не соблюдает ограничение сохранения метаданных."
+      },
+      "oracle": {
+        "success_criteria": [
+          "существующие метаданные apm.yml сохранены",
+          "includes добавлен как auto или существующий явный includes проверен",
+          "scripts.tests добавлен или обновлён вместе с проверкой бюджета description",
+          "результат не требует apm compile для коллекции только из .apm/skills без причины"
+        ],
+        "failure_indicators": [
+          "манифест перезаписан целиком без сохранения полей",
+          "compile добавлен как обязательный шаг для пакета только с .apm/skills",
+          "includes отсутствует или не включает локальные исходники .apm/skills",
+          "результат не проверяет, существует ли команда тестов"
+        ]
+      },
+      "application_evidence": [
+        "diff apm.yml ограничен нужными полями",
+        "отчёт явно перечисляет сохранённые метаданные",
+        "diff apm.yml добавляет includes auto или отчёт объясняет существующий явный includes",
+        "результат содержит проверяемую команду scripts.tests"
+      ],
+      "evaluation_surface": "ограниченное обновление существующего манифеста APM",
+      "assertions": [
+        "Обновление сохраняет существующие метаданные пакета.",
+        "Обновление обеспечивает разворачивание локального дерева .apm/skills через includes.",
+        "scripts.tests появляется в apm.yml.",
+        "Навык различает коллекцию только из .apm/skills и пакет с instructions."
+      ],
+      "must_not": [
+        "не перезаписывать name, version, author, license и dependencies без запроса",
+        "не делать apm compile обязательным для пакета только из .apm/skills",
+        "не использовать hooks или commands как основной переносимый механизм без явной причины"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-root-skills-to-apm-source-tree",
+      "prompt": "В репозитории навыки лежат в корневом skills/, apm.yml не содержит includes, а apm install --dry-run не показывает локальные навыки. Проверь структуру по документации APM и исправь пакет.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "существующий манифест APM без includes"
+        },
+        {
+          "path": "skills/example-skill/SKILL.md",
+          "purpose": "навык в корневом каталоге, ошибочно используемом как исходное дерево APM"
+        },
+        {
+          "path": "tools/validate-trigger-evals.py",
+          "purpose": "валидатор проверок срабатывания"
+        },
+        {
+          "path": "tools/validate-skill-result-evals.py",
+          "purpose": "валидатор сценариев результата"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "средство запуска модельных проверок"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названо расхождение: корневой skills/ не является обычным исходным деревом APM-пакета",
+          "показан перенос или план переноса skills/<name> в .apm/skills/<name>",
+          "показано добавление includes: auto или проверка явного includes",
+          "обновлена команда scripts.tests на путь .apm/skills",
+          "перечислены проверки apm install --dry-run, валидаторов и остаточные ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "пакет хранит переносимые навыки в корневом skills/, поэтому локальная установка APM не видит исходное дерево .apm/skills.",
+            "expected_conclusion": "исходники коллекции с несколькими навыками нужно разместить в .apm/skills/**, а корневой skills/ не считать достаточной APM-структурой без явной совместимой схемы",
+            "acceptable_fix_direction": "перенести каталоги навыков в .apm/skills и обновить документацию или команды, которые ссылались на старый путь"
+          },
+          {
+            "severity": "high",
+            "observed_problem": "apm.yml не содержит includes, поэтому локальные примитивы из .apm не разворачиваются при установке пакета.",
+            "expected_conclusion": "для обычного локального дерева .apm нужен includes: auto или явный список публикуемых путей",
+            "acceptable_fix_direction": "добавить includes: auto, если нет осознанного явного includes"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент оставил навыки в корневом skills/ и только добавил scripts.tests.",
+        "expected_failure": "Такой ответ сохраняет неверное исходное дерево и не устраняет причину, по которой apm install не разворачивает локальные навыки."
+      },
+      "oracle": {
+        "success_criteria": [
+          "результат различает исходники .apm/skills и корневой skills/ как плагиновый или совместимый вывод",
+          "результат обеспечивает includes для локального дерева .apm",
+          "scripts.tests по умолчанию проверяет .apm/skills",
+          "отчёт отделяет подтверждённое поведение apm install от поведения apm pack"
+        ],
+        "failure_indicators": [
+          "ответ считает успешный apm pack доказательством правильной исходной структуры",
+          "ответ оставляет корневой skills/ основным источником APM без явного обоснования",
+          "ответ не добавляет includes и не объясняет существующий явный includes"
+        ]
+      },
+      "application_evidence": [
+        "diff содержит перенос skills/<name> в .apm/skills/<name> или явный план миграции",
+        "diff apm.yml добавляет includes auto или сохраняет проверенный явный includes",
+        "diff scripts.tests или отчёт использует .apm/skills как путь по умолчанию"
+      ],
+      "evaluation_surface": "исправление структуры исходников APM-пакета и проверяемость локальной установки",
+      "assertions": [
+        "Результат не закрепляет корневой skills/ как обычный источник APM-пакета.",
+        "Результат обеспечивает разворачивание локальных примитивов через includes.",
+        "Результат различает установку APM и упаковку плагина."
+      ],
+      "must_not": [
+        "не ограничиваться README без изменения структуры или манифеста",
+        "не использовать apm pack как единственную проверку локальной установки",
+        "не переносить проблему в apm compile"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-selective-tests-preserve-full-run",
+      "prompt": "В коллекции .apm/skills/** полный модельный прогон apm run evals занимает слишком много времени. Обнови настройку APM так, чтобы по умолчанию оставался полный прогон, но разработчик мог проверить один навык или один модельный сценарий, не возвращая модельные вызовы в контроль качества apm run tests.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "существующий манифест APM с разделёнными целями tests и evals",
+          "content": "name: example-collection\nversion: 0.2.3\ndescription: Пример коллекции навыков\ntarget:\n- codex\ntype: skill\nincludes: auto\nscripts:\n  tests: python tools/run-collection-checks.py\n  evals: python tools/run-skill-evals.py\n"
+        },
+        {
+          "path": "tools/validate-skill-descriptions.py",
+          "purpose": "валидатор бюджета description",
+          "content": "#!/usr/bin/env python3\n\"\"\"Validate skill description budgets.\"\"\"\n"
+        },
+        {
+          "path": "tools/validate-trigger-evals.py",
+          "purpose": "валидатор проверок срабатывания",
+          "content": "#!/usr/bin/env python3\n\"\"\"Validate trigger eval files.\"\"\"\n"
+        },
+        {
+          "path": "tools/validate-skill-result-evals.py",
+          "purpose": "валидатор сценариев результата",
+          "content": "#!/usr/bin/env python3\n\"\"\"Validate result scenario files.\"\"\"\n"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "средство запуска модельных проверок",
+          "content": "parser.add_argument(\"--case-id\", action=\"append\", default=[])\nenv_case_ids = os.environ.get(\"APM_EVAL_CASE_ID\", \"\")\n# The runner filters trigger and result scenarios by the selected id before model calls.\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названы команды полного модельного прогона и выборочного запуска",
+          "показаны команды для полного прогона, одного навыка и одного сценария через APM_EVAL_PATH и APM_EVAL_CASE_ID",
+          "объяснено, что выборочный запуск не заменяет полный перед публикацией",
+          "подтверждено, что контроль качества apm run tests остаётся без модельных вызовов",
+          "перечислены выполненные проверки команды и оставшиеся ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "ускорение предлагается как постоянное урезание полного прогона или возврат модельных вызовов в контроль качества tests, из-за чего проверка коллекции перестаёт быть полной по умолчанию или теряет переносимость.",
+            "expected_conclusion": "полный модельный прогон evals должен остаться поведением по умолчанию, а ускорение должно задаваться явным фильтром пути или идентификатора сценария без возврата модели в tests",
+            "acceptable_fix_direction": "оставить scripts.evals полным по умолчанию и запускать узкий цикл через APM_EVAL_PATH=.apm/skills/<name> и APM_EVAL_CASE_ID=<id>"
+          },
+          {
+            "severity": "medium",
+            "observed_problem": "модельный прогон не различает проверку одного навыка и одного сценария результата, поэтому разработчик вынужден прогонять всю коллекцию после каждой локальной правки.",
+            "expected_conclusion": "инфраструктура коллекции должна позволять узкий прогон без удаления проверок качества",
+            "acceptable_fix_direction": "документировать варианты запуска evals для .apm/skills/<name> и конкретного id сценария"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где scripts.evals урезан до одного навыка по умолчанию, где APM_EVAL_LIMIT=1 закреплён постоянно или где модельный прогон возвращён в scripts.tests.",
+        "expected_failure": "Такой ответ ускоряет локальный запуск ценой потери полного покрытия или переносимости контроля качества."
+      },
+      "oracle": {
+        "success_criteria": [
+          "apm run evals без переменных среды остаётся полным модельным прогоном коллекции",
+          "есть способ прогнать один каталог навыка из .apm/skills через APM_EVAL_PATH",
+          "есть способ прогнать один модельный сценарий по APM_EVAL_CASE_ID",
+          "контроль качества apm run tests остаётся только детерминированным",
+          "отчёт называет, когда нужен полный прогон"
+        ],
+        "failure_indicators": [
+          "scripts.evals по умолчанию прогоняет только часть коллекции",
+          "выборочный запуск описан только в README без изменения команды или скрипта",
+          "ускорение достигается удалением модельных сценариев или проверок срабатывания",
+          "модельный прогон возвращён в scripts.tests"
+        ]
+      },
+      "application_evidence": [
+        "отчёт показывает команду полного evals и выборочные варианты через APM_EVAL_PATH и APM_EVAL_CASE_ID",
+        "отчёт подтверждает, что scripts.tests не получает модельный шаг",
+        "отчёт показывает команды полного и выборочного запуска"
+      ],
+      "evaluation_surface": "настройка APM-команды для полного и выборочного модельного прогона без потери переносимости контроля качества",
+      "assertions": [
+        "Полный модельный прогон остаётся значением по умолчанию.",
+        "Выборочный запуск управляется явным путём навыка в .apm/skills или id сценария.",
+        "Оптимизация скорости не удаляет проверки качества и не возвращает модель в контроль качества tests."
+      ],
+      "must_not": [
+        "не заменять полный apm run evals постоянным APM_EVAL_LIMIT",
+        "не удалять модельные сценарии ради скорости",
+        "не возвращать модельный прогон в scripts.tests"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-do-not-stop-after-first-packaging-defect",
+      "prompt": "В проекте уже есть apm.yml и команда apm run tests. Проверка apm pack --dry-run показывает один лишний .pyc в публикуемом составе, а apm audit --ci --no-policy --no-drift проходит. Исправь проект как коллекцию APM и не останавливайся на первом найденном дефекте.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "существующий манифест APM"
+        },
+        {
+          "path": ".apm/skills/example-skill/SKILL.md",
+          "purpose": "пример публикуемого навыка"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "средство запуска проверок навыков"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "назван локальный дефект упаковки и его исправление",
+          "отдельно перечислены структурные проверки манифеста, .apm/skills, includes, scripts.tests и публикуемого состава",
+          "постоянная проверка запрещает __pycache__, .pyc и .pyo в исходниках, проекциях и apm.lock.yaml",
+          "объяснено, что именно подтверждает apm pack, а что не подтверждает",
+          "объяснено, что apm audit --no-drift имеет сниженное покрытие",
+          "названы непроверенные свойства и остаточный риск, если они остались"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "локальный дефект публикуемого состава может скрыть незавершённую структурную приёмку всей коллекции APM.",
+            "expected_conclusion": "удаление одного .pyc не завершает setup без постоянной проверки защищённых деревьев и lock-файла, отдельной проверки манифеста, .apm/skills, includes, scripts.tests и повторной упаковки после правки",
+            "acceptable_fix_direction": "исправить артефакт, добавить в tests барьер для __pycache__, .pyc и .pyo до и после проверок и затем пройти явный чек-лист структурной готовности или назвать непроверенные свойства"
+          },
+          {
+            "severity": "medium",
+            "observed_problem": "apm audit --ci --no-policy --no-drift может пройти даже при пропущенной проверке дрейфа и не доказывает полную готовность коллекции.",
+            "expected_conclusion": "такой audit полезен как частичное подтверждение, но его нужно явно отделять от структурной приёмки",
+            "acceptable_fix_direction": "в отчёте назвать сниженное покрытие и не использовать этот запуск как единственное доказательство готовности"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент удалил .pyc, но не добавил постоянную проверку, либо объявил проект исправленным без повторной упаковки или без разделения подтверждённых и непроверенных свойств.",
+        "expected_failure": "Такой ответ исправляет только один симптом и позволяет байткоду снова попасть в публикуемый состав."
+      },
+      "oracle": {
+        "success_criteria": [
+          "локальный дефект упаковки исправлен, но не подменяет структурную приёмку",
+          "scripts.tests постоянно отклоняет __pycache__, .pyc и .pyo в защищённых деревьях и apm.lock.yaml",
+          "отчёт разделяет подтверждённые свойства манифеста, исходников, includes, tests и упаковки",
+          "после изменения публикуемого состава есть повторная проверка упаковки или явно назван остаточный риск",
+          "результат прямо указывает, что audit с --no-drift имеет сниженное покрытие"
+        ],
+        "failure_indicators": [
+          "ответ завершает setup сразу после удаления одного файла",
+          "ответ не добавляет постоянную проверку скомпилированных Python-артефактов",
+          "ответ использует доправочный apm pack как итоговое доказательство",
+          "ответ считает apm audit --no-drift достаточным подтверждением полной готовности",
+          "ответ не отделяет упаковку от структуры и установки"
+        ]
+      },
+      "application_evidence": [
+        "отчёт называет исправленный артефакт, постоянную проверку исходников и отдельный структурный чек-лист",
+        "отчёт различает свойства, подтверждённые pack, audit и структурной проверкой",
+        "результат повторяет упаковочную проверку после изменения или явно фиксирует, что она не повторялась"
+      ],
+      "evaluation_surface": "остановка по правилу и качество структурной приёмки после локального дефекта упаковки",
+      "assertions": [
+        "Результат не заканчивает setup на одном исправленном упаковочном артефакте.",
+        "Контроль качества не допускает Python-байткод в исходниках, проекциях и lock-файле.",
+        "Результат явно называет непроверенные свойства и остаточный риск, если структурная приёмка неполна.",
+        "Результат различает частичное подтверждение audit и полную структурную проверку."
+      ],
+      "must_not": [
+        "не объявлять проект исправленным только по одному удалённому .pyc",
+        "не ограничиваться разовым удалением __pycache__ или .pyc без постоянной проверки",
+        "не использовать apm audit --no-drift как единственное доказательство готовности",
+        "не ссылаться только на доправочный apm pack без повторной проверки после изменения"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-prevent-python-cache-drift",
+      "prompt": "После изменения .apm/skills/example/scripts/check.py агент дважды проверил файл через python -B -m py_compile и PYTHONDONTWRITEBYTECODE=1 python -m py_compile, затем выполнил apm install. В .apm появился __pycache__, а apm.lock.yaml теперь разворачивает этот файл в .agents и .claude. Исправь повторяющуюся причину и контур самоприменения коллекции.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "манифест проекта-потребителя APM"
+        },
+        {
+          "path": ".apm/skills/example/scripts/check.py",
+          "purpose": "исходный Python-скрипт навыка"
+        },
+        {
+          "path": "apm.lock.yaml",
+          "purpose": "файл блокировки с путями Python-байткода"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названа причина: py_compile пишет байткод даже с -B и PYTHONDONTWRITEBYTECODE",
+          "синтаксис проверяется в памяти без импорта, py_compile и compileall",
+          "барьер проверяет .apm, проекции и apm.lock.yaml до установки и после неё",
+          "загрязнённый lock-файл пересоздаётся из чистого исходного дерева",
+          "для изменения .apm/skills применены ai-skill-development и ai-setup-apm"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "правило считает -B и PYTHONDONTWRITEBYTECODE достаточной защитой для явного компилятора, поэтому кэш из исходника попадает в проекции и lock-файл.",
+            "expected_conclusion": "явный компилятор нужно запретить на защищённых деревьях, заменить синтаксической проверкой в памяти и поставить проверяемый барьер перед APM install.",
+            "acceptable_fix_direction": "очистить физические артефакты, пересоздать производный lock-файл из чистого дерева и дважды пройти цикл проверки, установки и аудита."
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который снова рекомендует -B для py_compile, проверяет только .apm или удаляет кэш без проверки lock-файла.",
+        "expected_failure": "Такой ответ сохраняет путь повторного создания или распространения байткода."
+      },
+      "oracle": {
+        "success_criteria": [
+          "явное ограничение -B и PYTHONDONTWRITEBYTECODE для py_compile названо правильно",
+          "предложена синтаксическая проверка без записи байткода",
+          "барьер охватывает физические деревья и семантические пути lock-файла",
+          "самоприменение останавливается до установки при загрязнённом состоянии",
+          "назван безопасный порядок пересоздания производного lock-файла"
+        ],
+        "failure_indicators": [
+          "ответ предлагает py_compile с -B или PYTHONDONTWRITEBYTECODE как безопасную проверку",
+          "ответ проверяет только исходное дерево .apm",
+          "ответ правит apm.lock.yaml вручную или не проверяет его",
+          "ответ запускает apm install до предварительного барьера"
+        ]
+      },
+      "application_evidence": [
+        "результат запрещает явный компилятор на защищённых деревьях",
+        "результат содержит барьеры до и после самоприменения",
+        "результат различает очистку файлов и пересоздание производного lock-файла"
+      ],
+      "evaluation_surface": "предотвращение создания, распространения и закрепления Python-байткода при разработке и самоприменении APM-коллекции",
+      "assertions": [
+        "Явный компилятор не применяется к защищённым деревьям.",
+        "Физические деревья и apm.lock.yaml проверяются до установки и после неё.",
+        "Разовое удаление кэша не считается устранением причины дрейфа.",
+        "Изменение .apm/skills маршрутизируется через оба профильных навыка."
+      ],
+      "must_not": [
+        "не предлагать -B или PYTHONDONTWRITEBYTECODE как защиту от py_compile",
+        "не ограничиваться проверкой .apm или удалением __pycache__",
+        "не править apm.lock.yaml и развёрнутые копии вручную",
+        "не запускать установку до предварительной проверки"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-stop-on-consumer-apm-dependency",
+      "prompt": "В проекте есть apm.yml и devDependencies.apm на example-org/example-skills, но он не публикует .apm/skills, .apm/agents или .apm/instructions. Проверь, нужно ли настраивать его как коллекцию APM.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "потребительский манифест APM",
+          "content": "name: example-project\nversion: 0.1.0\ntargets:\n  - claude\ndevDependencies:\n  apm:\n    - example-org/example-skills#^0.2.0\n"
+        },
+        {
+          "path": "AGENTS.md",
+          "purpose": "локальные инструкции клиентского проекта",
+          "content": "# AGENTS.md\n\nЛокальные инструкции проекта.\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "проект классифицирован как потребитель: есть зависимости APM, но нет признаков публикуемого пакета",
+          "перечислены найденные consumer-признаки: apm.yml и devDependencies.apm",
+          "отдельно отмечено, что цель claude относится к клиентскому контуру и требует проверки CLAUDE.md в соседнем навыке",
+          "зафиксировано, что producer-структуру создавать не нужно",
+          "настройка клиентского контура возвращена в ai-setup-project, ai-agents-md-maintenance или клиентские инструкции"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "проект-потребитель с devDependencies.apm ошибочно принимается за публикуемый пакет только из-за apm.yml и APM-зависимости.",
+            "expected_conclusion": "нужно классифицировать проект как потребителя, не создавать producer-структуру и вернуть настройку клиентского контура в клиентский маршрут",
+            "acceptable_fix_direction": "явно назвать отсутствие .apm/skills, .apm/agents и publishable .apm/instructions, не менять apm.yml как producer-манифест и перенаправить настройку клиентского контура в ai-setup-project, ai-agents-md-maintenance или клиентские инструкции"
+          },
+          {
+            "severity": "medium",
+            "observed_problem": "цель `claude` в `targets` теряется при маршрутизации, хотя она указывает на отдельную клиентскую обвязку.",
+            "expected_conclusion": "ветка ai-setup-apm должна явно назвать признак `claude`, но не настраивать `CLAUDE.md` самостоятельно",
+            "acceptable_fix_direction": "зафиксировать в отчёте, что `targets: [claude]` относится к клиентскому маршруту и требует проверки `CLAUDE.md` в ai-setup-project или ai-agents-md-maintenance"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент добавил includes, type skill или .apm/skills только из-за consumer-зависимости APM.",
+        "expected_failure": "Такой ответ превращает проект-потребитель в публикуемый пакет без признаков публикации."
+      },
+      "oracle": {
+        "success_criteria": [
+          "ответ прямо говорит, что одного apm.yml и devDependencies.apm недостаточно для публикуемого пакета",
+          "ответ перечисляет отсутствующие признаки публикации",
+          "diff не добавляет producer-поля или каталоги .apm/skills, .apm/agents, .apm/instructions",
+          "ответ отдельно отмечает `targets: [claude]` как сигнал клиентского контура",
+          "ответ возвращает настройку клиентского контура в ai-setup-project, ai-agents-md-maintenance или клиентские инструкции"
+        ],
+        "failure_indicators": [
+          "ответ создаёт или требует .apm/skills без отдельного запроса",
+          "ответ добавляет includes или type skill только потому, что проект использует APM-зависимость",
+          "ответ продолжает настройку apm run tests для публикуемого пакета без признаков публикации"
+        ]
+      },
+      "application_evidence": [
+        "отчёт называет consumer-зависимость APM и отсутствие publish-признаков",
+        "diff не меняет apm.yml в producer-манифест и не добавляет .apm/skills",
+        "результат отдельно называет `targets: [claude]` признаком клиентской обвязки",
+        "результат содержит явное перенаправление настройки клиентского контура в соседний навык или клиентские инструкции"
+      ],
+      "evaluation_surface": "классификация типа проекта и граница между публикуемым пакетом и проектом-потребителем",
+      "assertions": [
+        "Результат не считает consumer-зависимость APM признаком публикуемого пакета.",
+        "Результат классифицирует проект как потребителя и не строит producer-структуру.",
+        "Результат отдельно называет `targets: [claude]` признаком клиентской обвязки.",
+        "Результат возвращает настройку клиентского контура в клиентский маршрут."
+      ],
+      "must_not": [
+        "не создавать producer-структуру только из-за devDependencies.apm",
+        "не переписывать apm.yml под публикуемый пакет без publish-признаков",
+        "не пытаться настраивать CLAUDE.md внутри ai-setup-apm вместо клиентского маршрута",
+        "не подменять настройку клиентского контура настройкой публикуемого пакета APM"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-keep-direct-dependency-intent",
+      "prompt": "В проекте-потребителе в apm.yml напрямую указан только example-org/example-skills в devDependencies.apm, а в apm.lock.yaml и .agents/skills развёрнуты ещё example-collection, example-language, example-analysis и example-text. Предлагаю перенести их все в dependencies.apm, чтобы apm.yml отражал фактический набор навыков. Разберись, нужно ли это.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "манифест проекта-потребителя с одной прямой зависимостью APM",
+          "content": "name: example-project\nversion: 1.0.0\ndependencies:\n  apm: []\n  mcp: []\ndevDependencies:\n  apm:\n    - example-org/example-skills#^0.4.0\n"
+        },
+        {
+          "path": "apm.lock.yaml",
+          "purpose": "файл блокировки с развёрнутым графом прямого и транзитивных пакетов",
+          "content": "lockfile_version: '2'\ndependencies:\n  - repo_url: example-org/example-skills\n    constraint: ^0.4.0\n  - repo_url: example-org/example-collection\n    constraint: ^0.4.4\n  - repo_url: example-org/example-language\n    constraint: ^1.2.4\n  - repo_url: example-org/example-analysis\n    constraint: ^0.5.0\n  - repo_url: example-org/example-text\n    constraint: ^1.8.0\n"
+        },
+        {
+          "path": ".agents/skills/example-skill/SKILL.md",
+          "purpose": "пример развёрнутого транзитивного навыка",
+          "content": "---\nname: example-skill\ndescription: Русский язык для агентных сообщений.\n---\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "разделены прямые зависимости apm.yml и транзитивно установленные пакеты из файла блокировки и развёрнутого дерева",
+          "объяснено, что apm.yml выражает прямое намерение проекта, а apm.lock.yaml генерируется apm install и хранит весь разрешённый граф",
+          "транзитивные пакеты в файле блокировки названы нормой, а не пробелом в манифесте",
+          "изменение dependencies.apm предложено только как отдельное решение проекта подключить пакет напрямую"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "предложение перенести все пакеты из файла блокировки в dependencies.apm путает прямое намерение проекта с разрешённым графом установки.",
+            "expected_conclusion": "файл блокировки уже фиксирует фактический граф, включая транзитивные пакеты, поэтому копировать его в прямые зависимости не нужно; прямые зависимости меняют только как новое смысловое решение проекта",
+            "acceptable_fix_direction": "оставить dependencies.apm и devDependencies.apm как декларацию намерения, объяснить роль apm.lock.yaml и не добавлять транзитивные пакеты в прямые зависимости без отдельного решения подключить их напрямую"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент копирует все пакеты из файла блокировки в dependencies.apm, чтобы apm.yml отражал фактический набор.",
+        "expected_failure": "Такой ответ смешивает прямое намерение проекта с разрешённым графом и дублирует в манифесте то, что уже фиксирует файл блокировки."
+      },
+      "oracle": {
+        "success_criteria": [
+          "ответ называет example-org/example-skills единственной прямой зависимостью APM из apm.yml",
+          "ответ относит example-collection, example-language, example-analysis и example-text к транзитивно установленным пакетам разрешённого графа",
+          "ответ объясняет, что apm.lock.yaml генерируется apm install и уже хранит весь граф, поэтому копировать его в манифест не нужно",
+          "ответ требует отдельного решения человека перед добавлением новых прямых зависимостей APM"
+        ],
+        "failure_indicators": [
+          "ответ переносит все транзитивные пакеты в dependencies.apm ради отражения фактического набора",
+          "ответ объясняет прямой список зависимостей как способ продублировать содержимое файла блокировки"
+        ]
+      },
+      "application_evidence": [
+        "отчёт содержит отдельные списки прямых зависимостей и транзитивно установленных пакетов",
+        "итоговые изменения отсутствуют или не добавляют транзитивные пакеты в прямые dependencies.apm",
+        "результат называет роль apm.lock.yaml как генерируемого графа установки"
+      ],
+      "evaluation_surface": "диагностика проекта-потребителя APM без превращения файла блокировки в прямой манифест",
+      "assertions": [
+        "Результат сохраняет смысл прямых зависимостей APM как решения проекта.",
+        "Результат отделяет файл блокировки и развёрнутые навыки от прямого манифеста.",
+        "Результат предлагает менять прямые зависимости только после смыслового решения проекта."
+      ],
+      "must_not": [
+        "не копировать транзитивные пакеты из файла блокировки в прямые dependencies.apm ради отражения фактического набора",
+        "не предлагать ручную правку apm.lock.yaml"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-interpret-apm-audit-drift",
+      "prompt": "В проекте-потребителе apm audit сообщает orphaned для .agents/skills/old-skill/SKILL.md и modified для .agents/skills/example-skill/SKILL.md. Думаю убрать old-skill из dependencies.apm и закоммитить правку example-skill. Объясни, что значат эти предупреждения и как их правильно закрыть.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "манифест проекта-потребителя",
+          "content": "name: example-project\nversion: 1.0.0\ndependencies:\n  apm: []\n  mcp: []\ndevDependencies:\n  apm:\n    - example-org/example-skills#^0.4.0\n"
+        },
+        {
+          "path": "audit-output.txt",
+          "purpose": "вывод apm audit с двумя видами расхождения",
+          "content": "drift: orphaned .agents/skills/old-skill/SKILL.md\ndrift: modified .agents/skills/example-skill/SKILL.md\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "orphaned объяснён как развёрнутый файл без текущего источника, а не как транзитивный пакет",
+          "modified объяснён как развёрнутый файл, отличающийся от результата установки",
+          "для обоих видов названо штатное исправление: apm install или возврат правки в источник",
+          "правка apm.yml или ручная правка развёрнутого файла не предлагаются как способ закрыть предупреждение"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "предложение убрать пакет из dependencies.apm и закоммитить правку развёрнутого файла трактует категории apm audit неверно: orphaned относится к развёрнутому файлу без источника, а modified лечится возвратом правки в источник.",
+            "expected_conclusion": "orphaned закрывается командой apm install (автоматическая очистка развёрнутого файла без источника), modified — возвратом правки в источник или apm install; правка apm.yml для этого не нужна",
+            "acceptable_fix_direction": "объяснить категории unintegrated, modified и orphaned, предложить apm install и возврат правки example-skill в источник, не менять dependencies.apm и не коммитить ручную правку развёрнутого файла"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент считает orphaned транзитивным пакетом и закрывает предупреждения правкой dependencies.apm и коммитом правки развёрнутого файла.",
+        "expected_failure": "Такой ответ подменяет реальные категории расхождения установки правкой манифеста и закрепляет ручную правку развёрнутого файла вместо возврата её в источник."
+      },
+      "oracle": {
+        "success_criteria": [
+          "ответ определяет orphaned как развёрнутый файл без текущего источника",
+          "ответ определяет modified как расхождение развёрнутого файла с результатом установки",
+          "ответ предлагает apm install и возврат правки в источник как штатное исправление",
+          "ответ не предлагает менять dependencies.apm или коммитить ручную правку развёрнутого файла ради устранения предупреждения"
+        ],
+        "failure_indicators": [
+          "ответ трактует orphaned как транзитивный или лишний пакет в зависимостях",
+          "ответ закрывает modified коммитом ручной правки развёрнутого файла без возврата в источник",
+          "ответ меняет apm.yml, чтобы убрать предупреждение apm audit"
+        ]
+      },
+      "application_evidence": [
+        "отчёт разбирает orphaned и modified по реальным категориям apm audit",
+        "штатное исправление названо как apm install или возврат правки в источник",
+        "итоговые изменения не правят apm.yml и не коммитят правку развёрнутого файла ради предупреждения"
+      ],
+      "evaluation_surface": "трактовка категорий apm audit у проекта-потребителя",
+      "assertions": [
+        "Результат трактует orphaned как развёрнутый файл без источника, а не как транзитивный пакет.",
+        "Результат предлагает apm install или возврат правки в источник как штатное исправление.",
+        "Результат не закрывает предупреждение apm audit правкой apm.yml."
+      ],
+      "must_not": [
+        "не трактовать orphaned как транзитивный или лишний пакет зависимостей",
+        "не закрывать предупреждение apm audit правкой apm.yml или коммитом ручной правки развёрнутого файла"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-recover-broken-release-without-erasing-project-files",
+      "prompt": "После обновления example-org/example-skills apm audit --ci не проходит: выпуск 0.25.0 заявляет .agents/skills/example-skill/assets/settings.local.yml.sample, но не поставляет этот файл. apm install повторяет ошибку. Раньше это лечили командой rm -rf apm.lock.yaml .agents .codex .claude. Исправь состояние проекта.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "прямые зависимости проекта-потребителя",
+          "content": "name: example-project\nversion: 1.0.0\ndependencies:\n  apm: []\n  mcp: []\ndevDependencies:\n  apm:\n    - example-org/example-skills#^0.25.0\n"
+        },
+        {
+          "path": "audit-output.txt",
+          "purpose": "ошибка воспроизведения установки",
+          "content": "error: example-org/example-skills 0.25.0 declares .agents/skills/example-skill/assets/settings.local.yml.sample but does not provide it\n"
+        },
+        {
+          "path": ".agents/AGENTS.md",
+          "purpose": "отслеживаемые правила проекта в каталоге, соседнем с проекцией",
+          "content": "# Правила проекта\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "ошибка отделена от обычных категорий drift и названа противоречием между метаданными выпуска и его содержимым",
+          "перед пересозданием состояния сохранены ошибка, apm.yml, apm.lock.yaml и проверено состояние Git",
+          "производные APM-файлы предлагается изолировать в резервной копии и пересоздать apm install из apm.yml",
+          "отслеживаемый .agents/AGENTS.md не удаляется и не перемещается вместе с проекциями",
+          "повтор того же отсутствующего пути после чистой установки признан дефектом выпуска, требующим исправленного выпуска или явного решения владельца"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Выпуск заявляет файл, которого не содержит, поэтому повторная установка с тем же файлом блокировки не может восстановить проекцию.",
+            "expected_conclusion": "Нужно безопасно изолировать только подтверждённое производное APM-состояние, пересоздать его из apm.yml и проверить audit; повтор той же ошибки доказывает дефект выпуска.",
+            "acceptable_fix_direction": "Не использовать rm -rf. Сохранить резервную копию, не затрагивать отслеживаемый .agents/AGENTS.md, выполнить apm install и apm audit --ci; при повторе ошибки запросить исправленный выпуск либо явное решение о временном обходе."
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который без проверки Git рекурсивно удаляет apm.lock.yaml, .agents, .codex и .claude либо бесконечно повторяет apm install.",
+        "expected_failure": "Такой ответ может уничтожить правила и настройки проекта и не отличает дефект выпуска от обычного дрейфа установки."
+      },
+      "oracle": {
+        "success_criteria": [
+          "ответ не предлагает rm -rf или удаление целых клиентских каталогов",
+          "ответ сохраняет и изолирует только производное APM-состояние до пересоздания",
+          "ответ защищает отслеживаемый .agents/AGENTS.md",
+          "ответ требует повторной проверки apm audit --ci",
+          "ответ признаёт повтор отсутствующего заявленного файла дефектом выпуска и не маскирует его"
+        ],
+        "failure_indicators": [
+          "ответ рекурсивно удаляет .agents, .codex или .claude без проверки состава",
+          "ответ предлагает вручную править apm.lock.yaml или создавать отсутствующий файл",
+          "ответ считает повторяющуюся ошибку отсутствующего заявленного файла обычным drift"
+        ]
+      },
+      "application_evidence": [
+        "результат описывает сохранение производного состояния и его пересоздание из apm.yml",
+        "результат не изменяет прямые зависимости ради ошибки выпуска",
+        "результат оставляет решение о временном обходе владельцу проекта"
+      ],
+      "evaluation_surface": "безопасное восстановление установки проекта-потребителя после выпуска APM с отсутствующим заявленным файлом",
+      "assertions": [
+        "Результат отличает дефект выпуска от drift развёрнутых файлов.",
+        "Результат защищает пользовательские и отслеживаемые Git файлы при пересоздании APM-состояния.",
+        "Результат требует исправленного выпуска или решения владельца, если чистая установка вновь воспроизводит ошибку."
+      ],
+      "must_not": [
+        "не удалять рекурсивно .agents, .codex или .claude без проверки состава и резервной копии",
+        "не повторять apm install с тем же дефектным состоянием как единственное исправление",
+        "не объявлять дефектный выпуск исправленным без успешных apm install и apm audit --ci"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-portable-tests-split",
+      "prompt": "Сторонний участник по лицензии MIT не может выполнить apm run tests: третьим шагом scripts.tests запускает tools/run-skill-evals.py, а тот делает живые вызовы модели через конкретный инструмент командной строки и привязан к конкретным моделям и подписке автора. Сделай проверки коллекции переносимыми.",
+      "input_files": [
+        {
+          "path": "apm.yml",
+          "purpose": "манифест APM, где контроль качества tests включает модельный шаг",
+          "content": "name: example-collection\nversion: 0.4.0\ndescription: Пример коллекции навыков\nlicense: MIT\ntarget:\n- codex\ntype: skill\nincludes: auto\nscripts:\n  tests: python tools/run-collection-checks.py\n  evals: python tools/run-skill-evals.py\n"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "средство запуска, привязанное к конкретному инструменту командной строки и модели",
+          "content": "PRIMARY_MODEL = \"vendor-model-fast\"\nJUDGE_MODEL = \"vendor-model-large\"\n# Вызывает локальный инструмент командной строки автора напрямую.\nsubprocess.run([\"vendor-cli\", \"exec\", \"--model\", PRIMARY_MODEL], ...)\n"
+        },
+        {
+          "path": ".apm/skills/example-skill/SKILL.md",
+          "purpose": "пример публикуемого навыка",
+          "content": "---\nname: example-skill\ndescription: Пример навыка для коллекции.\n---\n\n# example-skill\n\nКороткий пример публикуемого навыка.\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названа причина непереносимости: модельный шаг внутри контроля качества tests",
+          "показано разделение на детерминированный scripts.tests и опциональный scripts.evals",
+          "показано, что вызов модели идёт через адаптер по переносимому контракту, а не через конкретный инструмент командной строки",
+          "показано, что настройки моделей вынесены в локальные настройки вне Git, а не в apm.yml или навыки",
+          "перечислены выполненные проверки и оставшиеся ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "контроль качества apm run tests включает живой модельный шаг, поэтому участник без нужного окружения, подписки или модели не может его выполнить, а проверка перестаёт быть повторяемой.",
+            "expected_conclusion": "детерминированные проверки нужно оставить в scripts.tests как переносимый контроль качества без модели, а модельный прогон вынести в отдельную опциональную цель scripts.evals",
+            "acceptable_fix_direction": "убрать вызов средства запуска из scripts.tests и добавить scripts.evals с модельным прогоном"
+          },
+          {
+            "severity": "high",
+            "observed_problem": "средство запуска привязано к конкретному инструменту командной строки и конкретным моделям, а имена моделей рискуют попасть в переносимый манифест или навыки.",
+            "expected_conclusion": "модель нужно вызывать через адаптер по переносимому контракту, а инструмент, список моделей и модель-судью задавать локальными настройками вне Git",
+            "acceptable_fix_direction": "ввести контракт адаптера (вызов с моделью, промпт на входе, текст на выходе) и локальные настройки evals.local.yml, добавляемые в .git/info/exclude, без имён моделей в apm.yml и навыках"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент оставил модельный шаг в scripts.tests и только заменил имя модели на переменную среды.",
+        "expected_failure": "Такой ответ не делает контроль качества переносимым: сторонний участник без модели по-прежнему не может выполнить apm run tests."
+      },
+      "oracle": {
+        "success_criteria": [
+          "scripts.tests состоит только из детерминированных проверок и не вызывает модель",
+          "модельный прогон вынесен в отдельную цель scripts.evals",
+          "модель вызывается через адаптер по переносимому контракту",
+          "настройки моделей лежат в локальных настройках вне Git, а в apm.yml и навыках имён моделей нет"
+        ],
+        "failure_indicators": [
+          "модельный вызов остаётся в scripts.tests",
+          "имена моделей записаны в apm.yml или в навыки",
+          "файл настроек с моделями добавлен в Git вместо локального слоя",
+          "средство запуска по-прежнему жёстко привязано к одному инструменту командной строки без адаптера"
+        ]
+      },
+      "application_evidence": [
+        "diff apm.yml переносит модельный шаг из tests в отдельную цель evals",
+        "отчёт описывает контракт адаптера и локальные настройки вне Git",
+        "отчёт подтверждает отсутствие имён моделей в apm.yml и навыках"
+      ],
+      "evaluation_surface": "переносимость контроля качества проверок и граница между детерминированными и модельными проверками коллекции",
+      "assertions": [
+        "Результат делает scripts.tests детерминированным контролем качества без вызовов модели.",
+        "Результат выносит модельный прогон в отдельную цель scripts.evals.",
+        "Результат вызывает модель через адаптер и хранит настройки моделей вне Git."
+      ],
+      "must_not": [
+        "не оставлять модельный вызов в scripts.tests",
+        "не записывать имена моделей в apm.yml или навыки",
+        "не коммитить файл настроек с моделями в Git"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-deliver-eval-tools-via-installer",
+      "prompt": "В проекте-издателе коллекции APM адаптеры модельных прогонов и средство запуска переписывают вручную в каждом новом проекте. Настрой доставку оснастки модельных прогонов так, чтобы целевой проект получал её из навыка, а не переписывал заново, и чтобы рабочие копии не расходились с источником.",
+      "input_files": [
+        {
+          "path": ".apm/skills/ai-setup-apm/scripts/eval-tools/run-skill-evals.py",
+          "purpose": "канонический источник средства запуска в пакете навыка"
+        },
+        {
+          "path": ".apm/skills/ai-setup-apm/scripts/eval-tools/adapters/codex",
+          "purpose": "канонический адаптер модели в пакете навыка"
+        },
+        {
+          "path": ".apm/skills/ai-setup-apm/scripts/install-eval-tools",
+          "purpose": "установщик оснастки по общим правилам"
+        },
+        {
+          "path": "tools/run-skill-evals.py",
+          "purpose": "рабочая копия средства запуска в проекте"
+        },
+        {
+          "path": "apm.yml",
+          "purpose": "манифест с контролем качества tests"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названо, что переносимую оснастку доставляет установщик из пакета навыка, а не ручное копирование",
+          "показано, что канонический источник лежит в scripts/ навыка и копируется в tools/ установщиком",
+          "показано, что рабочее расположение в проекте остаётся tools/",
+          "показано, что расхождение рабочих копий с источником ловит детерминированная проверка в контроле качества tests",
+          "перечислены выполненные проверки и оставшиеся ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "переносимая оснастка модельных прогонов переписывается в каждом проекте вручную, потому что не доставляется как часть пакета навыка.",
+            "expected_conclusion": "оснастку нужно держать каноническим источником в scripts/ навыка и ставить в целевой проект установщиком, потому что в целевой проект попадает только содержимое пакета навыка",
+            "acceptable_fix_direction": "поместить средство запуска, валидаторы, адаптеры и образец в scripts/ навыка и добавить установщик install-* [project-root], который копирует их в tools/"
+          },
+          {
+            "severity": "high",
+            "observed_problem": "проект-издатель и производит оснастку, и сам её запускает из tools/, поэтому рабочие копии могут разойтись с источником без переустановки.",
+            "expected_conclusion": "расхождение рабочих копий с каноническим источником должна ловить детерминированная проверка в контроле качества tests без вызовов модели",
+            "acceptable_fix_direction": "добавить в scripts.tests проверку совпадения копий в tools/ с источником в пакете и править источник, а не рабочую копию"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, где агент просто скопировал адаптеры в tools/ текущего проекта вручную без установщика и без источника в пакете.",
+        "expected_failure": "Такой ответ не делает оснастку переносимой: следующий проект снова переписывает её вручную, а расхождение копий ничем не ловится."
+      },
+      "oracle": {
+        "success_criteria": [
+          "канонический источник оснастки размещён в scripts/ навыка",
+          "добавлен установщик по правилам install-* [project-root], копирующий в tools/",
+          "рабочее расположение в проекте остаётся tools/",
+          "в контроль качества tests добавлена детерминированная проверка совпадения копий с источником",
+          "отчёт называет команду установки и выполненные проверки"
+        ],
+        "failure_indicators": [
+          "оснастка скопирована вручную без установщика",
+          "источник оставлен вне пакета навыка и не доедет в целевой проект",
+          "рабочее расположение перенесено из tools/ без необходимости",
+          "проверка расхождения отсутствует или вынесена из контроля качества в модельный прогон"
+        ]
+      },
+      "application_evidence": [
+        "diff содержит источник оснастки в scripts/ навыка и установщик install-*",
+        "diff apm.yml добавляет в tests детерминированную проверку совпадения копий с источником",
+        "отчёт называет команду install-* и рабочее расположение tools/"
+      ],
+      "evaluation_surface": "изменение артефактов доставки оснастки и качество результата настройки переносимости",
+      "assertions": [
+        "Результат доставляет оснастку установщиком из пакета навыка, а не ручным копированием.",
+        "Результат сохраняет рабочее расположение оснастки в tools/.",
+        "Результат добавляет в контроль качества tests детерминированную проверку совпадения рабочих копий с источником."
+      ],
+      "must_not": [
+        "не оставлять источник переносимой оснастки вне пакета навыка",
+        "не доставлять оснастку ручным копированием вместо установщика",
+        "не переносить проверку расхождения в модельный прогон evals"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-git-boundary-for-dependencies",
+      "prompt": "В проекте с APM зависимости разворачивают навыки в .agents/ и .claude/. Разработчик иногда добавляет эти файлы в Git. Добавь в ai-setup-apm проверяемую защиту, но не запрещай собственные файлы проекта в клиентских каталогах.",
+      "input_files": [
+        {
+          "path": "apm.lock.yaml",
+          "purpose": "реестр зависимостей и их deployed_files"
+        },
+        {
+          "path": ".claude/project-rule.md",
+          "purpose": "собственный проектный файл, не принадлежащий зависимости"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "назван поставляемый детерминированный валидатор",
+          "объяснено сопоставление deployed_files и git ls-files",
+          "названы путь, пакет-владелец и ручное исправление нарушения",
+          "перечислены выполненные автоматические тесты"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "развёрнутый файл зависимости может попасть в индекс Git, а .gitignore не защищает уже отслеживаемый файл.",
+            "expected_conclusion": "нужна детерминированная проверка по реестру развёртывания из apm.lock.yaml, а не по имени клиентского каталога.",
+            "acceptable_fix_direction": "поставить скрипт навыка, сравнивающий dependencies[*].deployed_files с git ls-files и завершающийся с ошибкой для каждого нарушения"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который добавляет только .gitignore или запрещает отслеживать весь каталог .claude/.",
+        "expected_failure": "Такой ответ не ловит уже отслеживаемые файлы либо запрещает допустимые проектные файлы."
+      },
+      "oracle": {
+        "success_criteria": [
+          "валидатор использует apm.lock.yaml и git ls-files",
+          "нарушение выводит путь, пакет-владелец, указание удалить файл из индекса и настроить .gitignore",
+          "собственные .apm/ и проектные клиентские файлы вне deployed_files не считаются нарушением",
+          "скрипт не изменяет Git или рабочее дерево и покрыт автоматическими тестами"
+        ],
+        "failure_indicators": [
+          "происхождение файла определено только по имени .agents/, .claude/ или .codex/",
+          "скрипт автоматически меняет .gitignore, индекс или рабочее дерево",
+          "проверка требует постороннюю коллекцию навыков, модель, сеть или интерактивный ввод"
+        ]
+      },
+      "application_evidence": [
+        "diff содержит скрипт в scripts/ ai-setup-apm и автоматический тест",
+        "инструкция навыка предлагает включить скрипт в обязательные проверки проекта",
+        "договор продукта описывает назначение нового скрипта"
+      ],
+      "evaluation_surface": "изменение артефактов поставляемой проверки и граница между проекциями зависимостей и файлами проекта",
+      "assertions": [
+        "Результат проверяет принадлежность файла зависимости по deployed_files, а не по клиентскому каталогу.",
+        "Результат выводит все отслеживаемые проекции с владельцами и ручным способом исправления.",
+        "Результат не изменяет Git и не создаёт зависимость от посторонней коллекции навыков."
+      ],
+      "must_not": [
+        "не считать все файлы .agents/, .claude/ или .codex/ проекциями зависимостей",
+        "не считать собственный .apm/ проекта нарушением",
+        "не исправлять индекс Git или .gitignore автоматически"
+      ]
+    },
+    {
+      "id": "ai-setup-apm-result-isolate-published-product",
+      "prompt": "Подготовь к публикации коллекцию APM. В поставляемом навыке есть указание читать private/review-notes.yml разработчика, сценарий результата использует реальный отчёт заказчика, а установщик копирует tools/author-only-helper.py. Исправь пакет и опиши приёмку границы продукта.",
+      "input_files": [
+        {
+          "path": ".apm/skills/example-skill/SKILL.md",
+          "purpose": "поставляемый навык со ссылкой на закрытый материал разработчика",
+          "content": "# example-skill\n\nПеред началом прочитай private/review-notes.yml.\n"
+        },
+        {
+          "path": ".apm/skills/example-skill/evals/result-scenarios.json",
+          "purpose": "поставляемый сценарий с реальными данными заказчика"
+        },
+        {
+          "path": ".apm/skills/example-skill/scripts/install-helper",
+          "purpose": "установщик, который доставляет вспомогательный файл только для работы разработчика"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "названа граница между публичным договором коллекции и внутренним контекстом разработки",
+          "показано самостоятельное правило или вымышленный пример вместо закрытого материала и реальных данных",
+          "показано удаление или замена средства, которое не нужно проекту-потребителю",
+          "названы автоматическая проверка маркеров и изолированный запуск детерминированного контроля качества"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "поставляемые материалы требуют закрытый файл разработчика, содержат реальные данные и устанавливают средство без назначения для потребителя.",
+            "expected_conclusion": "пакет смешивает публичное поведение с внутренней работой разработчика и не будет самодостаточным после установки у потребителя.",
+            "acceptable_fix_direction": "заменить закрытый материал самостоятельным правилом или вымышленным примером, удалить средство без публичного назначения и проверить пакет в чистом проекте-потребителе"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который сохраняет ссылку на private/review-notes.yml, лишь поясняет её комментариями и оставляет средство разработчика в установщике.",
+        "expected_failure": "Такой ответ сохраняет зависимость поставляемого пакета от среды разработчика и не доказывает самодостаточность коллекции."
+      },
+      "oracle": {
+        "success_criteria": [
+          "ответ отделяет публичный договор коллекции от внутреннего контекста разработки",
+          "закрытые материалы и реальные данные заменены самостоятельными материалами либо удалены",
+          "установщик не доставляет средство без назначения для проекта-потребителя",
+          "приёмка включает автоматическую проверку известных маркеров и чистый проект-потребитель"
+        ],
+        "failure_indicators": [
+          "ответ оставляет в поставляемом дереве ссылку на закрытый материал разработчика",
+          "ответ считает комментарий достаточной заменой самостоятельному правилу",
+          "ответ сохраняет средство разработчика без публичного назначения",
+          "ответ проверяет только SKILL.md и не рассматривает сценарии или установщик"
+        ]
+      },
+      "application_evidence": [
+        "diff заменяет или удаляет зависимость от private/review-notes.yml, реальные данные и средство разработчика",
+        "отчёт различает публичный договор и внутренний контекст разработки",
+        "отчёт называет проверку поставляемого дерева и изолированный запуск tests"
+      ],
+      "evaluation_surface": "граница публичного договора и изоляция публикуемой коллекции от среды разработчика",
+      "assertions": [
+        "Результат оставляет в пакете только сведения и зависимости, нужные пользователю коллекции или проекту-потребителю.",
+        "Результат заменяет внутренние материалы самостоятельными правилами, вымышленными примерами или проверками.",
+        "Результат проверяет не только инструкции, но и сценарии, скрипты и установщики."
+      ],
+      "must_not": [
+        "не выдавать внутренний контекст разработчика за публичный договор коллекции",
+        "не сохранять скрытую зависимость от закрытого файла или средства разработчика",
+        "не ограничивать проверку только одним SKILL.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Установщик оснастки модельных прогонов по общим правилам установщиков навыка:
+#   install-* [project-root]
+#   - без аргумента берёт корень текущего репозитория Git;
+#   - копирует переносимый набор в <project-root> по манифесту;
+#   - печатает строку installed=<project-root>.
+#
+# Копирует средство запуска, валидаторы, адаптеры и образец настроек из этого навыка в
+# целевой проект. Канонический источник — каталог eval-tools рядом со скриптом;
+# отображение путей задаёт eval-tools/manifest.txt.
+
+usage() {
+  cat <<'EOF'
+Usage:
+  install-eval-tools [project-root]
+
+Копирует оснастку модельных прогонов (средство запуска, валидаторы, адаптеры, образец настроек)
+из этого навыка в <project-root> по eval-tools/manifest.txt.
+Без аргумента берёт корень текущего репозитория Git.
+EOF
+}
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  usage
+  exit 0
+fi
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+src_dir="$script_dir/eval-tools"
+manifest="$src_dir/manifest.txt"
+project_root="${1:-$(git rev-parse --show-toplevel)}"
+
+if [[ ! -f "$manifest" ]]; then
+  echo "Манифест не найден: $manifest" >&2
+  exit 1
+fi
+
+while IFS='|' read -r src dest mode; do
+  case "$src" in
+    ''|\#*) continue ;;
+  esac
+  src_path="$src_dir/$src"
+  dest_path="$project_root/$dest"
+  if [[ ! -f "$src_path" ]]; then
+    echo "Источник не найден: $src_path" >&2
+    exit 1
+  fi
+  mkdir -p "$(dirname -- "$dest_path")"
+  install -m "0$mode" "$src_path" "$dest_path"
+done < "$manifest"
+
+printf 'installed=%s\n' "$project_root"

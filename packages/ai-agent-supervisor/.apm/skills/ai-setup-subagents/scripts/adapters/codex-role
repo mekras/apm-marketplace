@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+"""Запуск роли Codex: модель, усилие, режим доступа; задача приходит через stdin."""
+from __future__ import annotations
+
+import json, os, subprocess, sys, tempfile
+from pathlib import Path
+
+if len(sys.argv) != 4:
+    raise SystemExit("Использование: codex-role <модель> <усилие> <режим>")
+model, effort, sandbox = sys.argv[1:]
+with tempfile.TemporaryDirectory() as directory:
+    final = Path(directory) / "final.txt"
+    run = subprocess.run(["codex", "exec", "--json", "--color", "never", "--strict-config", "--skip-git-repo-check", "--sandbox", sandbox, "--model", model, "-c", f'model_reasoning_effort="{effort}"', "--output-last-message", str(final), "-"], input=sys.stdin.read(), text=True, capture_output=True)
+    raw_log = os.environ.get("CODEX_ROLE_LOG")
+    if raw_log:
+        Path(raw_log).write_text(run.stdout, encoding="utf-8")
+    usage = None
+    for line in run.stdout.splitlines():
+        try:
+            event = json.loads(line)
+            if event.get("type") == "turn.completed": usage = event.get("usage")
+        except json.JSONDecodeError: pass
+    # Явный параметр и журнал фиксируют фактическую конфигурацию отдельного
+    # процесса; встроенный fan-out для этой гарантии не используется.
+    actual = model if run.returncode == 0 else None
+    print(json.dumps({"model": actual, "usage": usage}, ensure_ascii=False))
+    if final.exists(): print(final.read_text(encoding="utf-8"), end="")
+    if run.returncode: print(run.stderr, file=sys.stderr, end="")
+    raise SystemExit(run.returncode)

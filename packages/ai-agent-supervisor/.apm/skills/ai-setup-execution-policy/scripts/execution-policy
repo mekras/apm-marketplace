@@ -1,0 +1,545 @@
+#!/usr/bin/env python3
+"""Создать и проверить материалы политики выполнения."""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tomllib
+from pathlib import Path
+from typing import Any
+
+
+SCHEMA_VERSION = 1
+PRIVATE_PROJECT_FIELDS = {"model", "price", "cost", "limit", "account", "api_key", "token"}
+HANDOFF_SECTIONS = (
+    "Причина передачи",
+    "Цель и критерии готовности",
+    "Границы и запреты",
+    "Проверенные основания",
+    "Непроверенные выводы",
+    "Результаты и изменённые файлы",
+    "Выполненные проверки",
+    "Открытые вопросы и риски",
+    "Следующий шаг",
+    "Результат продолжения",
+    "Оценка экономии",
+)
+
+
+class PolicyError(ValueError):
+    """Ошибка структуры или ограничений политики."""
+
+
+def load_toml(path: Path) -> dict[str, Any]:
+    try:
+        with path.open("rb") as source:
+            data = tomllib.load(source)
+    except OSError as error:
+        raise PolicyError(f"не удалось прочитать {path}: {error}") from error
+    except tomllib.TOMLDecodeError as error:
+        raise PolicyError(f"некорректный TOML в {path}: {error}") from error
+    if not isinstance(data, dict):
+        raise PolicyError(f"{path}: корень должен быть таблицей TOML")
+    if data.get("schema_version") != SCHEMA_VERSION:
+        raise PolicyError(f"{path}: ожидается schema_version = {SCHEMA_VERSION}")
+    return data
+
+
+def require_string(value: object, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise PolicyError(f"{label} должен быть непустой строкой")
+    return value
+
+
+def require_strings(value: object, label: str, *, nonempty: bool = False) -> list[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) and item.strip() for item in value):
+        raise PolicyError(f"{label} должен быть массивом непустых строк")
+    if nonempty and not value:
+        raise PolicyError(f"{label} не должен быть пустым")
+    return list(value)
+
+
+def user_routes(data: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    routes = data.get("routes")
+    if not isinstance(routes, list) or not routes:
+        raise PolicyError("в пользовательском ядре нужен непустой массив routes")
+    result: dict[str, dict[str, Any]] = {}
+    for index, route in enumerate(routes):
+        if not isinstance(route, dict):
+            raise PolicyError(f"routes[{index}] должен быть таблицей TOML")
+        route_id = require_string(route.get("id"), f"routes[{index}].id")
+        require_string(route.get("environment"), f"routes[{index}].environment")
+        require_string(route.get("model"), f"routes[{index}].model")
+        if route_id in result:
+            raise PolicyError(f"повторяется маршрут {route_id}")
+        result[route_id] = route
+    return result
+
+
+def find_private_project_fields(value: object, path: str = "") -> list[str]:
+    findings: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            label = f"{path}.{key}" if path else str(key)
+            if key.lower() in PRIVATE_PROJECT_FIELDS:
+                findings.append(label)
+            findings.extend(find_private_project_fields(item, label))
+    elif isinstance(value, list):
+        for index, item in enumerate(value):
+            findings.extend(find_private_project_fields(item, f"{path}[{index}]"))
+    return findings
+
+
+def project_classes(data: dict[str, Any], routes: dict[str, dict[str, Any]], core_evidence: list[str]) -> dict[str, dict[str, Any]]:
+    private_fields = find_private_project_fields(data)
+    if private_fields:
+        raise PolicyError("в проектном уточнении запрещены приватные поля: " + ", ".join(private_fields))
+    classes = data.get("task_classes")
+    if not isinstance(classes, list) or not classes:
+        raise PolicyError("в проектном уточнении нужен непустой массив task_classes")
+    result: dict[str, dict[str, Any]] = {}
+    for index, item in enumerate(classes):
+        if not isinstance(item, dict):
+            raise PolicyError(f"task_classes[{index}] должен быть таблицей TOML")
+        class_id = require_string(item.get("id"), f"task_classes[{index}].id")
+        reference = require_string(item.get("reference_route"), f"task_classes[{index}].reference_route")
+        candidate = require_string(item.get("candidate_route"), f"task_classes[{index}].candidate_route")
+        if reference not in routes or candidate not in routes:
+            raise PolicyError(f"класс {class_id} ссылается на отсутствующий маршрут")
+        automatic = item.get("automatic")
+        if not isinstance(automatic, bool):
+            raise PolicyError(f"task_classes[{index}].automatic должен быть true или false")
+        root_task = item.get("root_task", False)
+        if not isinstance(root_task, bool):
+            raise PolicyError(f"task_classes[{index}].root_task должен быть true или false")
+        criteria = require_strings(item.get("acceptance_criteria"), f"task_classes[{index}].acceptance_criteria", nonempty=True)
+        evidence = require_strings(item.get("required_evidence"), f"task_classes[{index}].required_evidence", nonempty=True)
+        handoff_method = require_string(item.get("handoff_method"), f"task_classes[{index}].handoff_method")
+        missing = sorted(set(core_evidence) - set(evidence))
+        if missing:
+            raise PolicyError(f"класс {class_id} ослабляет обязательные свидетельства: {', '.join(missing)}")
+        if class_id in result:
+            raise PolicyError(f"повторяется класс задач {class_id}")
+        result[class_id] = {
+            "id": class_id,
+            "reference_route": reference,
+            "candidate_route": candidate,
+            "automatic": automatic,
+            "root_task": root_task,
+            "acceptance_criteria": criteria,
+            "required_evidence": evidence,
+            "handoff_method": handoff_method,
+        }
+    return result
+
+
+def policy_fingerprint(routes: dict[str, dict[str, Any]], task_class: dict[str, Any], core_evidence: list[str]) -> str:
+    route_ids = (task_class["reference_route"], task_class["candidate_route"])
+    payload = {
+        "core_evidence": sorted(core_evidence),
+        "routes": {
+            route_id: {
+                "environment": routes[route_id]["environment"],
+                "model": routes[route_id]["model"],
+            }
+            for route_id in route_ids
+        },
+        "task_class": task_class,
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def require_result_locations(value: object, required: list[str], label: str) -> None:
+    if not isinstance(value, dict):
+        raise PolicyError(f"{label} должен быть таблицей путей к результатам")
+    missing = sorted(set(required) - set(value))
+    if missing:
+        raise PolicyError(f"{label}: отсутствуют результаты: {', '.join(missing)}")
+    invalid = [key for key in required if not isinstance(value.get(key), str) or not value[key].strip()]
+    if invalid:
+        raise PolicyError(f"{label}: пустые пути к результатам: {', '.join(invalid)}")
+
+
+def require_criterion_results(value: object, criteria: list[str], label: str) -> None:
+    if not isinstance(value, dict):
+        raise PolicyError(f"{label} должен быть таблицей результатов критериев")
+    missing = sorted(set(criteria) - set(value))
+    if missing:
+        raise PolicyError(f"{label}: отсутствуют результаты: {', '.join(missing)}")
+    failed = [criterion for criterion in criteria if value.get(criterion) != "passed"]
+    if failed:
+        raise PolicyError(f"{label}: критерии не пройдены: {', '.join(failed)}")
+
+
+def check_qualification(path: Path, task_class: dict[str, Any], routes: dict[str, dict[str, Any]], core_evidence: list[str]) -> list[str]:
+    data = load_toml(path)
+    errors: list[str] = []
+    expected = {
+        "task_class": task_class["id"],
+        "reference_route": task_class["reference_route"],
+        "candidate_route": task_class["candidate_route"],
+        "acceptance_criteria": task_class["acceptance_criteria"],
+        "required_evidence": task_class["required_evidence"],
+        "handoff_method": task_class["handoff_method"],
+    }
+    for key, expected_value in expected.items():
+        if data.get(key) != expected_value:
+            errors.append(f"{path}: поле {key} не совпадает с действующей политикой")
+    if data.get("outcome") != "qualified":
+        errors.append(f"{path}: outcome должен быть qualified")
+    if data.get("rework_required") is not False:
+        errors.append(f"{path}: переделывание работы запрещает автоматический допуск")
+    for key in ("actual_reference_route", "actual_candidate_route"):
+        if not isinstance(data.get(key), str) or not data[key].strip():
+            errors.append(f"{path}: отсутствует {key}")
+    try:
+        require_result_locations(data.get("result_evidence"), task_class["required_evidence"], f"{path}.result_evidence")
+    except PolicyError as error:
+        errors.append(str(error))
+    try:
+        require_criterion_results(data.get("criterion_results"), task_class["acceptance_criteria"], f"{path}.criterion_results")
+    except PolicyError as error:
+        errors.append(str(error))
+    escalated = data.get("escalated")
+    if not isinstance(escalated, bool):
+        errors.append(f"{path}: escalated должен быть true или false")
+    elif escalated:
+        try:
+            require_string(data.get("escalation_reason"), f"{path}.escalation_reason")
+            require_strings(data.get("preserved_results"), f"{path}.preserved_results", nonempty=True)
+        except PolicyError as error:
+            errors.append(str(error))
+    if task_class["root_task"]:
+        for key in ("reference_trace", "candidate_trace"):
+            value = data.get(key)
+            if not isinstance(value, str) or not value.strip():
+                errors.append(f"{path}: для корневой задачи отсутствует {key}")
+                continue
+            trace = Path(value)
+            trace = trace if trace.is_absolute() else path.parent / trace
+            if not trace.is_file():
+                errors.append(f"{path}: не найден технический след {key}")
+    if data.get("policy_fingerprint") != policy_fingerprint(routes, task_class, core_evidence):
+        errors.append(f"{path}: квалификация требует пересмотра из-за изменения политики")
+    return errors
+
+
+def qualification_for(
+    task_class: dict[str, Any], paths: list[Path], routes: dict[str, dict[str, Any]], core_evidence: list[str]
+) -> tuple[list[str], list[tuple[Path, dict[str, Any]]]]:
+    matching: list[tuple[Path, dict[str, Any]]] = []
+    errors: list[str] = []
+    for path in paths:
+        try:
+            data = load_toml(path)
+        except PolicyError as error:
+            errors.append(str(error))
+            continue
+        if (
+            data.get("task_class") == task_class["id"]
+            and data.get("reference_route") == task_class["reference_route"]
+            and data.get("candidate_route") == task_class["candidate_route"]
+        ):
+            matching.append((path, data))
+    if not matching:
+        errors.append(f"класс {task_class['id']}: нет свидетельства квалификации")
+        return errors, matching
+    for path, _ in matching:
+        errors.extend(check_qualification(path, task_class, routes, core_evidence))
+    return errors, matching
+
+
+def collect_qualification_paths(core_path: Path, data: dict[str, Any], values: list[Path]) -> list[Path]:
+    configured = data.get("qualification_files", [])
+    paths = list(values)
+    if configured:
+        for value in require_strings(configured, "qualification_files"):
+            path = Path(value)
+            paths.append(path if path.is_absolute() else core_path.parent / path)
+    return list(dict.fromkeys(path.resolve() for path in paths))
+
+
+def show_policy(args: argparse.Namespace) -> int:
+    try:
+        core_path = args.user_core.resolve()
+        project_path = args.project_overlay.resolve()
+        core = load_toml(core_path)
+        routes = user_routes(core)
+        core_evidence = require_strings(core.get("required_evidence"), "required_evidence", nonempty=True)
+        classes = project_classes(load_toml(project_path), routes, core_evidence)
+        selected = [args.task_class] if args.task_class else list(classes)
+        unknown = [item for item in selected if item not in classes]
+        if unknown:
+            raise PolicyError("не найден класс задач: " + ", ".join(unknown))
+        qualification_paths = collect_qualification_paths(core_path, core, args.qualification)
+    except PolicyError as error:
+        print(f"Ошибка политики: {error}", file=sys.stderr)
+        return 2
+
+    errors: list[str] = []
+    print(f"user_core={core_path}")
+    print(f"project_overlay={project_path}")
+    for class_id in selected:
+        item = classes[class_id]
+        print(f"task_class={class_id}")
+        print("source.routes=user_core")
+        print("source.criteria=project_overlay")
+        print(f"reference_route={item['reference_route']}")
+        print(f"candidate_route={item['candidate_route']}")
+        if item["automatic"]:
+            qualification_errors, qualifications = qualification_for(item, qualification_paths, routes, core_evidence)
+            if qualification_errors:
+                errors.extend(qualification_errors)
+                print("automatic_candidate=blocked")
+            else:
+                print("automatic_candidate=qualified")
+                for path, qualification in qualifications:
+                    print(f"qualification={path}")
+                    print(f"actual_reference_route={qualification['actual_reference_route']}")
+                    print(f"actual_candidate_route={qualification['actual_candidate_route']}")
+                    print(f"escalated={str(qualification['escalated']).lower()}")
+                    print(f"rework_required={str(qualification['rework_required']).lower()}")
+                    if qualification["escalated"]:
+                        print(f"escalation_reason={qualification['escalation_reason']}")
+                        for result in qualification["preserved_results"]:
+                            print(f"preserved_result={result}")
+        else:
+            print("automatic_candidate=manual")
+    for class_id in classes:
+        if class_id not in selected:
+            print(f"unapplied_task_class={class_id}")
+    if errors:
+        for error in errors:
+            print(f"Ошибка политики: {error}", file=sys.stderr)
+        return 1
+    print("policy_status=ready")
+    return 0
+
+
+def toml_string(value: str) -> str:
+    return json.dumps(value, ensure_ascii=False)
+
+
+def toml_array(values: list[str]) -> str:
+    return "[" + ", ".join(toml_string(value) for value in values) + "]"
+
+
+def prepare_qualification(args: argparse.Namespace) -> int:
+    try:
+        core = load_toml(args.user_core)
+        routes = user_routes(core)
+        core_evidence = require_strings(core.get("required_evidence"), "required_evidence", nonempty=True)
+        classes = project_classes(load_toml(args.project_overlay), routes, core_evidence)
+        task_class = classes.get(args.task_class)
+        if task_class is None:
+            raise PolicyError(f"не найден класс задач {args.task_class}")
+        output = args.output.resolve()
+        if output.exists():
+            raise PolicyError(f"файл уже существует: {output}")
+        ensure_private_output(output, args.allow_git)
+        content = "\n".join(
+            (
+                f"schema_version = {SCHEMA_VERSION}",
+                f"task_class = {toml_string(task_class['id'])}",
+                f"reference_route = {toml_string(task_class['reference_route'])}",
+                f"candidate_route = {toml_string(task_class['candidate_route'])}",
+                f"acceptance_criteria = {toml_array(task_class['acceptance_criteria'])}",
+                f"required_evidence = {toml_array(task_class['required_evidence'])}",
+                f"handoff_method = {toml_string(task_class['handoff_method'])}",
+                'actual_reference_route = ""',
+                'actual_candidate_route = ""',
+                "result_evidence = {}",
+                "criterion_results = {}",
+                'reference_trace = ""',
+                'candidate_trace = ""',
+                'outcome = "pending"',
+                "escalated = false",
+                'escalation_reason = ""',
+                "preserved_results = []",
+                "rework_required = false",
+                f"policy_fingerprint = {toml_string(policy_fingerprint(routes, task_class, core_evidence))}",
+                "",
+            )
+        )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(content, encoding="utf-8")
+    except PolicyError as error:
+        print(f"Ошибка подготовки квалификации: {error}", file=sys.stderr)
+        return 2
+    print(f"qualification_draft={output}")
+    return 0
+
+
+def git_root(path: Path) -> Path | None:
+    directory = path.parent
+    while not directory.exists() and directory != directory.parent:
+        directory = directory.parent
+    completed = subprocess.run(
+        ["git", "-C", str(directory), "rev-parse", "--show-toplevel"],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if completed.returncode != 0:
+        return None
+    return Path(completed.stdout.strip()).resolve()
+
+
+def ignored_by_git(root: Path, path: Path) -> bool:
+    relative = os.path.relpath(path, root)
+    completed = subprocess.run(
+        ["git", "-C", str(root), "check-ignore", "-q", "--no-index", relative],
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    return completed.returncode == 0
+
+
+def ensure_private_output(output: Path, allow_git: bool) -> None:
+    if allow_git:
+        return
+    root = git_root(output)
+    if root and output.is_relative_to(root) and not ignored_by_git(root, output):
+        raise PolicyError(
+            "приватный файл внутри Git должен быть исключён из Git или создан с --allow-git"
+        )
+
+
+def sample_path(script_path: Path, filename: str) -> Path:
+    adjacent = script_path.with_name(filename)
+    if adjacent.is_file():
+        return adjacent
+    return script_path.parent.parent / "assets" / filename
+
+
+def initialize(args: argparse.Namespace, kind: str) -> int:
+    output = args.output.resolve()
+    if output.exists():
+        print(f"Ошибка создания: файл уже существует: {output}", file=sys.stderr)
+        return 2
+    if kind == "user":
+        try:
+            ensure_private_output(output, args.allow_git)
+        except PolicyError as error:
+            print(f"Ошибка создания: {error}", file=sys.stderr)
+            return 2
+    filename = f"execution-policy.{kind}.toml.sample"
+    source = sample_path(Path(__file__).resolve(), filename)
+    if not source.is_file():
+        print(f"Ошибка создания: не найден образец {source}", file=sys.stderr)
+        return 2
+    output.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source, output)
+    if kind == "user":
+        output.chmod(0o600)
+    print(f"created_{kind}={output}")
+    return 0
+
+
+def check_handoff(args: argparse.Namespace) -> int:
+    try:
+        content = args.input.read_text(encoding="utf-8")
+    except OSError as error:
+        print(f"Ошибка пакета передачи: {error}", file=sys.stderr)
+        return 2
+    missing: list[str] = []
+    sections: dict[str, str] = {}
+    for section in HANDOFF_SECTIONS:
+        heading = f"## {section}"
+        start = content.find(heading)
+        if start < 0:
+            missing.append(section)
+            continue
+        start += len(heading)
+        end = content.find("\n## ", start)
+        section_content = content[start:] if end < 0 else content[start:end]
+        sections[section] = section_content
+        if not section_content.strip() or "<заполнить>" in section_content:
+            missing.append(section)
+    if missing:
+        print("Ошибка пакета передачи: отсутствуют разделы: " + ", ".join(missing), file=sys.stderr)
+        return 1
+
+    def metadata(section: str, key: str) -> str | None:
+        match = re.search(rf"(?m)^{re.escape(key)}:[ \t]*([^\r\n]+?)[ \t]*$", sections[section])
+        return match.group(1).strip() if match else None
+
+    continuation_status = metadata("Результат продолжения", "status")
+    full_transcript = metadata("Результат продолжения", "full_transcript_required")
+    rework = metadata("Результат продолжения", "rework_required")
+    economy_confirmed = metadata("Оценка экономии", "confirmed")
+    economy_basis = metadata("Оценка экономии", "basis")
+    errors: list[str] = []
+    if continuation_status not in {"pending", "continued", "failed"}:
+        errors.append("раздел «Результат продолжения» должен содержать status: pending, continued или failed")
+    if full_transcript not in {"true", "false"}:
+        errors.append("раздел «Результат продолжения» должен содержать full_transcript_required: true или false")
+    if rework not in {"true", "false"}:
+        errors.append("раздел «Результат продолжения» должен содержать rework_required: true или false")
+    if economy_confirmed not in {"true", "false"}:
+        errors.append("раздел «Оценка экономии» должен содержать confirmed: true или false")
+    if not economy_basis:
+        errors.append("раздел «Оценка экономии» должен содержать непустое basis")
+    if continuation_status == "pending" and economy_confirmed == "true":
+        errors.append("незавершённая передача не может подтверждать экономию")
+    if (full_transcript == "true" or rework == "true") and continuation_status != "failed":
+        errors.append("полная стенограмма или переделывание требуют status: failed")
+    if continuation_status == "failed" and economy_confirmed == "true":
+        errors.append("неуспешная передача не может подтверждать экономию")
+    if errors:
+        print("Ошибка пакета передачи: " + "; ".join(errors), file=sys.stderr)
+        return 1
+    print(
+        f"handoff_status=ready\ninput={args.input}\nhandoff_bytes={len(content.encode('utf-8'))}"
+        f"\nhandoff_continuation_status={continuation_status}\nhandoff_economy_confirmed={economy_confirmed}"
+    )
+    return 0
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Создать и проверить материалы политики выполнения.")
+    commands = parser.add_subparsers(dest="command", required=True)
+    for command, kind in (("init-user", "user"), ("init-project", "project")):
+        subparser = commands.add_parser(command)
+        subparser.add_argument("--output", required=True, type=Path)
+        if kind == "user":
+            subparser.add_argument("--allow-git", action="store_true")
+        subparser.set_defaults(handler=lambda args, selected=kind: initialize(args, selected))
+
+    check = commands.add_parser("check")
+    check.add_argument("--user-core", required=True, type=Path)
+    check.add_argument("--project-overlay", required=True, type=Path)
+    check.add_argument("--qualification", action="append", default=[], type=Path)
+    check.add_argument("--task-class")
+    check.set_defaults(handler=show_policy)
+
+    prepare = commands.add_parser("prepare-qualification")
+    prepare.add_argument("--user-core", required=True, type=Path)
+    prepare.add_argument("--project-overlay", required=True, type=Path)
+    prepare.add_argument("--task-class", required=True)
+    prepare.add_argument("--output", required=True, type=Path)
+    prepare.add_argument("--allow-git", action="store_true")
+    prepare.set_defaults(handler=prepare_qualification)
+
+    handoff = commands.add_parser("check-handoff")
+    handoff.add_argument("--input", required=True, type=Path)
+    handoff.set_defaults(handler=check_handoff)
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    return args.handler(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

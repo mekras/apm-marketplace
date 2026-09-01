@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+"""Получить нативный каталог моделей активной оснастки.
+
+Контракт: ``discover-subagent-models --adapter COMMAND`` печатает JSON с
+``harness``, ``status`` и ``models``. Адаптер получает ``list`` первым
+аргументом и возвращает тот же JSON. Так другие оснастки не зависят от Codex.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import shlex
+import subprocess
+import sys
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Получить каталог моделей подагентов")
+    parser.add_argument("--adapter", required=True, help="команда адаптера каталога")
+    parser.add_argument("--timeout", type=int, default=30)
+    args = parser.parse_args()
+    if args.timeout <= 0:
+        parser.error("--timeout должен быть положительным")
+    command = shlex.split(args.adapter)
+    try:
+        result = subprocess.run([*command, "list"], text=True, capture_output=True,
+                                timeout=args.timeout, check=False)
+        if result.returncode:
+            raise RuntimeError(result.stderr.strip() or f"код выхода {result.returncode}")
+        payload = json.loads(result.stdout)
+        if not isinstance(payload.get("models"), list):
+            raise ValueError("в ответе нет массива models")
+        payload.setdefault("status", "available")
+    except (OSError, subprocess.TimeoutExpired, RuntimeError, ValueError, json.JSONDecodeError) as error:
+        payload = {"status": "not_received", "models": [], "reason": str(error)}
+    print(json.dumps(payload, ensure_ascii=False))
+    return 0 if payload["status"] == "available" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

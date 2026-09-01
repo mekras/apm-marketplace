@@ -1,0 +1,393 @@
+#!/usr/bin/env python3
+import argparse
+import glob
+import json
+import os
+from pathlib import Path
+
+
+DEFAULT_COMMON_LIMIT_MODELS = set()
+DEFAULT_SEPARATE_LIMIT_MODELS = set()
+
+
+def env_model_set(name, default):
+    raw = os.environ.get(name)
+    if raw is None:
+        return set(default)
+    return {item.strip() for item in raw.split(",") if item.strip()}
+
+
+COMMON_LIMIT_MODELS = env_model_set(
+    "CODEX_COMMON_LIMIT_MODELS",
+    DEFAULT_COMMON_LIMIT_MODELS,
+)
+SEPARATE_LIMIT_MODELS = env_model_set(
+    "CODEX_SEPARATE_LIMIT_MODELS",
+    DEFAULT_SEPARATE_LIMIT_MODELS,
+)
+
+
+def read_jsonl(path):
+    with open(path, encoding="utf-8") as handle:
+        for line in handle:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                yield json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+
+def find_session(thread_id):
+    if not thread_id:
+        return None
+    codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+    root = codex_home / "sessions"
+    pattern = str(root / "**" / f"*{thread_id}.jsonl")
+    matches = glob.glob(pattern, recursive=True)
+    return matches[0] if matches else None
+
+
+def limit_class(model):
+    if model in SEPARATE_LIMIT_MODELS:
+        return "separate"
+    if model in COMMON_LIMIT_MODELS:
+        return "common"
+    return "unknown"
+
+
+def decimal_comma(value):
+    return str(value).replace(".", ",")
+
+
+def pct_delta(first, last, key):
+    try:
+        start = first[key]["used_percent"]
+        end = last[key]["used_percent"]
+    except (KeyError, TypeError):
+        return ""
+    if start == end:
+        return f"{decimal_comma(f'{end:.1f}')}%"
+    return f"{decimal_comma(f'{start:.1f}')}% -> {decimal_comma(f'{end:.1f}')}%"
+
+
+def collect_session_data(path):
+    model = None
+    rate_limits = []
+    token_counts = []
+    duration_ms = None
+    agent_path = None
+    agent_role = None
+
+    for event in read_jsonl(path):
+        event_type = event.get("type")
+        payload = event.get("payload") or {}
+
+        if event_type == "session_meta":
+            source = payload.get("source")
+            if isinstance(source, dict):
+                spawn = source.get("subagent", {}).get("thread_spawn", {})
+                agent_path = spawn.get("agent_path")
+                agent_role = spawn.get("agent_role")
+
+        if event_type == "turn_context":
+            model = payload.get("model") or model
+
+        if event_type == "event_msg":
+            if payload.get("type") == "token_count":
+                info = payload.get("info") or {}
+                usage = info.get("total_token_usage")
+                if usage:
+                    token_counts.append(usage)
+                limits = payload.get("rate_limits")
+                if limits:
+                    rate_limits.append(limits)
+            if payload.get("type") == "task_complete":
+                duration_ms = payload.get("duration_ms")
+
+    return {
+        "model": model,
+        "rate_limits": rate_limits,
+        "token_counts": token_counts,
+        "duration_ms": duration_ms,
+        "agent_path": agent_path,
+        "agent_role": agent_role,
+    }
+
+
+def collect_run(path):
+    thread_id = None
+    usage = None
+
+    for event in read_jsonl(path):
+        if event.get("type") == "thread.started":
+            thread_id = event.get("thread_id")
+        if event.get("type") == "turn.completed":
+            usage = event.get("usage") or usage
+
+    session_path = find_session(thread_id)
+    session = collect_session_data(session_path) if session_path else {}
+    session_usage = (session.get("token_counts") or [None])[-1]
+    limits = session.get("rate_limits") or []
+    first_limit = limits[0] if limits else {}
+    last_limit = limits[-1] if limits else {}
+    usage = usage or session_usage or {}
+    total_tokens = usage.get("total_tokens")
+    if total_tokens in (None, ""):
+        total_tokens = sum(
+            usage.get(key, 0) or 0
+            for key in (
+                "input_tokens",
+                "output_tokens",
+                "reasoning_output_tokens",
+            )
+        )
+
+    model = session.get("model") or infer_model_from_name(path)
+
+    return {
+        "path": path,
+        "thread_id": thread_id or "",
+        "session_path": session_path or "",
+        "model": model or "unknown",
+        "limit_class": limit_class(model),
+        "input_tokens": usage.get("input_tokens", ""),
+        "cached_input_tokens": usage.get("cached_input_tokens", ""),
+        "output_tokens": usage.get("output_tokens", ""),
+        "reasoning_output_tokens": usage.get("reasoning_output_tokens", ""),
+        "total_tokens": total_tokens,
+        "duration_ms": session.get("duration_ms") or "",
+        "primary_limit": pct_delta(first_limit, last_limit, "primary"),
+        "secondary_limit": pct_delta(first_limit, last_limit, "secondary"),
+        "agent_path": session.get("agent_path"),
+        "agent_role": session.get("agent_role"),
+    }
+
+
+def infer_model_from_name(path):
+    name = Path(path).name
+    models = sorted(COMMON_LIMIT_MODELS | SEPARATE_LIMIT_MODELS, key=len, reverse=True)
+    for model in models:
+        if model in name:
+            return model
+    return None
+
+
+def default_inputs():
+    cwd_name = Path.cwd().name
+    default_dir = os.environ.get(
+        "CODEX_SUBAGENT_OUT_DIR",
+        f"/tmp/{cwd_name}-subagents",
+    )
+    return sorted(glob.glob(os.path.join(default_dir, "*.jsonl")))
+
+
+def format_tokens(value):
+    if value in ("", None):
+        return "n/a"
+    value = int(value)
+    if value >= 1_000_000:
+        return f"{decimal_comma(f'{value / 1_000_000:.2f}')} млн"
+    if value >= 1_000:
+        return f"{decimal_comma(f'{value / 1_000:.1f}')} тыс."
+    return str(value)
+
+
+def format_duration(ms):
+    if not isinstance(ms, int):
+        return "n/a"
+    seconds = ms / 1000
+    if seconds >= 60:
+        return f"{decimal_comma(f'{seconds / 60:.1f}')} мин"
+    return f"{decimal_comma(f'{seconds:.1f}')} с"
+
+
+def print_simple(rows):
+    if not rows:
+        print("Журналы расхода Codex не найдены.")
+        return
+
+    by_limit = {}
+    by_model = {}
+    total_runs = len(rows)
+    total_duration = 0
+
+    for row in rows:
+        limit = row["limit_class"]
+        model = row["model"]
+        tokens = int(row["total_tokens"] or 0)
+        duration = row["duration_ms"]
+
+        bucket = by_limit.setdefault(limit, {"runs": 0, "tokens": 0})
+        bucket["runs"] += 1
+        bucket["tokens"] += tokens
+
+        model_bucket = by_model.setdefault(
+            model,
+            {"runs": 0, "tokens": 0, "duration_ms": 0, "limit_class": limit},
+        )
+        model_bucket["runs"] += 1
+        model_bucket["tokens"] += tokens
+        if isinstance(duration, int):
+            model_bucket["duration_ms"] += duration
+            total_duration += duration
+
+    print("Отчёт по моделям Codex")
+    print(f"Запусков: {total_runs}")
+    print(f"Общее время: {format_duration(total_duration)}")
+    print("")
+    print("Расход по лимитам:")
+    for limit in ("common", "separate", "unknown"):
+        data = by_limit.get(limit)
+        if not data:
+            continue
+        label = {
+            "common": "общий лимит",
+            "separate": "отдельный лимит",
+            "unknown": "лимит не настроен (CODEX_COMMON_LIMIT_MODELS/CODEX_SEPARATE_LIMIT_MODELS)",
+        }[limit]
+        print(f"- {label}: {format_tokens(data['tokens'])} токенов, запусков: {data['runs']}")
+
+    print("")
+    print("Модели:")
+    for model, data in sorted(by_model.items()):
+        label = {
+            "common": "общий лимит",
+            "separate": "отдельный лимит",
+            "unknown": "лимит не настроен (CODEX_COMMON_LIMIT_MODELS/CODEX_SEPARATE_LIMIT_MODELS)",
+        }[data["limit_class"]]
+        print(
+            f"- {model}: {format_tokens(data['tokens'])} токенов, "
+            f"{format_duration(data['duration_ms'])}, запусков: {data['runs']}, "
+            f"{label}"
+        )
+
+    latest = sorted(rows, key=lambda row: row["path"])[-3:]
+    print("")
+    print("Последние запуски:")
+    for row in latest:
+        print(
+            f"- {Path(row['path']).name}: {row['model']}, "
+            f"{format_tokens(row['total_tokens'])}, {format_duration(row['duration_ms'])}"
+        )
+
+    limits = [row for row in rows if row["primary_limit"] or row["secondary_limit"]]
+    if limits:
+        last = limits[-1]
+        print("")
+        print(
+            "Последние проценты лимитов: "
+            f"primary {last['primary_limit'] or 'n/a'}, "
+            f"secondary {last['secondary_limit'] or 'n/a'}"
+        )
+
+
+def print_line(rows):
+    if not rows:
+        print("Модели: нет журналов расхода.")
+        return
+
+    by_limit = {}
+    by_model = {}
+    duration_ms = 0
+
+    for row in rows:
+        limit = row["limit_class"]
+        model = row["model"]
+        tokens = int(row["total_tokens"] or 0)
+        by_limit[limit] = by_limit.get(limit, 0) + tokens
+        by_model[model] = by_model.get(model, 0) + tokens
+        if isinstance(row["duration_ms"], int):
+            duration_ms += row["duration_ms"]
+
+    limit_parts = []
+    if by_limit.get("common"):
+        limit_parts.append(f"общий {format_tokens(by_limit['common'])}")
+    if by_limit.get("separate"):
+        limit_parts.append(f"отдельный {format_tokens(by_limit['separate'])}")
+    if by_limit.get("unknown"):
+        limit_parts.append(f"неизвестный {format_tokens(by_limit['unknown'])}")
+
+    model_parts = [
+        f"{model} {format_tokens(tokens)}"
+        for model, tokens in sorted(by_model.items())
+    ]
+
+    print(
+        "Модели: "
+        + ", ".join(model_parts)
+        + " | лимиты: "
+        + (", ".join(limit_parts) or "нет данных")
+        + f" | время: {format_duration(duration_ms)}"
+    )
+
+
+def print_markdown(rows):
+    headers = [
+        "file",
+        "model",
+        "limit",
+        "input",
+        "cached",
+        "output",
+        "reasoning",
+        "total",
+        "duration",
+        "primary",
+        "secondary",
+    ]
+    print("| " + " | ".join(headers) + " |")
+    print("| " + " | ".join("---" for _ in headers) + " |")
+    for row in rows:
+        duration = row["duration_ms"]
+        if isinstance(duration, int):
+            duration = f"{decimal_comma(f'{duration / 1000:.1f}')} с"
+        values = [
+            Path(row["path"]).name,
+            row["model"],
+            row["limit_class"],
+            row["input_tokens"],
+            row["cached_input_tokens"],
+            row["output_tokens"],
+            row["reasoning_output_tokens"],
+            row["total_tokens"],
+            duration,
+            row["primary_limit"],
+            row["secondary_limit"],
+        ]
+        print("| " + " | ".join(str(value) for value in values) + " |")
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Summarize Codex model usage from JSONL run logs.",
+    )
+    parser.add_argument("paths", nargs="*", help="JSONL files or directories")
+    parser.add_argument("--line", action="store_true", help="print one-line summary")
+    parser.add_argument("--details", action="store_true", help="print detailed table")
+    parser.add_argument("--json", action="store_true", help="print JSON")
+    args = parser.parse_args()
+
+    inputs = args.paths or default_inputs()
+    files = []
+    for item in inputs:
+        if os.path.isdir(item):
+            files.extend(sorted(glob.glob(os.path.join(item, "*.jsonl"))))
+        else:
+            files.append(item)
+
+    rows = [collect_run(path) for path in files]
+
+    if args.json:
+        print(json.dumps(rows, ensure_ascii=False, indent=2))
+    elif args.line:
+        print_line(rows)
+    elif args.details:
+        print_markdown(rows)
+    else:
+        print_simple(rows)
+
+
+if __name__ == "__main__":
+    main()

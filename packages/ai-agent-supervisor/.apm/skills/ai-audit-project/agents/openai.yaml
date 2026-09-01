@@ -1,0 +1,4 @@
+interface:
+  display_name: "ai-audit-project"
+  short_description: "Аудит правил проекта для агента"
+  default_prompt: "Используй ai-audit-project для глубокой проверки AGENTS.md и других правил проекта. По умолчанию разбирай найденные проблемы по одной."

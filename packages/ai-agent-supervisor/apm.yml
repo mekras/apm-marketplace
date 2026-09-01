@@ -1,0 +1,16 @@
+name: ai-agent-supervisor
+version: 2.3.21
+description: Коллекция навыков для контроля применения ИИ в продуктовых задачах
+author: Михаил Красильников
+license: MIT
+target:
+- claude
+- codex
+type: skill
+includes: auto
+dependencies:
+  apm: []
+  mcp: []
+scripts:
+  tests: python tools/run-project-tests.py
+  evals: python tools/run-skill-evals.py

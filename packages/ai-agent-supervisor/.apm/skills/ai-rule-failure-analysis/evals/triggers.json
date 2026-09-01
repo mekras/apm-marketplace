@@ -1,0 +1,53 @@
+{
+  "skill_name": "ai-rule-failure-analysis",
+  "cases": [
+    {
+      "id": "ai-rule-failure-analysis-positive-why-ignored-rule",
+      "prompt": "Почему ты не выполнил правило из AGENTS.md, хотя оно было явно написано?",
+      "should_trigger": true,
+      "rationale": "Человек указывает на нарушение правила агентом."
+    },
+    {
+      "id": "ai-rule-failure-analysis-positive-missed-skill",
+      "prompt": "Ты должен был применить навык ai-work-control перед изменением источника истины, но не сделал этого. Разбери, как исправить правила.",
+      "should_trigger": true,
+      "rationale": "Провал связан с невызванным обязательным навыком и требует анализа правил."
+    },
+    {
+      "id": "ai-rule-failure-analysis-positive-not-one-off",
+      "prompt": "Не отвечай, что это просто твоя ошибка. Объясни, что в процедуре позволило тебе нарушить инструкцию.",
+      "should_trigger": true,
+      "rationale": "Пользователь прямо просит рассматривать провал как слабость процедуры."
+    },
+    {
+      "id": "ai-rule-failure-analysis-positive-route-failure",
+      "prompt": "Модель опять не выбрала нужный маршрут и пропустила проверку. Нужно понять, какое правило усилить.",
+      "should_trigger": true,
+      "rationale": "Ошибка маршрутизации должна разбираться как дефект правил или контроля."
+    },
+    {
+      "id": "ai-rule-failure-analysis-negative-product-bug",
+      "prompt": "В приложении падает тест авторизации, найди ошибку в коде и исправь её.",
+      "should_trigger": false,
+      "rationale": "Обычная ошибка продукта не относится к провалу применения правил агентом."
+    },
+    {
+      "id": "ai-rule-failure-analysis-negative-result-evaluation",
+      "prompt": "Нужно принять или отклонить результат работы ИИ перед публикацией документа.",
+      "should_trigger": false,
+      "rationale": "Это задача оценки результата, для неё есть ai-work-result-evaluation."
+    },
+    {
+      "id": "ai-rule-failure-analysis-negative-new-skill-design",
+      "prompt": "Спроектируй новый навык для анализа требований и добавь проверки срабатывания.",
+      "should_trigger": false,
+      "rationale": "Проектирование навыка без наблюдаемого провала относится к ai-skill-development."
+    },
+    {
+      "id": "ai-rule-failure-analysis-negative-general-quality",
+      "prompt": "Проверь качество ответа модели и скажи, можно ли использовать его дальше.",
+      "should_trigger": false,
+      "rationale": "Общая приёмка результата не относится к разбору нарушения правил."
+    }
+  ]
+}

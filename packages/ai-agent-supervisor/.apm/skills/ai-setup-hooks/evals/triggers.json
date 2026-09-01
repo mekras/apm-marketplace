@@ -1,0 +1,59 @@
+{
+  "skill_name": "ai-setup-hooks",
+  "cases": [
+    {
+      "id": "ai-setup-hooks-positive-commit-check",
+      "prompt": "Настрой хук, который проверяет сообщение коммита по правилам проекта.",
+      "should_trigger": true,
+      "rationale": "Прямой запрос на хук, проверяющий артефакт на событии Git."
+    },
+    {
+      "id": "ai-setup-hooks-positive-enforce-before-commit",
+      "prompt": "Добавь автоматическую проверку правил проекта перед коммитом.",
+      "should_trigger": true,
+      "rationale": "Контроль правила на детерминированном событии коммита."
+    },
+    {
+      "id": "ai-setup-hooks-positive-survey-candidates",
+      "prompt": "Какие правила проекта можно контролировать хуком, а какие нельзя?",
+      "should_trigger": true,
+      "rationale": "Обследование событий и правил на пригодность к хуку."
+    },
+    {
+      "id": "ai-setup-hooks-positive-ci-gate",
+      "prompt": "Включи проверку структуры файлов на шаге непрерывной интеграции.",
+      "should_trigger": true,
+      "rationale": "Детерминированная проверка артефакта на событии интеграции."
+    },
+    {
+      "id": "ai-setup-hooks-edge-reminder-hook",
+      "prompt": "Сделай так, чтобы агент всегда вспоминал нужный навык перед коммитом.",
+      "should_trigger": true,
+      "rationale": "Навык должен объяснить, что напоминание не контроль, и предложить проверку артефакта вместо него."
+    },
+    {
+      "id": "ai-setup-hooks-edge-root-setup",
+      "prompt": "Настрой проект под правильную работу агентов.",
+      "should_trigger": false,
+      "rationale": "Это корневая настройка проекта; хуки — лишь один из шагов, маршрут в ai-setup-project."
+    },
+    {
+      "id": "ai-setup-hooks-negative-subagents",
+      "prompt": "Спроектируй политику подагентов: роли, модели и лимиты.",
+      "should_trigger": false,
+      "rationale": "Это политика подагентов, а не контроль правил хуком."
+    },
+    {
+      "id": "ai-setup-hooks-negative-agents-md",
+      "prompt": "Обнови AGENTS.md, чтобы убрать конфликт инструкций.",
+      "should_trigger": false,
+      "rationale": "Это сопровождение машинных инструкций, а не установка хука."
+    },
+    {
+      "id": "ai-setup-hooks-negative-write-commit-message",
+      "prompt": "Напиши сообщение коммита для этих изменений.",
+      "should_trigger": false,
+      "rationale": "Это подготовка текста, а не настройка контроля на событии."
+    }
+  ]
+}

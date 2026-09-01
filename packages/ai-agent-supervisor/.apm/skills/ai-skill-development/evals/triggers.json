@@ -1,0 +1,131 @@
+{
+  "skill_name": "ai-skill-development",
+  "cases": [
+    {
+      "id": "ai-skill-development-positive-create-skill",
+      "prompt": "Создай новый навык для проверки русскоязычных юридических текстов.",
+      "should_trigger": true,
+      "rationale": "Нужно создать новый навык агента."
+    },
+    {
+      "id": "ai-skill-development-positive-apm-source-self-application",
+      "prompt": "Измени процедуру навыка в .apm/skills/example/SKILL.md, проверь его Python-скрипты и переустанови локальную коллекцию APM.",
+      "should_trigger": true,
+      "rationale": "Изменение исходника навыка требует ai-skill-development, а путь .apm и последующее самоприменение одновременно требуют ai-setup-apm."
+    },
+    {
+      "id": "ai-skill-development-positive-update-description",
+      "prompt": "Улучши SKILL.md: description слишком широкий и навык срабатывает не по делу.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить маршрутизирующее описание и границы навыка."
+    },
+    {
+      "id": "ai-skill-development-positive-review-skill",
+      "prompt": "Проверь этот навык и найди риски в description, references и agents/openai.yaml.",
+      "should_trigger": true,
+      "rationale": "Нужна диагностика качества существующего навыка."
+    },
+    {
+      "id": "ai-skill-development-positive-project-specific",
+      "prompt": "В проекте есть локальные навыки. Как подключить к ним общие правила из центрального репозитория?",
+      "should_trigger": true,
+      "rationale": "Нужно спроектировать сопровождение проектных навыков через общие правила."
+    },
+    {
+      "id": "ai-skill-development-positive-trigger-evals",
+      "prompt": "Добавь evals/triggers.json для навыка и проверь положительные и отрицательные случаи.",
+      "should_trigger": true,
+      "rationale": "Нужно добавить проверки срабатывания навыка."
+    },
+    {
+      "id": "ai-skill-development-positive-skill-tests",
+      "prompt": "Предложи набор тестов для нового навыка: срабатывание, качество результата и регрессии.",
+      "should_trigger": true,
+      "rationale": "Нужно спроектировать проверки качества и поведения навыка агента."
+    },
+    {
+      "id": "ai-skill-development-positive-script-decision",
+      "prompt": "Создай навык и оцени, какие его повторяемые действия можно вынести из работы модели в скрипт.",
+      "should_trigger": true,
+      "rationale": "Нужно создать навык агента и выбрать способ исполнения его процедуры."
+    },
+    {
+      "id": "ai-skill-development-positive-script-contract-tests",
+      "prompt": "В навыке есть Python-скрипт, который сохраняет состояние проекта. Добавь реалистичную фикстуру и обязательную проверку публичной команды, чтобы выпуск не пропустил ошибку записи JSON.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить навык и его постоянные проверки для поставляемого скрипта."
+    },
+    {
+      "id": "ai-skill-development-positive-selective-skill-tests",
+      "prompt": "Проверки навыков стали слишком долгими. Обнови правила сопровождения тестов, чтобы при правке одного навыка запускать только нужный навык или отдельный сценарий, но не терять качество.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить правила написания и управления тестами навыка, включая выборочный запуск и критерии качества."
+    },
+    {
+      "id": "ai-skill-development-positive-maintained-skill-missing-tests",
+      "prompt": "Я изменил SKILL.md существующего навыка, но у него нет evals/triggers.json и сценариев результата. Проверь покрытие и добавь недостающие тесты.",
+      "should_trigger": true,
+      "rationale": "Нужно сопровождение навыка с проверкой и созданием недостающих постоянных тестов."
+    },
+    {
+      "id": "ai-skill-development-positive-update-procedure-tests",
+      "prompt": "В навыке поменялась процедура работы и ограничения. Обнови сам навык и не забудь тесты, которые доказывают новое поведение.",
+      "should_trigger": true,
+      "rationale": "Изменение процедуры навыка требует обновления подходящих тестов результата и ограничений."
+    },
+    {
+      "id": "ai-skill-development-positive-stale-existing-tests",
+      "prompt": "У навыка уже есть evals/triggers.json, но после изменения description старые кейсы больше не покрывают новую границу с соседним навыком. Обнови покрытие.",
+      "should_trigger": true,
+      "rationale": "Сопровождение навыка включает проверку и обновление устаревших тестов, а не только создание отсутствующих."
+    },
+    {
+      "id": "ai-skill-development-positive-openai-yaml",
+      "prompt": "После правки SKILL.md обнови agents/openai.yaml, чтобы описание не устарело.",
+      "should_trigger": true,
+      "rationale": "Нужно синхронизировать интерфейсные метаданные навыка."
+    },
+    {
+      "id": "ai-skill-development-positive-description-budget",
+      "prompt": "Сократи description у нескольких навыков до маршрутизирующего минимума и обнови тесты, чтобы коллекция проверяла бюджет описаний.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить навыки, их description и постоянные тесты сопровождения."
+    },
+    {
+      "id": "ai-skill-development-negative-ordinary-code-change",
+      "prompt": "Исправь ошибку в обработке пустого ответа API и добавь тест.",
+      "should_trigger": false,
+      "rationale": "Это обычная задача разработки, навык агента не меняется."
+    },
+    {
+      "id": "ai-skill-development-negative-ai-audit-agents-md",
+      "prompt": "Проверь AGENTS.md в этом репозитории на конфликтность и машинную пригодность.",
+      "should_trigger": false,
+      "rationale": "Это проверка проектных инструкций, а не навыка агента."
+    },
+    {
+      "id": "ai-skill-development-negative-readme",
+      "prompt": "Напиши README для библиотеки командной строки.",
+      "should_trigger": false,
+      "rationale": "Это пользовательская документация, а не документация навыка агента."
+    },
+    {
+      "id": "ai-skill-development-negative-general-prompt",
+      "prompt": "Помоги написать хороший системный промпт для ассистента поддержки.",
+      "should_trigger": false,
+      "rationale": "Запрос про промпт, но не про навык агента или его структуру."
+    },
+    {
+      "id": "ai-skill-development-negative-russian-editing",
+      "prompt": "Отредактируй русский текст объявления и убери канцелярит.",
+      "should_trigger": false,
+      "rationale": "Это редактура текста, а не создание или проверка навыка."
+    },
+    {
+      "id": "ai-skill-development-negative-run-tests",
+      "prompt": "Запусти тесты проекта и кратко перескажи результат.",
+      "should_trigger": false,
+      "rationale": "Нужно выполнить проверку проекта без изменения навыка."
+    }
+  ]
+}

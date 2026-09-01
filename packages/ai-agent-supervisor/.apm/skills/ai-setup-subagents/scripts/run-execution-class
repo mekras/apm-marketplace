@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""Запустить класс исполнения через локальный адаптер оснастки."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import shlex
+import subprocess
+import sys
+import time
+import tomllib
+import uuid
+from pathlib import Path
+from typing import Any
+
+
+def assignment(
+    data: dict[str, Any], target: str, execution_class: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    classes = data.get("execution_classes")
+    if not isinstance(classes, dict):
+        raise ValueError("не найдена таблица execution_classes")
+    contract = classes.get(execution_class)
+    if not isinstance(contract, dict):
+        raise ValueError(f"не найден класс {execution_class}")
+
+    targets = data.get("targets")
+    target_data = targets.get(target) if isinstance(targets, dict) else None
+    assignments = (
+        target_data.get("execution_classes")
+        if isinstance(target_data, dict)
+        else None
+    )
+    configured = assignments.get(execution_class) if isinstance(assignments, dict) else None
+    if not isinstance(configured, dict):
+        raise ValueError(f"для {target} не найдено назначение класса {execution_class}")
+    return contract, configured
+
+
+def command(value: object) -> list[str]:
+    if isinstance(value, str):
+        result = shlex.split(value)
+    elif isinstance(value, list) and all(isinstance(item, str) for item in value):
+        result = value
+    else:
+        result = []
+    if not result:
+        raise ValueError("adapter должен быть непустой командой")
+    return result
+
+
+def model_matches(configured: dict[str, Any], actual: object) -> bool:
+    if not isinstance(actual, str) or not actual:
+        return False
+    model = configured.get("model")
+    if actual == model:
+        return True
+    prefix = configured.get("actual_model_prefix")
+    return isinstance(prefix, str) and bool(prefix) and actual.startswith(prefix)
+
+
+def input_files(values: list[str], parser: argparse.ArgumentParser) -> list[str]:
+    result = []
+    for value in values:
+        path = Path(value).resolve()
+        if not path.is_file():
+            parser.error(f"входной файл не найден: {value}")
+        result.append(str(path))
+    return result
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Запустить класс исполнения через локальный адаптер оснастки."
+    )
+    parser.add_argument("execution_class")
+    parser.add_argument("--target", required=True)
+    parser.add_argument("--config", type=Path, default=Path("subagents.local.toml"))
+    parser.add_argument("--input", action="append", default=[])
+    parser.add_argument("--out", type=Path, default=Path(".codex/subagents"))
+    parser.add_argument(
+        "--obligation",
+        help="идентификатор обязательства профильной роли, которое обслуживает запуск",
+    )
+    args = parser.parse_args()
+
+    try:
+        data = tomllib.loads(args.config.read_text(encoding="utf-8"))
+        contract, configured = assignment(data, args.target, args.execution_class)
+        model = configured.get("model")
+        effort = configured.get("effort")
+        sandbox = configured.get("sandbox")
+        adapter = command(configured.get("adapter"))
+        if not all(
+            isinstance(value, str) and value for value in (model, effort, sandbox)
+        ):
+            raise ValueError("у назначения обязательны model, effort и sandbox")
+    except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
+        parser.error(f"ошибка настройки: {error}")
+
+    files = input_files(args.input, parser)
+    request = {
+        "execution_class": args.execution_class,
+        "contract": contract,
+        "inputs": files,
+        "task": sys.stdin.read(),
+    }
+    args.out.mkdir(parents=True, exist_ok=True)
+    started = time.time()
+    prefix = f"{int(started)}-{args.target}-{args.execution_class}"
+    final = args.out / f"{prefix}.final.txt"
+    record_path = args.out / f"{prefix}.json"
+    stderr_path = args.out / f"{prefix}.stderr.txt"
+    journal = args.out / f"{prefix}.jsonl"
+    environment = {
+        **os.environ,
+        "CODEX_ROLE_LOG": str(journal),
+        "CLAUDE_ROLE_LOG": str(journal),
+    }
+    completed = subprocess.run(
+        [*adapter, model, effort, sandbox],
+        input=json.dumps(request, ensure_ascii=False),
+        text=True,
+        capture_output=True,
+        env=environment,
+        check=False,
+    )
+    final.write_text(completed.stdout, encoding="utf-8")
+    stderr_path.write_text(completed.stderr, encoding="utf-8")
+
+    try:
+        header = json.loads(completed.stdout.splitlines()[0])
+    except (IndexError, json.JSONDecodeError):
+        header = {}
+    actual = header.get("model") if isinstance(header, dict) else None
+    notice = header.get("model_notice") if isinstance(header, dict) else None
+    usage = header.get("usage") if isinstance(header, dict) else None
+    record = {
+        "run_id": str(uuid.uuid4()),
+        "execution_class": args.execution_class,
+        "target": args.target,
+        "assigned_model": model,
+        "actual_model": actual,
+        "model_matches": model_matches(configured, actual),
+        "model_notice": notice,
+        "usage": usage,
+        "effort": effort,
+        "sandbox": sandbox,
+        "inputs": files,
+        "contract": contract,
+        "final": str(final),
+        "result_path": str(final),
+        "result_available": final.is_file(),
+        "stderr": str(stderr_path),
+        "journal": str(journal),
+        "seconds": round(time.time() - started, 3),
+        "returncode": completed.returncode,
+    }
+    if args.obligation is not None:
+        record["obligation_id"] = args.obligation
+    record_path.write_text(
+        json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    if completed.returncode or not record["model_matches"]:
+        print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
+        return 1
+    print(json.dumps(record, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

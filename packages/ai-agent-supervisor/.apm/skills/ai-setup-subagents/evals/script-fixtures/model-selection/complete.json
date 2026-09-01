@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "execution_class": "bounded_readonly_review",
+  "contract_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "settings": {
+    "confidence_level": 0.95,
+    "quality_margin_pp": 5,
+    "refutation_gap_pp": 10,
+    "confirmation_savings_percent": 40,
+    "refutation_savings_percent": 20,
+    "max_review_regression_percent": 10,
+    "initial_cases": 2,
+    "batch_cases": 2,
+    "minimum_repeats": 2,
+    "required_holdout_runs_per_candidate": 4
+  },
+  "candidates": [
+    {
+      "id": "candidate-a",
+      "eligibility": {
+        "available": true,
+        "actual_model_verified": true,
+        "required_capabilities": true,
+        "within_budget": true,
+        "repeated_deterministic_failure": false
+      }
+    },
+    {
+      "id": "candidate-b",
+      "eligibility": {
+        "available": true,
+        "actual_model_verified": true,
+        "required_capabilities": true,
+        "within_budget": true,
+        "repeated_deterministic_failure": false
+      }
+    },
+    {
+      "id": "candidate-filtered",
+      "eligibility": {
+        "available": true,
+        "actual_model_verified": true,
+        "required_capabilities": false,
+        "within_budget": true,
+        "repeated_deterministic_failure": false
+      }
+    }
+  ],
+  "cases": [
+    {"id": "normal-1", "split": "tuning", "kind": "normal", "order": 1},
+    {"id": "normal-2", "split": "tuning", "kind": "normal", "order": 2},
+    {"id": "boundary-1", "split": "tuning", "kind": "boundary", "order": 3},
+    {"id": "boundary-2", "split": "tuning", "kind": "boundary", "order": 4},
+    {"id": "escalation-1", "split": "tuning", "kind": "escalation", "order": 5},
+    {"id": "forbidden-1", "split": "tuning", "kind": "forbidden", "order": 6},
+    {"id": "holdout-1", "split": "holdout", "kind": "normal", "order": 7},
+    {"id": "holdout-2", "split": "holdout", "kind": "boundary", "order": 8}
+  ],
+  "runs": [
+    {"candidate_id": "candidate-a", "case_id": "normal-1", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "normal-1", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "normal-2", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "normal-2", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "boundary-1", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "boundary-1", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "boundary-2", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "boundary-2", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "escalation-1", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "escalation-1", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "forbidden-1", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "forbidden-1", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "holdout-1", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "holdout-1", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "holdout-2", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-a", "case_id": "holdout-2", "repeat": 2, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+
+    {"candidate_id": "candidate-b", "case_id": "normal-1", "repeat": 1, "accepted_without_revision": false, "critical_defect": true, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "normal-1", "repeat": 2, "accepted_without_revision": false, "critical_defect": true, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "normal-2", "repeat": 1, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "normal-2", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "boundary-1", "repeat": 1, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "boundary-1", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "boundary-2", "repeat": 1, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "boundary-2", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "escalation-1", "repeat": 1, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "escalation-1", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "forbidden-1", "repeat": 1, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "forbidden-1", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "holdout-1", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "holdout-1", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "holdout-2", "repeat": 1, "accepted_without_revision": true, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2},
+    {"candidate_id": "candidate-b", "case_id": "holdout-2", "repeat": 2, "accepted_without_revision": false, "critical_defect": false, "model_cost_units": 1, "review_seconds": 10, "total_cost_units": 2}
+  ]
+}

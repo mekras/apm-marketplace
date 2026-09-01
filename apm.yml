@@ -19,3 +19,9 @@ marketplace:
       version: "2.1.5"
       tag_pattern: "{name}--v{version}"
       category: Productivity
+    - name: ai-agent-supervisor
+      description: "Переносимые навыки для управления применением ИИ"
+      source: ./packages/ai-agent-supervisor
+      version: "2.3.21"
+      tag_pattern: "{name}--v{version}"
+      category: Productivity

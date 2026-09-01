@@ -1,0 +1,47 @@
+{
+  "skill_name": "ai-setup-execution-policy",
+  "cases": [
+    {
+      "id": "ai-setup-execution-policy-positive-user-core",
+      "prompt": "Нужно настроить общую для моих проектов политику моделей и маршрутов, но не хранить цены и точные модели в репозиториях.",
+      "should_trigger": true,
+      "rationale": "Запрос требует разделить пользовательское ядро и проектные уточнения."
+    },
+    {
+      "id": "ai-setup-execution-policy-positive-qualification",
+      "prompt": "Проверь, можно ли автоматически применять более экономичный маршрут для повторяемого класса задач без снижения качества.",
+      "should_trigger": true,
+      "rationale": "Нужна квалификация маршрута до автоматического применения."
+    },
+    {
+      "id": "ai-setup-execution-policy-positive-handoff",
+      "prompt": "Подготовь передачу этой задачи в новую сессию так, чтобы не тащить всю стенограмму и не потерять основания.",
+      "should_trigger": true,
+      "rationale": "Запрос относится к пакету передачи между сессиями."
+    },
+    {
+      "id": "ai-setup-execution-policy-positive-root-trace",
+      "prompt": "Внешняя интеграция утверждает, что сама выбирает модель для корневой задачи. Какие свидетельства нужны, прежде чем это включать автоматически?",
+      "should_trigger": true,
+      "rationale": "Нужна проверка следа внешней интеграции для корневого маршрута."
+    },
+    {
+      "id": "ai-setup-execution-policy-positive-p0-without-automation",
+      "prompt": "На этой машине нет Python и POSIX-оболочки. Настрой общую политику для двух проектов без установки среды и честно укажи, что останется непроверенным.",
+      "should_trigger": true,
+      "rationale": "Нужна базовая переносимая настройка пользовательского ядра и проектных уточнений без автоматизации."
+    },
+    {
+      "id": "ai-setup-execution-policy-negative-subagent-only",
+      "prompt": "Настрой роли дешёвых подагентов и ограничения fan-out для этого проекта.",
+      "should_trigger": false,
+      "rationale": "Это настройка дочерних агентов, для неё существует ai-setup-subagents."
+    },
+    {
+      "id": "ai-setup-execution-policy-negative-runtime-controller",
+      "prompt": "Напиши сервис, который будет переключать модель в уже запущенной корневой сессии.",
+      "should_trigger": false,
+      "rationale": "Навык не создаёт постоянно работающий контроллер корневых сессий."
+    }
+  ]
+}

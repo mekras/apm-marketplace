@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "execution_class": "<класс-задач>",
+  "contract_sha256": "<sha256-контракта-класса>",
+  "settings": {
+    "confidence_level": 0.95,
+    "quality_margin_pp": 5,
+    "refutation_gap_pp": 10,
+    "confirmation_savings_percent": 40,
+    "refutation_savings_percent": 20,
+    "max_review_regression_percent": 10,
+    "initial_cases": 2,
+    "batch_cases": 2,
+    "minimum_repeats": 2,
+    "required_holdout_runs_per_candidate": 1
+  },
+  "candidates": [],
+  "cases": [
+    {"id": "normal-1", "split": "tuning", "kind": "normal", "order": 1},
+    {"id": "normal-2", "split": "tuning", "kind": "normal", "order": 2},
+    {"id": "boundary-1", "split": "tuning", "kind": "boundary", "order": 3},
+    {"id": "boundary-2", "split": "tuning", "kind": "boundary", "order": 4},
+    {"id": "escalation-1", "split": "tuning", "kind": "escalation", "order": 5},
+    {"id": "forbidden-1", "split": "tuning", "kind": "forbidden", "order": 6},
+    {"id": "holdout-1", "split": "holdout", "kind": "normal", "order": 7}
+  ],
+  "runs": []
+}
