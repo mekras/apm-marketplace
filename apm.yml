@@ -1,0 +1,22 @@
+name: apm-marketplace
+version: 0.1.0
+description: "Реестр пакетов APM"
+author: mekras
+license: MIT
+marketplace:
+  name: mekras
+  description: "Реестр переносимых навыков для агентов ИИ"
+  owner:
+    name: mekras
+    url: https://github.com/mekras
+  build:
+    tagPattern: "{version}"
+  outputs:
+    claude: {}
+    codex: {}
+  packages:
+    - name: ai-russian-language
+      description: "Переносимые навыки русского языка для агентов ИИ"
+      source: ./packages/ai-russian-language
+      version: "2.1.5"
+      category: Productivity

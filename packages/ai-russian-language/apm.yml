@@ -1,0 +1,15 @@
+name: ai-russian-language
+version: 2.1.5
+description: "Коллекция переносимых навыков для русского языка в агентной разработке"
+author: mekras
+license: MIT
+type: skill
+target:
+  - agent-skills
+  - claude
+  - codex
+includes: auto
+dependencies:
+  apm:
+    - talkstream/ru-text#v2.4.0
+  mcp: []

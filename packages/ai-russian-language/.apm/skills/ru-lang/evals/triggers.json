@@ -1,0 +1,131 @@
+{
+  "skill_name": "ru-lang",
+  "cases": [
+    {
+      "id": "ru-lang-positive-write-user-message",
+      "prompt": "Сформулируй по-русски короткий ответ пользователю: мы получили заявку и вернёмся с решением завтра.",
+      "should_trigger": true,
+      "rationale": "Нужно создать русский текст для пользователя."
+    },
+    {
+      "id": "ru-lang-positive-edit-russian-text",
+      "prompt": "Отредактируй текст: \"мы сделали апдейт конфига, обновили доки, убрали кастомный обработчик и перевели каталог в read-only; теперь practically всё работает\".",
+      "should_trigger": true,
+      "rationale": "Нужно улучшить русский текст и заменить нежелательные слова."
+    },
+    {
+      "id": "ru-lang-positive-rewrite-clearer",
+      "prompt": "Перепиши по-русски яснее: \"Данная возможность была реализована в целях повышения удобства\".",
+      "should_trigger": true,
+      "rationale": "Нужно улучшить русскую формулировку."
+    },
+    {
+      "id": "ru-lang-positive-avoid-anglicisms",
+      "prompt": "Подбери русские варианты для слов: апдейт, ретрай, фича, чек-лист.",
+      "should_trigger": true,
+      "rationale": "Нужно подобрать русские замены заимствованиям."
+    },
+    {
+      "id": "ru-lang-positive-replace-pipeline-and-batch",
+      "prompt": "Отредактируй русский статус: \"Пайплайн уже работает, запустил первый батч на 3 файла\".",
+      "should_trigger": true,
+      "rationale": "Нужно заменить нежелательные заимствования в обычном русском техническом тексте."
+    },
+    {
+      "id": "ru-lang-positive-replace-deploy",
+      "prompt": "Отредактируй русский статус: \"После деплоя проверил логи и откат не понадобился\".",
+      "should_trigger": true,
+      "rationale": "Нужно заменить слово `деплой` на естественный русский вариант в обычном техническом тексте."
+    },
+    {
+      "id": "ru-lang-positive-technical-elements",
+      "prompt": "Проверь русский текст, но не меняй URL, API names и имена файлов: \"OAuth-токен лежит в config.json\".",
+      "should_trigger": true,
+      "rationale": "Нужна русская правка с сохранением технических элементов."
+    },
+    {
+      "id": "ru-lang-positive-fix-hybrid-technical-terms",
+      "prompt": "Отредактируй русский отчёт: \"Сделал PHP-решение, TypeScript-компонент, Docker-образ, JSON-файл и auth-contract для Keycloak-реализации\".",
+      "should_trigger": true,
+      "rationale": "Нужно распознать и исправить однотипные англо-русские кальки в техническом русском тексте, а не только заранее перечисленные слова."
+    },
+    {
+      "id": "ru-lang-positive-fix-wrong-quotes",
+      "prompt": "Исправь русский текст и замени неправильные кавычки: “мы получили заявку и вернёмся завтра”.",
+      "should_trigger": true,
+      "rationale": "Нужно отредактировать русский текст и исправить типографику кавычек."
+    },
+    {
+      "id": "ru-lang-negative-shell-command",
+      "prompt": "Run `git status --short` and tell me if the worktree is clean.",
+      "should_trigger": false,
+      "rationale": "Запрос на выполнение команды, русскоязычный текст не создаётся."
+    },
+    {
+      "id": "ru-lang-negative-code-only",
+      "prompt": "Rename the TypeScript function getUserData to fetchUserProfile across the codebase.",
+      "should_trigger": false,
+      "rationale": "Задача про код и идентификаторы без русской редакторской работы."
+    },
+    {
+      "id": "ru-lang-negative-translate-to-english",
+      "prompt": "Translate this Russian sentence into English: \"Заявка принята в работу\".",
+      "should_trigger": false,
+      "rationale": "Итоговый текст должен быть не на русском."
+    },
+    {
+      "id": "ru-lang-positive-factual-russian-answer",
+      "prompt": "Какая команда показывает последние коммиты в Git?",
+      "should_trigger": true,
+      "rationale": "Ожидается ответ на русском, поэтому нужны общие правила русского текста."
+    },
+    {
+      "id": "ru-lang-positive-commit-message-base-layer",
+      "prompt": "Составь сообщение коммита по-русски для изменения в обработке ошибок.",
+      "should_trigger": true,
+      "rationale": "Нужно сформулировать русское сообщение коммита по правилам набора разработки."
+    },
+    {
+      "id": "ru-lang-positive-technical-report-base-layer",
+      "prompt": "Напиши краткий отчёт по-русски: что изменено в коде, чем проверено и какие риски остались.",
+      "should_trigger": true,
+      "rationale": "Нужен русский технический отчёт в контексте разработки."
+    },
+    {
+      "id": "ru-lang-positive-release-report-base-layer",
+      "prompt": "Напиши по-русски статус выпуска: релиз 0.1.0, bump не нужен, git-состояние чистое.",
+      "should_trigger": true,
+      "rationale": "Нужен русский технический отчёт с заменой англоязычных и гибридных рабочих форм."
+    },
+    {
+      "id": "ru-lang-positive-commit-message-from-english-draft",
+      "prompt": "Проверь сообщение коммита `fix empty API response` и перепиши его по правилам проекта.",
+      "should_trigger": true,
+      "rationale": "Сообщение коммита должно запускать единый навык независимо от языка черновика."
+    },
+    {
+      "id": "ru-lang-positive-release-from-english-request",
+      "prompt": "Bump version to 0.1.0 and release it.",
+      "should_trigger": true,
+      "rationale": "Англоязычный запрос на выпуск требует русских формулировок коммита и отчёта по правилам разработки."
+    },
+    {
+      "id": "ru-lang-positive-user-facing-code-output",
+      "prompt": "Сгенерируй код обработчика, который показывает пользователю сообщение об ошибке и подсказку по следующему шагу. Если не сказано иное, текст должен быть на русском.",
+      "should_trigger": true,
+      "rationale": "Нужно создать код с русскоязычным пользовательским выводом."
+    },
+    {
+      "id": "ru-lang-positive-code-comment",
+      "prompt": "Помоги написать русский комментарий к коду, который объясняет, почему повторная попытка отключена.",
+      "should_trigger": true,
+      "rationale": "Нужно сформулировать русский комментарий в коде."
+    },
+    {
+      "id": "ru-lang-negative-sql-only",
+      "prompt": "Напиши только SQL-запрос без пояснений: выбрать активных пользователей из таблицы users.",
+      "should_trigger": false,
+      "rationale": "Ожидается только код запроса, а не русский текст."
+    }
+  ]
+}

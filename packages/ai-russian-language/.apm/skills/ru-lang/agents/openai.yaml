@@ -1,0 +1,7 @@
+interface:
+  display_name: "ru-lang"
+  short_description: "Наборы правил русского языка"
+  default_prompt: "Используй $ru-lang для русского текста, включая технические и разработческие задачи."
+
+policy:
+  allow_implicit_invocation: true
