@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-sec-audit",
+  "cases": [
+    {
+      "id": "ait-sec-audit-security-audit-positive-verify-mitigations",
+      "prompt": "Проверь, что меры защиты из модели угроз действительно внедрены и работают в нашем сервисе.",
+      "should_trigger": true,
+      "rationale": "Проверка внедрения и результативности мер — суть аудита."
+    },
+    {
+      "id": "ait-sec-audit-security-audit-positive-review",
+      "prompt": "Проведи рецензию безопасности конфигурации и кода перед релизом.",
+      "should_trigger": true,
+      "rationale": "Рецензия безопасности входит в навык."
+    },
+    {
+      "id": "ait-sec-audit-security-audit-positive-compliance",
+      "prompt": "Сопоставь систему с требованиями PCI-DSS и отметь, что выполнено, а что нет.",
+      "should_trigger": true,
+      "rationale": "Сверка с требованиями соответствия входит в аудит."
+    },
+    {
+      "id": "ait-sec-audit-security-audit-negative-build-model",
+      "prompt": "Построй модель угроз с нуля для нового сервиса.",
+      "should_trigger": false,
+      "rationale": "Первичное построение модели — задача security-threat-modeling."
+    },
+    {
+      "id": "ait-sec-audit-security-audit-negative-generic-eval",
+      "prompt": "Прими результат работы ИИ и реши, можно ли его публиковать.",
+      "should_trigger": false,
+      "rationale": "Это общая оценка результата (ai-work-result-evaluation), не аудит безопасности."
+    }
+  ]
+}

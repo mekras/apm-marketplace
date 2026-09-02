@@ -1,0 +1,77 @@
+{
+  "skill_name": "ait-req-elicitation",
+  "cases": [
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-plan-interviews",
+      "prompt": "Помоги спланировать интервью для выявления требований к новой системе заявок: кого позвать и какие вопросы задать.",
+      "should_trigger": true,
+      "rationale": "Нужно подготовить выявление требований через интервью."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-user-classes",
+      "prompt": "Определи классы пользователей и представителей, с которыми нужно поговорить перед сбором требований.",
+      "should_trigger": true,
+      "rationale": "Запрос касается классов пользователей и представителей для выявления требований."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-workshop",
+      "prompt": "Составь план семинара по сбору требований: цели, участники, вопросы, артефакты на выходе.",
+      "should_trigger": true,
+      "rationale": "Нужно организовать семинар по выявлению требований."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-classify-notes",
+      "prompt": "Разбери заметки после встречи с пользователями: где потребности, где решения, где открытые вопросы.",
+      "should_trigger": true,
+      "rationale": "Это первичная классификация сведений после выявления требований."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-missing-stakeholders",
+      "prompt": "Проверь, кого мы могли забыть при сборе требований к модулю отчётности.",
+      "should_trigger": true,
+      "rationale": "Нужно найти пропущенных заинтересованных лиц и источники требований."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-use-case-actor-goal-map",
+      "prompt": "Перед детализацией вариантов использования помоги составить карту действующих лиц, целей, частоты и открытых вопросов.",
+      "should_trigger": true,
+      "rationale": "Нужно выявить действующих лиц и цели до спецификации сценариев."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-positive-replacement-project",
+      "prompt": "Нужно выявить требования для замены старой системы: кого опросить, какие процессы, данные и интеграции изучить.",
+      "should_trigger": true,
+      "rationale": "Выявление требований должно учитывать класс проекта: замена существующей системы."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-negative-write-spec",
+      "prompt": "Оформи эти согласованные требования в спецификацию с идентификаторами и критериями приёмки.",
+      "should_trigger": false,
+      "rationale": "Написание спецификации относится к requirements-specification."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-negative-write-use-case",
+      "prompt": "Запиши полный вариант использования с предусловиями, гарантиями, основным сценарием и расширениями.",
+      "should_trigger": false,
+      "rationale": "Запись готового варианта использования относится к requirements-specification."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-negative-validate-requirements",
+      "prompt": "Проверь готовый список требований на двусмысленность, полноту и проверяемость.",
+      "should_trigger": false,
+      "rationale": "Проверка качества готовых требований относится к requirements-validation."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-negative-change-request",
+      "prompt": "Оцени запрос на изменение требования и покажи влияние на сроки, тесты и релиз.",
+      "should_trigger": false,
+      "rationale": "Анализ изменения относится к requirements-management."
+    },
+    {
+      "id": "ait-req-elicitation-requirements-elicitation-negative-project-concept",
+      "prompt": "Сформулируй краткую концепцию проекта: текущая проблема, цель и ожидаемый итог.",
+      "should_trigger": false,
+      "rationale": "Формулирование концепции проекта не относится к выявлению требований."
+    }
+  ]
+}

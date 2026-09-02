@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-code-review",
+  "cases": [
+    {
+      "id": "ait-code-review-review-positive-readability",
+      "prompt": "Проверь этот код на читаемость, обработку ошибок и соответствие критериям готовности.",
+      "should_trigger": true,
+      "rationale": "Проверка готового кода по аспектам качества — суть навыка."
+    },
+    {
+      "id": "ait-code-review-review-positive-smells",
+      "prompt": "Просмотри изменения и отметь запахи кода, оценив, где это реальная проблема.",
+      "should_trigger": true,
+      "rationale": "Запах кода как сигнал для проверки входит в навык обзора."
+    },
+    {
+      "id": "ait-code-review-review-positive-boundaries",
+      "prompt": "Оцени, изолированы ли границы со сторонним API в этом модуле.",
+      "should_trigger": true,
+      "rationale": "Проверка изоляции границ входит в обзор кода."
+    },
+    {
+      "id": "ait-code-review-review-negative-construction",
+      "prompt": "Напиши новый класс и спроектируй его методы и структуры данных.",
+      "should_trigger": false,
+      "rationale": "Это конструирование кода — задача ait-code-construction, а не обзора."
+    },
+    {
+      "id": "ait-code-review-review-negative-testing-design",
+      "prompt": "Спроектируй набор модульных тестов для нового сервиса.",
+      "should_trigger": false,
+      "rationale": "Проектирование тестов относится к ait-code-testing."
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "skill_name": "ait-personal-data",
+  "cases": [
+    {
+      "id": "ait-personal-data-positive-form",
+      "prompt": "Проверь форму регистрации российского сервиса на соблюдение правил работы с персональными данными.",
+      "should_trigger": true,
+      "rationale": "Нужна правовая проверка обработки данных в проекте ПО."
+    },
+    {
+      "id": "ait-personal-data-positive-transfer",
+      "prompt": "Можно ли передать данные пользователей в иностранный сервис аналитики?",
+      "should_trigger": true,
+      "rationale": "Задача затрагивает трансграничную передачу персональных данных."
+    },
+    {
+      "id": "ait-personal-data-positive-incident",
+      "prompt": "У нас утечка базы клиентов: что должен сделать юрист?",
+      "should_trigger": true,
+      "rationale": "Нужен правовой маршрут для инцидента с персональными данными."
+    },
+    {
+      "id": "ait-personal-data-negative-license",
+      "prompt": "Проверь совместимость GPL-зависимости с лицензией проекта.",
+      "should_trigger": false,
+      "rationale": "Это задача навыка ait-licensing."
+    },
+    {
+      "id": "ait-personal-data-negative-security",
+      "prompt": "Настрой шифрование базы данных и ротацию ключей.",
+      "should_trigger": false,
+      "rationale": "Техническая реализация защиты без правового вопроса относится к ИБ."
+    },
+    {
+      "id": "ait-personal-data-negative-source",
+      "prompt": "Технически добавь новый закон в корпус знаний.",
+      "should_trigger": false,
+      "rationale": "Это задача kc-sources-add."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-arch-revalidation",
+  "cases": [
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-positive-recheck",
+      "prompt": "Перепроверь архитектуру проекта от начала и до конца.",
+      "should_trigger": true,
+      "rationale": "Запрос на сквозную перепроверку архитектуры."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-positive-full-check",
+      "prompt": "Полностью проверь архитектуру: от оснований до решений и представлений.",
+      "should_trigger": true,
+      "rationale": "Нужен сквозной проход по слоям архитектурной документации."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-positive-staged",
+      "prompt": "Проведи постепенную перепроверку архитектурной документации, закрывая дефекты каждого слоя до перехода к следующему.",
+      "should_trigger": true,
+      "rationale": "Постепенный проход по слоям с закрытием каждого слоя — назначение навыка."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-positive-adr-set",
+      "prompt": "Проверь все записи архитектурных решений и их связь с требованиями и представлениями целиком.",
+      "should_trigger": true,
+      "rationale": "Сквозная проверка набора решений и их трассируемости относится к перепроверке архитектуры."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-negative-single-decision",
+      "prompt": "Помоги принять одно архитектурное решение и оформить ADR по выбору базы данных.",
+      "should_trigger": false,
+      "rationale": "Одно архитектурное решение относится к ait-architecture."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-negative-requirements",
+      "prompt": "Перепроверь требования проекта от первичных данных к детальным.",
+      "should_trigger": false,
+      "rationale": "Полная перепроверка требований относится к ait-req-revalidation."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-negative-corpus-only",
+      "prompt": "Проверь только корпус знаний на целостность и полноту обработки.",
+      "should_trigger": false,
+      "rationale": "Проверка только корпуса относится к kc-validation."
+    },
+    {
+      "id": "ait-arch-revalidation-arch-revalidation-negative-code-conformance",
+      "prompt": "Проверь, что код соответствует задокументированной архитектуре, и найди отклонения в реализации.",
+      "should_trigger": false,
+      "rationale": "Соответствие кода архитектуре вне области навыка: он проверяет архитектуру на уровне документации."
+    }
+  ]
+}

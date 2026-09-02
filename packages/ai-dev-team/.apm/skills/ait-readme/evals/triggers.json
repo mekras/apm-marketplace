@@ -1,0 +1,29 @@
+{
+  "skill_name": "ait-readme",
+  "cases": [
+    {
+      "id": "ait-readme-readme-positive-create",
+      "prompt": "Создай главный README проекта как точку входа для пользователя.",
+      "should_trigger": true,
+      "rationale": "Создание главного README — суть навыка."
+    },
+    {
+      "id": "ait-readme-readme-positive-review",
+      "prompt": "Проверь, что README понятно объясняет назначение проекта и как его подключить.",
+      "should_trigger": true,
+      "rationale": "Проверка пользовательской точки входа входит в навык."
+    },
+    {
+      "id": "ait-readme-readme-negative-spec",
+      "prompt": "Запиши детальную спецификацию требований к продукту.",
+      "should_trigger": false,
+      "rationale": "Спецификация требований — не README; это навыки требований."
+    },
+    {
+      "id": "ait-readme-readme-negative-internal-doc",
+      "prompt": "Оформи внутреннюю документацию реализации модуля.",
+      "should_trigger": false,
+      "rationale": "Внутренняя документация — задача ait-writing, а не README."
+    }
+  ]
+}

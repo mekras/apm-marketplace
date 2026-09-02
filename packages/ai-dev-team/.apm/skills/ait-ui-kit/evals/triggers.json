@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-ui-kit",
+  "cases": [
+    {
+      "id": "ait-ui-kit-positive-propose",
+      "prompt": "У нас уже десять экранов и три разработчика. Предложи, нужен ли проекту UI Kit и в каком объёме.",
+      "should_trigger": true,
+      "rationale": "Нужно оценить пользу и минимальный объём UI Kit."
+    },
+    {
+      "id": "ait-ui-kit-positive-create",
+      "prompt": "Создай стартовый UI Kit из компонентов существующего веб-приложения.",
+      "should_trigger": true,
+      "rationale": "Пользователь прямо просит создать UI Kit."
+    },
+    {
+      "id": "ait-ui-kit-positive-maintain",
+      "prompt": "Добавь новое состояние поля в UI Kit и проведи существующие формы через это изменение.",
+      "should_trigger": true,
+      "rationale": "Нужно сопроводить общий компонент и его потребителей."
+    },
+    {
+      "id": "ait-ui-kit-positive-use",
+      "prompt": "Собери экран настроек с использованием действующего UI Kit проекта.",
+      "should_trigger": true,
+      "rationale": "Пользователь требует применить UI Kit в интерфейсной задаче."
+    },
+    {
+      "id": "ait-ui-kit-boundary-public-library",
+      "prompt": "Спроектируй публичный API библиотеки UI-компонентов для сторонних разработчиков.",
+      "should_trigger": true,
+      "rationale": "UI Kit участвует, но для публичного API дополнительно нужен ait-architecture."
+    },
+    {
+      "id": "ait-ui-kit-negative-single-screen",
+      "prompt": "Улучши отступы и состояния ошибки на одном экране входа.",
+      "should_trigger": false,
+      "rationale": "Локальная интерфейсная задача без общего слоя относится к ait-interface-design."
+    },
+    {
+      "id": "ait-ui-kit-negative-personas",
+      "prompt": "Опиши персонажей приложения и их устойчивые цели.",
+      "should_trigger": false,
+      "rationale": "Пользовательское основание без интерфейсной формы относится к ait-ux-design."
+    },
+    {
+      "id": "ait-ui-kit-negative-brand",
+      "prompt": "Выбери новое позиционирование и фирменный стиль продукта.",
+      "should_trigger": false,
+      "rationale": "Позиционирование и обязательный фирменный стиль выбирает владелец продукта."
+    }
+  ]
+}

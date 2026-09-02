@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-impact-analysis",
+  "cases": [
+    {
+      "id": "ait-impact-analysis-positive-changed-requirement",
+      "prompt": "После изменения требования найди все затронутые части проекта на полной глубине зависимостей.",
+      "should_trigger": true,
+      "rationale": "Нужен сквозной анализ влияния изменения по графу проекта."
+    },
+    {
+      "id": "ait-impact-analysis-positive-create-graph",
+      "prompt": "Создай для проекта строгий направленный граф влияния и проверь покрытие файлов.",
+      "should_trigger": true,
+      "rationale": "Создание и проверка общего графа входит в навык."
+    },
+    {
+      "id": "ait-impact-analysis-positive-impact-gap",
+      "prompt": "Новый файл не сопоставлен графу влияния. Обнови договор и повтори анализ.",
+      "should_trigger": true,
+      "rationale": "Нужно устранить пробел сопоставления и заново вычислить влияние."
+    },
+    {
+      "id": "ait-impact-analysis-positive-selective-verification",
+      "prompt": "Настрой для целевого проекта выборочные детерминированные проверки по графу влияния и кешируй успешные результаты.",
+      "should_trigger": true,
+      "rationale": "Нужно сопоставить области графа с обязательными проверками и безопасно выбрать их охват."
+    },
+    {
+      "id": "ait-impact-analysis-negative-source-only",
+      "prompt": "Источник корпуса обновился. Сопоставь его с производными утверждениями корпуса.",
+      "should_trigger": false,
+      "rationale": "Внутреннее влияние источника в корпусе сначала проверяет kc-impact-audit."
+    },
+    {
+      "id": "ait-impact-analysis-negative-full-audit",
+      "prompt": "Полностью проверь весь Git-репозиторий и исправь найденные проблемы.",
+      "should_trigger": false,
+      "rationale": "Полную проверку ведёт ait-project-revalidation, используя граф как механизм."
+    },
+    {
+      "id": "ait-impact-analysis-negative-requirement-links",
+      "prompt": "Добавь требованию ссылки на источник, реализацию и тесты.",
+      "should_trigger": false,
+      "rationale": "Локальными связями требования владеет ait-req-management."
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-docs-structure-design",
+  "cases": [
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-positive-optimal",
+      "prompt": "Предложи оптимальную структуру документации для проекта с CLI, API и внутренними правилами.",
+      "should_trigger": true,
+      "rationale": "Нужно выбрать структуру документационного корпуса проекта."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-positive-analyst",
+      "prompt": "Сначала привлеки аналитика, собери данные о проекте и предложи структуру документации.",
+      "should_trigger": true,
+      "rationale": "Задача прямо требует проектирования структуры через данные аналитика."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-positive-project-purpose",
+      "prompt": "Предложи структуру документации и проверь, хватает ли понимания цели проекта, проблемы и ожидаемого результата.",
+      "should_trigger": true,
+      "rationale": "Нужно проектировать структуру корпуса с проверкой концепции проекта."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-positive-numbered",
+      "prompt": "Спроектируй структуру docs с нумерованными разделами по приоритету документов.",
+      "should_trigger": true,
+      "rationale": "Нужно выбрать структуру документационного корпуса и порядок разделов."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-positive-requirements-docs",
+      "prompt": "Предложи структуру документации требований: концепция, SRS, словарь данных, критерии приёмки, изменения и трассировка.",
+      "should_trigger": true,
+      "rationale": "Нужно спроектировать структуру корпуса документации требований."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-negative-one-page",
+      "prompt": "Отредактируй раздел установки в README, не меняя структуру документации.",
+      "should_trigger": false,
+      "rationale": "Это правка одного документа без проектирования корпуса."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-negative-rules",
+      "prompt": "Зафиксируй уже выбранную структуру документации в AGENTS.md.",
+      "should_trigger": false,
+      "rationale": "Выбор уже сделан, нужна фиксация правил, а не проектирование структуры."
+    },
+    {
+      "id": "ait-docs-structure-design-documentation-structure-design-negative-concept",
+      "prompt": "Сформулируй концепцию проекта: проблема, цель, способ достижения и ожидаемый итог.",
+      "should_trigger": false,
+      "rationale": "Это исходная проектная документация, а не выбор структуры документационного корпуса."
+    }
+  ]
+}

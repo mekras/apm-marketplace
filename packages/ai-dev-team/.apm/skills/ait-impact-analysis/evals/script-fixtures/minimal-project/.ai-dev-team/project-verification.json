@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "verification": {
+    "name": "Минимальный проект",
+    "impact_graph": ".ai-dev-team/project-impact.json",
+    "full_checks": ["python-version"],
+    "full_coverage_paths": [".ai-dev-team/project-impact.json", ".ai-dev-team/project-verification.json"],
+    "global_inputs": [".ai-dev-team/project-impact.json", ".ai-dev-team/project-verification.json"]
+  },
+  "areas": [
+    {
+      "id": "implementation",
+      "title": "Реализация",
+      "impact_nodes": ["implementation"],
+      "checks": ["python-version"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "python-version",
+      "title": "Версия Python",
+      "command": ["python3", "--version"],
+      "cwd": ".",
+      "inputs": ["src/**"],
+      "environment": {"inherit": ["PATH"], "set": {}},
+      "tool_version_command": ["python3", "--version"]
+    }
+  ]
+}

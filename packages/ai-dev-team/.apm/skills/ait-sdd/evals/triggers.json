@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-sdd",
+  "cases": [
+    {
+      "id": "ait-sdd-positive-adopted-feature",
+      "prompt": "Проект уже принял SDD. Добавь восстановление пароля.",
+      "should_trigger": true,
+      "rationale": "Изменение выполняется в явно принятом режиме."
+    },
+    {
+      "id": "ait-sdd-positive-adopted-bug",
+      "prompt": "В принятом режиме SDD исправь нарушение требования AUTH-7.",
+      "should_trigger": true,
+      "rationale": "Нужно отличить исправление реализации от изменения спецификации."
+    },
+    {
+      "id": "ait-sdd-positive-no-impact",
+      "prompt": "Проект работает по SDD. Переименуй внутренний класс без изменения поведения.",
+      "should_trigger": true,
+      "rationale": "Даже сохраняющая поведение задача требует исхода влияния."
+    },
+    {
+      "id": "ait-sdd-boundary-emergency",
+      "prompt": "В проекте принят SDD. Срочно закрой уязвимость до обновления спецификации.",
+      "should_trigger": true,
+      "rationale": "Аварийный обход должен пройти через управляемое исключение."
+    },
+    {
+      "id": "ait-sdd-negative-assessment",
+      "prompt": "Подходит ли нашему прототипу разработка на основе спецификаций?",
+      "should_trigger": false,
+      "rationale": "До принятия подхода применимость оценивает ait-reconstructability."
+    },
+    {
+      "id": "ait-sdd-negative-unadopted-fix",
+      "prompt": "Исправь ошибку обработки пустой строки и добавь тест.",
+      "should_trigger": false,
+      "rationale": "Запрос не сообщает о принятом режиме SDD."
+    },
+    {
+      "id": "ait-sdd-negative-rebuild",
+      "prompt": "Проверь, можно ли восстановить кодовую базу из спецификаций.",
+      "should_trigger": false,
+      "rationale": "Проверка восстановления относится к ait-reconstructability."
+    }
+  ]
+}

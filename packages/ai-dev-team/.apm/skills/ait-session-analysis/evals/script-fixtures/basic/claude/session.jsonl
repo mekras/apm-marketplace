@@ -1,0 +1,2 @@
+{"type":"user","sessionId":"claude-session","uuid":"claude-user-1","cwd":"project","timestamp":"2026-08-25T11:00:00Z","message":{"role":"user","content":"Review the workflow."}}
+{"type":"assistant","sessionId":"claude-session","uuid":"claude-answer-1","cwd":"project","timestamp":"2026-08-25T11:01:00Z","message":{"role":"assistant","content":[{"type":"text","text":"A required check was skipped."},{"type":"tool_use","name":"synthetic","input":{"password":"fixture-secret"}}],"stop_reason":"end_turn"}}

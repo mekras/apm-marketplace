@@ -1,0 +1,41 @@
+{
+  "skill_name": "ait-sec-threat-modeling",
+  "cases": [
+    {
+      "id": "ait-sec-threat-modeling-security-threat-modeling-positive-build-model",
+      "prompt": "Построй модель угроз для нового платёжного сервиса: что может пойти не так и какие меры нужны.",
+      "should_trigger": true,
+      "rationale": "Прямой запрос на построение модели угроз."
+    },
+    {
+      "id": "ait-sec-threat-modeling-security-threat-modeling-positive-stride",
+      "prompt": "Пройди систему по STRIDE и перечисли угрозы по элементам диаграммы.",
+      "should_trigger": true,
+      "rationale": "STRIDE — основной метод поиска угроз в этом навыке."
+    },
+    {
+      "id": "ait-sec-threat-modeling-security-threat-modeling-positive-attack-tree",
+      "prompt": "Составь дерево атак для цели «получить доступ к учётной записи администратора».",
+      "should_trigger": true,
+      "rationale": "Деревья атак — метод поиска угроз в рамках навыка."
+    },
+    {
+      "id": "ait-sec-threat-modeling-security-threat-modeling-positive-review-model",
+      "prompt": "Проверь готовую модель угроз: все ли границы доверия покрыты и связаны ли меры с угрозами.",
+      "should_trigger": true,
+      "rationale": "Проверка полноты модели угроз входит в навык."
+    },
+    {
+      "id": "ait-sec-threat-modeling-security-threat-modeling-negative-access-control",
+      "prompt": "Выбери механизм аутентификации и токены для доступа к нашему REST API между микросервисами.",
+      "should_trigger": false,
+      "rationale": "Это задача навыка security-access-control."
+    },
+    {
+      "id": "ait-sec-threat-modeling-security-threat-modeling-negative-audit",
+      "prompt": "Проведи аудит безопасности уже работающего сервиса и проверь, что меры реально внедрены.",
+      "should_trigger": false,
+      "rationale": "Это задача навыка security-audit."
+    }
+  ]
+}

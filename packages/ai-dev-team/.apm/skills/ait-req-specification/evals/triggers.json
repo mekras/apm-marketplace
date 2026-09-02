@@ -1,0 +1,83 @@
+{
+  "skill_name": "ait-req-specification",
+  "cases": [
+    {
+      "id": "ait-req-specification-requirements-specification-positive-write-srs",
+      "prompt": "Оформи согласованные требования в спецификацию требований к ПО: введение, функции, данные, интерфейсы и ограничения.",
+      "should_trigger": true,
+      "rationale": "Нужно написать структуру спецификации требований."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-functional-requirements",
+      "prompt": "Перепиши эти заметки в атомарные функциональные требования с идентификаторами и источниками.",
+      "should_trigger": true,
+      "rationale": "Нужно сформулировать отдельные функциональные требования."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-user-stories",
+      "prompt": "Сформулируй пользовательские истории и критерии приёмки для сценария оформления заявки.",
+      "should_trigger": true,
+      "rationale": "Запрос касается записи требований в формате пользовательских историй."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-use-case-template",
+      "prompt": "Оформи вариант использования для восстановления доступа: цель, действующее лицо, основной сценарий, расширения и гарантии.",
+      "should_trigger": true,
+      "rationale": "Нужно записать требования в формате варианта использования."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-use-case-guarantees",
+      "prompt": "Перепиши гарантии в полном варианте использования и сохрани остальные разделы карточки.",
+      "should_trigger": true,
+      "rationale": "Изменение формулировок готового варианта использования относится к записи требований."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-quality-requirement",
+      "prompt": "Запиши требование к производительности так, чтобы оно было измеримым и проверяемым.",
+      "should_trigger": true,
+      "rationale": "Нужно специфицировать атрибут качества."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-glossary",
+      "prompt": "Добавь в спецификацию словарь терминов и атрибуты требований: источник, приоритет, статус и релиз.",
+      "should_trigger": true,
+      "rationale": "Словарь и атрибуты относятся к документированию требований."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-positive-bi-dashboard",
+      "prompt": "Запиши требования к аналитической панели: показатели, источники данных, периодичность обновления и права доступа.",
+      "should_trigger": true,
+      "rationale": "Нужно специфицировать требования к данным, отчёту и панели."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-negative-raw-notes",
+      "prompt": "Сначала помоги понять, что из этих заметок является целью, задачей пользователя, бизнес-правилом и решением.",
+      "should_trigger": false,
+      "rationale": "Разбор исходных сведений относится к requirements-analysis."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-negative-review",
+      "prompt": "Проверь готовую спецификацию требований на полноту, противоречия и непроверяемые формулировки.",
+      "should_trigger": false,
+      "rationale": "Проверка готовой спецификации относится к requirements-validation."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-negative-discover-use-cases",
+      "prompt": "Помоги собрать карту действующих лиц и целей перед интервью по вариантам использования.",
+      "should_trigger": false,
+      "rationale": "Первичное выявление действующих лиц и целей относится к requirements-elicitation."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-negative-readme",
+      "prompt": "Обнови README проекта: добавь установку, запуск и примеры использования.",
+      "should_trigger": false,
+      "rationale": "README проекта относится к отдельному навыку для сопровождения README."
+    },
+    {
+      "id": "ait-req-specification-requirements-specification-negative-meeting",
+      "prompt": "Сделай протокол встречи с решениями, ответственными и сроками.",
+      "should_trigger": false,
+      "rationale": "Протокол встречи не является спецификацией требований."
+    }
+  ]
+}

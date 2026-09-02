@@ -1,0 +1,43 @@
+{
+  "schema_version": 2,
+  "graph": {
+    "name": "minimal-project",
+    "description": "Минимальный проект для контрактного сценария.",
+    "default_facet": "semantic",
+    "unmapped_paths": "block",
+    "ignore": [
+      ".git/**",
+      ".ai-dev-team/project-impact.json",
+      ".ai-dev-team/project-verification.json"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "implementation",
+      "title": "Реализация",
+      "kind": "implementation",
+      "semantic_type": "исходный код",
+      "authority": "canonical",
+      "paths": ["src/**"],
+      "checks": ["code-check"]
+    },
+    {
+      "id": "tests",
+      "title": "Проверки",
+      "kind": "test",
+      "semantic_type": "проверки кода",
+      "authority": "derived",
+      "paths": ["tests/**"],
+      "checks": ["test-check"]
+    }
+  ],
+  "edges": [
+    {
+      "from": "implementation",
+      "to": "tests",
+      "relation": "verifies",
+      "facets": ["quality"],
+      "rationale": "Проверки подтверждают поведение реализации."
+    }
+  ]
+}

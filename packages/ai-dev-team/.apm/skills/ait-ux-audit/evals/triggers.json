@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-ux-audit",
+  "cases": [
+    {
+      "id": "ait-ux-audit-ux-audit-positive-traceability",
+      "prompt": "Проверь, прослеживается ли каждое решение интерфейса до персонажа, цели пользователя и сценария.",
+      "should_trigger": true,
+      "rationale": "Проверка обоснованности и прослеживаемости решений — ядро навыка."
+    },
+    {
+      "id": "ait-ux-audit-ux-audit-positive-features-substitution",
+      "prompt": "Убедись, что набор целей пользователя не подменён перечнем функций, и найди функции без цели.",
+      "should_trigger": true,
+      "rationale": "Поиск подмены целей перечнем функций входит в аудит обоснованности."
+    },
+    {
+      "id": "ait-ux-audit-ux-audit-positive-scenario-coverage",
+      "prompt": "Проверь, покрывает ли UX-решение основной успешный сценарий и значимые расширения и на нужном ли уровне заданы цели.",
+      "should_trigger": true,
+      "rationale": "Сверка решений со сценариями и уровнями целей входит в навык."
+    },
+    {
+      "id": "ait-ux-audit-ux-audit-negative-design",
+      "prompt": "Спроектируй с нуля персонажей, цели и сценарии для нового продукта.",
+      "should_trigger": false,
+      "rationale": "Это первичное проектирование взаимодействия — навык ait-ux-design, а не аудит."
+    },
+    {
+      "id": "ait-ux-audit-ux-audit-negative-requirements-validation",
+      "prompt": "Проверь требования в SRS на полноту, непротиворечивость и проверяемость.",
+      "should_trigger": false,
+      "rationale": "Это проверка требований как документа — навыки ait-req-*, а не аудит обоснованности UX."
+    }
+  ]
+}

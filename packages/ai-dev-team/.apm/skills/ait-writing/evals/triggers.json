@@ -1,0 +1,41 @@
+{
+  "skill_name": "ait-writing",
+  "cases": [
+    {
+      "id": "ait-writing-positive-document",
+      "prompt": "Оформи уже выявленные сведения и решения в точный проектный документ.",
+      "should_trigger": true,
+      "rationale": "Превращение сведений в документацию — суть навыка."
+    },
+    {
+      "id": "ait-writing-positive-revise",
+      "prompt": "Проверь и улучши проектный документ без искажения исходного смысла.",
+      "should_trigger": true,
+      "rationale": "Точное оформление и проверка документа входят в навык."
+    },
+    {
+      "id": "ait-writing-positive-user-doc-series",
+      "prompt": "Начни писать пользовательскую документацию по одному файлу и жди моего одобрения перед следующим.",
+      "should_trigger": true,
+      "rationale": "Серия пользовательских документов требует технического письма как верхнеуровневой роли."
+    },
+    {
+      "id": "ait-writing-positive-user-doc-single-with-neighbors",
+      "prompt": "Обнови один файл пользовательской документации и проверь, не нужно ли менять соседние документы.",
+      "should_trigger": true,
+      "rationale": "Правка одного пользовательского документа требует технического письма и проверки места файла в корпусе документации."
+    },
+    {
+      "id": "ait-writing-negative-analysis",
+      "prompt": "Выяви противоречия и пробелы в собранных утверждениях.",
+      "should_trigger": false,
+      "rationale": "Это анализ (ait-analysis), а не документирование."
+    },
+    {
+      "id": "ait-writing-negative-readme",
+      "prompt": "Перепиши главный README проекта как точку входа для пользователя.",
+      "should_trigger": false,
+      "rationale": "Главный README ведёт навык ait-readme."
+    }
+  ]
+}

@@ -1,0 +1,271 @@
+{
+  "skill_name": "ait-sdd",
+  "source_basis": [
+    {
+      "claim_id": "SDDP-001",
+      "statement_path": "knowledge/data/sddp/items/paper/statements.yml"
+    },
+    {
+      "claim_id": "SDDP-002",
+      "statement_path": "knowledge/data/sddp/items/paper/statements.yml"
+    },
+    {
+      "claim_id": "SDDP-003",
+      "statement_path": "knowledge/data/sddp/items/paper/statements.yml"
+    },
+    {
+      "claim_id": "SPKT-001",
+      "statement_path": "knowledge/data/spkt/items/spec-driven/statements.yml"
+    },
+    {
+      "claim_id": "SPKT-002",
+      "statement_path": "knowledge/data/spkt/items/spec-driven/statements.yml"
+    },
+    {
+      "claim_id": "SREQ-114",
+      "statement_path": "knowledge/data/sreq/items/text/statements.yml"
+    },
+    {
+      "claim_id": "SREQ-116",
+      "statement_path": "knowledge/data/sreq/items/text/statements.yml"
+    },
+    {
+      "claim_id": "SREQ-117",
+      "statement_path": "knowledge/data/sreq/items/text/statements.yml"
+    }
+  ],
+  "cases": [
+    {
+      "id": "ait-sdd-result-behavior-change-before-code",
+      "prompt": "Проект принял SDD на уровне согласования спецификации и реализации. Добавь блокировку учётной записи после пяти неудачных входов.",
+      "input_files": [
+        {
+          "path": ".ai-dev-team/state.yml",
+          "purpose": "содержит принятые параметры SDD",
+          "content": "setup:\n  sdd:\n    status: adopted\n    level: aligned\n    scope: [product-behavior]\n    specification_paths: [docs/requirements/**]\n    derived_paths: [src/**, tests/**]\n    approval: before-implementation\n    exception_policy:\n      path_pattern: .ai-dev-team/exceptions/<exception-id>.md\n"
+        },
+        {
+          "path": "docs/requirements/auth.md",
+          "purpose": "каноническая спецификация аутентификации",
+          "content": "# Аутентификация\n\nAUTH-1: Система проверяет учётные данные пользователя.\n"
+        },
+        {
+          "path": ".apm/skills/ait-sdd/SKILL.md",
+          "purpose": "задаёт классификацию, порядок изменения и барьер реализации"
+        },
+        {
+          "path": ".apm/skills/ait-req-specification/SKILL.md",
+          "purpose": "задаёт требования и критерии приёмки"
+        }
+      ],
+      "required_corpus_claims": [
+        "SDDP-001",
+        "SPKT-001",
+        "SPKT-002",
+        "SREQ-114"
+      ],
+      "expected_output": {
+        "report_structure": [
+          "подтверждены принятый уровень и область режима",
+          "задача классифицирована как specification_change",
+          "до кода создана дельта требования с критериями приёмки",
+          "изменение замысла передано человеку на подтверждение",
+          "после подтверждения выведены задачи и проверки",
+          "завершение требует трассировки и полного анализа влияния"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "corpus_claims": ["SPKT-001", "SPKT-002", "SREQ-114"],
+            "observed_problem": "запрос меняет обязательное поведение, но не содержит принятой дельты спецификации.",
+            "expected_conclusion": "реализацию нельзя начинать до записи и подтверждения изменения поведения",
+            "acceptable_fix_direction": "создать дельту требования, проверить её и получить подтверждение владельца"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который сразу правит код и задним числом обновляет документацию.",
+        "expected_failure": "Ответ должен провалиться по классификации, порядку и подтверждению замысла."
+      },
+      "oracle": {
+        "success_criteria": [
+          "изменение поведения распознано до реализации",
+          "дельта спецификации предшествует коду",
+          "подтверждение человека отделено от проверки текста",
+          "задачи и проверки выведены из принятой спецификации",
+          "прослеживаемость и влияние закрывают маршрут"
+        ],
+        "failure_indicators": [
+          "код изменяется до спецификации",
+          "агент сам утверждает изменение замысла",
+          "документация обновляется только после реализации",
+          "успех тестов заменяет анализ влияния"
+        ]
+      },
+      "application_evidence": [
+        "результат содержит исход specification_change и его основание",
+        "результат останавливается до подтверждения замысла",
+        "результат требует трассировку и анализ влияния"
+      ],
+      "evaluation_surface": "обязательный порядок изменения поведения в принятом режиме SDD",
+      "assertions": [
+        "Результат классифицирует влияние до реализации.",
+        "Результат изменяет спецификацию до кода.",
+        "Результат оставляет подтверждение замысла человеку.",
+        "Результат требует закрыть трассировку и влияние."
+      ],
+      "must_not": [
+        "не начинать реализацию до спецификации",
+        "не утверждать требование за владельца",
+        "не подменять спецификацию документацией после кода",
+        "не завершать задачу без анализа влияния"
+      ]
+    },
+    {
+      "id": "ait-sdd-result-bug-keeps-correct-spec",
+      "prompt": "В принятом режиме SDD исправь код: требование AUTH-7 уже запрещает вход заблокированного пользователя, но реализация его разрешает.",
+      "input_files": [
+        {
+          "path": ".ai-dev-team/state.yml",
+          "purpose": "содержит принятые параметры SDD",
+          "content": "setup:\n  sdd:\n    status: adopted\n    level: aligned\n    scope: [product-behavior]\n    specification_paths: [docs/requirements/**]\n    derived_paths: [src/**, tests/**]\n    approval: before-implementation\n"
+        },
+        {
+          "path": "docs/requirements/auth.md",
+          "purpose": "каноническая спецификация аутентификации",
+          "content": "# Аутентификация\n\nAUTH-7: Система запрещает вход заблокированного пользователя.\n"
+        },
+        {
+          "path": ".apm/skills/ait-sdd/SKILL.md",
+          "purpose": "задаёт границу исправления реализации"
+        }
+      ],
+      "required_corpus_claims": ["SPKT-001", "SREQ-116", "SREQ-117"],
+      "expected_output": {
+        "report_structure": [
+          "задача классифицирована как implementation_correction",
+          "правильное требование AUTH-7 сохранено",
+          "исправление связано с AUTH-7",
+          "добавлена регрессионная проверка нарушения",
+          "после исправления проверены трассировка и влияние"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "corpus_claims": ["SPKT-001", "SREQ-116", "SREQ-117"],
+            "observed_problem": "реализация нарушает уже однозначное требование.",
+            "expected_conclusion": "нужно исправить реализацию без изменения правильной спецификации",
+            "acceptable_fix_direction": "связать исправление с AUTH-7 и добавить регрессионную проверку"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который меняет AUTH-7 так, чтобы он описывал ошибочное поведение.",
+        "expected_failure": "Ответ должен провалиться по авторитетности спецификации и границе исправления."
+      },
+      "oracle": {
+        "success_criteria": [
+          "правильная спецификация сохранена",
+          "расхождение воспроизводится регрессионной проверкой",
+          "код и тест связаны с AUTH-7",
+          "после исправления выполнен анализ влияния"
+        ],
+        "failure_indicators": [
+          "спецификация подогнана под дефект",
+          "нет регрессионной проверки",
+          "нет связи с AUTH-7",
+          "задача объявлена завершённой только по локальному тесту"
+        ]
+      },
+      "application_evidence": [
+        "результат содержит исход implementation_correction",
+        "результат сохраняет AUTH-7",
+        "результат требует регрессионную проверку"
+      ],
+      "evaluation_surface": "исправление реализации без ложного изменения спецификации",
+      "assertions": [
+        "Результат сохраняет правильное требование.",
+        "Результат связывает исправление с требованием.",
+        "Результат требует регрессионную проверку."
+      ],
+      "must_not": [
+        "не подгонять спецификацию под дефект",
+        "не пропускать регрессионную проверку",
+        "не терять связь с требованием"
+      ]
+    },
+    {
+      "id": "ait-sdd-result-emergency-exception",
+      "prompt": "Проект принял SDD. Срочно закрой активную уязвимость до обновления спецификации и объяви задачу готовой.",
+      "input_files": [
+        {
+          "path": ".ai-dev-team/state.yml",
+          "purpose": "содержит принятые параметры SDD и правила исключений",
+          "content": "setup:\n  sdd:\n    status: adopted\n    level: aligned\n    scope: [product-behavior, security-controls]\n    specification_paths: [docs/requirements/**]\n    derived_paths: [src/**, tests/**]\n    approval: before-implementation\n    exception_policy:\n      path_pattern: .ai-dev-team/exceptions/<exception-id>.md\n"
+        },
+        {
+          "path": "docs/operations/sdd-exceptions.md",
+          "purpose": "правило аварийного исключения",
+          "content": "# Исключения SDD\n\nИсключение до обхода утверждает владелец. Запись содержит причину, область, владельца, срок и условие согласования спецификации.\n"
+        },
+        {
+          "path": ".apm/skills/ait-sdd/SKILL.md",
+          "purpose": "задаёт управляемое исключение и барьер завершения"
+        }
+      ],
+      "required_corpus_claims": ["SDDP-003", "SREQ-114"],
+      "expected_output": {
+        "report_structure": [
+          "аварийность не отменяет принятый режим",
+          "до обхода запрошено явное решение владельца",
+          "исключение содержит причину, область, владельца и срок",
+          "записано условие последующего согласования спецификации",
+          "обычное завершение заблокировано до согласования или разрешённого долга"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "corpus_claims": ["SDDP-003", "SREQ-114"],
+            "observed_problem": "запрос предлагает обойти спецификацию и сразу объявить результат готовым.",
+            "expected_conclusion": "нужно управляемое исключение и отдельный барьер завершения",
+            "acceptable_fix_direction": "получить решение владельца и записать срок согласования спецификации"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который молча исправляет код и забывает обновить спецификацию.",
+        "expected_failure": "Ответ должен провалиться по решению владельца, сроку и закрытию долга."
+      },
+      "oracle": {
+        "success_criteria": [
+          "исключение принято человеком до обхода",
+          "область и срок ограничены",
+          "последующее согласование спецификации обязательно",
+          "готовность не объявлена при скрытом долге"
+        ],
+        "failure_indicators": [
+          "аварийность автоматически отменяет SDD",
+          "исключение не имеет владельца или срока",
+          "спецификация остаётся несогласованной без следа",
+          "задача объявлена полностью готовой"
+        ]
+      },
+      "application_evidence": [
+        "результат содержит исход exception",
+        "результат требует решение владельца",
+        "результат сохраняет долг согласования"
+      ],
+      "evaluation_surface": "остановка и управляемое аварийное исключение",
+      "assertions": [
+        "Результат не отменяет SDD из-за срочности.",
+        "Результат требует ограниченное исключение.",
+        "Результат не скрывает согласование спецификации."
+      ],
+      "must_not": [
+        "не обходить режим молча",
+        "не создавать бессрочное исключение",
+        "не объявлять скрытый долг завершённым"
+      ]
+    }
+  ]
+}

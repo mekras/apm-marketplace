@@ -1,0 +1,41 @@
+{
+  "skill_name": "ait-changelog",
+  "cases": [
+    {
+      "id": "ait-changelog-positive-update-file",
+      "prompt": "Обнови CHANGELOG.md после изменения CLI и добавь действие при обновлении.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо касается сопровождения журнала изменений проекта."
+    },
+    {
+      "id": "ait-changelog-positive-need-check",
+      "prompt": "Проверь, нужно ли после этой правки добавить запись в журнал изменений проекта.",
+      "should_trigger": true,
+      "rationale": "Нужно оценить значимость изменения для журнала."
+    },
+    {
+      "id": "ait-changelog-positive-create-file",
+      "prompt": "Создай CHANGELOG.md для нового проекта и не выдумывай прошлую историю.",
+      "should_trigger": true,
+      "rationale": "Создание нового журнала изменений относится к этому навыку."
+    },
+    {
+      "id": "ait-changelog-negative-readme",
+      "prompt": "Обнови README.md: добавь установку и ссылку на документацию.",
+      "should_trigger": false,
+      "rationale": "Это задача сопровождения README, а не журнала изменений."
+    },
+    {
+      "id": "ait-changelog-negative-code-review",
+      "prompt": "Сделай обзор кода и найди регрессии.",
+      "should_trigger": false,
+      "rationale": "Обзор кода не означает работу с журналом изменений."
+    },
+    {
+      "id": "ait-changelog-negative-formatting",
+      "prompt": "Исправь форматирование Markdown и не меняй смысл.",
+      "should_trigger": false,
+      "rationale": "Чистое форматирование не требует навыка журнала изменений."
+    }
+  ]
+}

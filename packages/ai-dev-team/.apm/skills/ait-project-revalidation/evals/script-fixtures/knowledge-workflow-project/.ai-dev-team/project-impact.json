@@ -1,0 +1,53 @@
+{
+  "schema_version": 2,
+  "graph": {
+    "name": "knowledge-workflow",
+    "description": "Фикстура полной проверки с навигационным представлением.",
+    "default_facet": "semantic",
+    "unmapped_paths": "warn",
+    "ignore": [".git/**"]
+  },
+  "nodes": [
+    {
+      "id": "concept",
+      "title": "Концепция",
+      "kind": "concept",
+      "semantic_type": "концепция",
+      "authority": "canonical",
+      "representations": [
+        {"path": "docs/index.md", "role": "navigation"},
+        {"path": "docs/concept.md", "role": "canonical"}
+      ],
+      "checks": ["ait-docs-concept"],
+      "review_stages": ["requirements"]
+    },
+    {
+      "id": "knowledge",
+      "title": "Корпус знаний",
+      "kind": "knowledge",
+      "semantic_type": "корпус знаний",
+      "authority": "canonical",
+      "representations": [
+        {"path": "knowledge/corpus.yml", "role": "canonical"}
+      ],
+      "checks": ["kc-validation"],
+      "review_stages": ["repository"]
+    },
+    {
+      "id": "requirements",
+      "title": "Требования",
+      "kind": "requirements",
+      "semantic_type": "требования",
+      "authority": "canonical",
+      "representations": [
+        {"path": "docs/concept.md", "role": "canonical"}
+      ],
+      "checks": ["ait-req-revalidation"],
+      "review_stages": ["requirements"]
+    }
+  ],
+  "edges": [
+    {"from": "concept", "to": "requirements"},
+    {"from": "knowledge", "to": "requirements"}
+  ]
+}

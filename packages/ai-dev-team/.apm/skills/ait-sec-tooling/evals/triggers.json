@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-sec-tooling",
+  "cases": [
+    {
+      "id": "ait-sec-tooling-security-tooling-positive-tm-tool",
+      "prompt": "Какой инструмент выбрать для моделирования угроз в нашей команде?",
+      "should_trigger": true,
+      "rationale": "Прямой выбор средства моделирования угроз."
+    },
+    {
+      "id": "ait-sec-tooling-security-tooling-positive-gateway",
+      "prompt": "Сравни классы средств для применения политик доступа: API-шлюз, service mesh, OPA — что под нашу задачу?",
+      "should_trigger": true,
+      "rationale": "Подбор класса средства контроля доступа под задачу."
+    },
+    {
+      "id": "ait-sec-tooling-security-tooling-positive-crypto-lib",
+      "prompt": "Нужно выбрать криптографическое средство для шифрования данных; писать своё или взять библиотеку?",
+      "should_trigger": true,
+      "rationale": "Выбор средства защиты с принципом проверенных решений."
+    },
+    {
+      "id": "ait-sec-tooling-security-tooling-negative-threat-model",
+      "prompt": "Найди угрозы для нашего сервиса и предложи меры.",
+      "should_trigger": false,
+      "rationale": "Это задача security-threat-modeling, а не выбор инструмента."
+    },
+    {
+      "id": "ait-sec-tooling-security-tooling-negative-audit",
+      "prompt": "Проверь, что меры защиты внедрены и работают.",
+      "should_trigger": false,
+      "rationale": "Это задача security-audit."
+    }
+  ]
+}

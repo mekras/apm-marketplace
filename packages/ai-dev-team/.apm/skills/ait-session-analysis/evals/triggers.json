@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-session-analysis",
+  "cases": [
+    {
+      "id": "ait-session-analysis-positive-default",
+      "prompt": "Запусти ait-session-analysis",
+      "should_trigger": true,
+      "rationale": "Точная команда запускает инкрементальный анализ новых завершённых частей."
+    },
+    {
+      "id": "ait-session-analysis-negative-current",
+      "prompt": "Проверь завершённую часть текущей сессии и найди потери времени.",
+      "should_trigger": false,
+      "rationale": "Запрос не содержит точную команду запуска навыка."
+    },
+    {
+      "id": "ait-session-analysis-negative-specific",
+      "prompt": "Проанализируй сессию 0198f2 и предложи недостающие навыки.",
+      "should_trigger": false,
+      "rationale": "Идентификатор сессии не является командой запуска навыка."
+    },
+    {
+      "id": "ait-session-analysis-negative-period",
+      "prompt": "Проанализируй сессии проекта за август 2026 года.",
+      "should_trigger": false,
+      "rationale": "Запрос периода не содержит точную команду запуска навыка."
+    },
+    {
+      "id": "ait-session-analysis-boundary-all",
+      "prompt": "По моей явной просьбе проверь всю доступную историю сессий проекта.",
+      "should_trigger": false,
+      "rationale": "Явная просьба о полной истории не заменяет точную команду."
+    },
+    {
+      "id": "ait-session-analysis-negative-own-errors",
+      "prompt": "Сделай выводы из своих ошибок в сессии 01a05d39-e00f-7bd1-b3ce-0565bd19b025 и предложи исправления на будущее.",
+      "should_trigger": false,
+      "rationale": "Разбор ошибок конкретной сессии не содержит точную команду запуска навыка."
+    },
+    {
+      "id": "ait-session-analysis-negative-report",
+      "prompt": "Вот отчёт другого пользователя о сессиях. Проверь, верны ли его выводы.",
+      "should_trigger": false,
+      "rationale": "Готовый внешний отчёт проверяет парный навык ait-session-report-review."
+    },
+    {
+      "id": "ait-session-analysis-negative-statistics",
+      "prompt": "Сравни среднюю эффективность версий 0.25 и 0.26 по всем пользователям.",
+      "should_trigger": false,
+      "rationale": "Агрегированная статистика и причинное сравнение версий находятся вне навыка."
+    }
+  ]
+}

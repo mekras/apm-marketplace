@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-twelve-factor",
+  "cases": [
+    {
+      "id": "ait-twelve-factor-positive-explicit-audit",
+      "prompt": "Проверь наш сервис по методологии The Twelve-Factor App и составь план устранения пробелов.",
+      "should_trigger": true,
+      "rationale": "Пользователь прямо просит применить методологию к сервису."
+    },
+    {
+      "id": "ait-twelve-factor-positive-early-saas-adr",
+      "prompt": "Мы начинаем облачный SaaS с API, фоновыми обработчиками и средами dev, stage и production. Какие ранние архитектурные решения нужно зафиксировать?",
+      "should_trigger": true,
+      "rationale": "Раннее проектирование SaaS требует оценки применимости методологии и предложения ADR."
+    },
+    {
+      "id": "ait-twelve-factor-positive-cloud-readiness",
+      "prompt": "Оцени готовность самостоятельно развёртываемого сервиса к непрерывной поставке, горизонтальному масштабированию и замене внешних служб.",
+      "should_trigger": true,
+      "rationale": "Запрос охватывает несколько целей и факторов жизненного цикла сервисного приложения."
+    },
+    {
+      "id": "ait-twelve-factor-boundary-explicit-library",
+      "prompt": "Нужно ли применять Twelve-Factor к публикуемой библиотеке и создавать об этом ADR?",
+      "should_trigger": true,
+      "rationale": "Прямое упоминание требует оценки применимости, даже если итогом будет отказ."
+    },
+    {
+      "id": "ait-twelve-factor-negative-library-dependencies",
+      "prompt": "Настрой публикацию библиотеки и явно объяви её зависимости.",
+      "should_trigger": false,
+      "rationale": "Один похожий приём в библиотеке не означает применение методологии сервисных приложений."
+    },
+    {
+      "id": "ait-twelve-factor-negative-cli-config",
+      "prompt": "Добавь чтение настроек из переменных окружения в локальную программу командной строки.",
+      "should_trigger": false,
+      "rationale": "Локальная реализация одного приёма без сервисного жизненного цикла относится к конструированию кода."
+    },
+    {
+      "id": "ait-twelve-factor-negative-existing-deployment-docs",
+      "prompt": "Напиши инструкцию развёртывания сервиса через существующий Helm chart.",
+      "should_trigger": false,
+      "rationale": "Документирование уже принятой схемы поставки не требует оценки всей методологии."
+    },
+    {
+      "id": "ait-twelve-factor-negative-desktop-app",
+      "prompt": "Спроектируй обновление и локальное хранение данных настольного приложения.",
+      "should_trigger": false,
+      "rationale": "Настольное приложение не описано как самостоятельно развёртываемый сервис или SaaS."
+    }
+  ]
+}

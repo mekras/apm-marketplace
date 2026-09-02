@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-project-revalidation",
+  "cases": [
+    {
+      "id": "ait-project-revalidation-positive-all-problems",
+      "prompt": "Проверь весь проект и исправь все найденные проблемы.",
+      "should_trigger": true,
+      "rationale": "Явно запрошена полная проверка и исправление всего проекта."
+    },
+    {
+      "id": "ait-project-revalidation-positive-all-aspects",
+      "prompt": "Проведи полную проверку репозитория по всем аспектам: настройки, требования, дизайн, код, тесты, безопасность и документация.",
+      "should_trigger": true,
+      "rationale": "Запрос перечисляет все основные области и весь репозиторий."
+    },
+    {
+      "id": "ait-project-revalidation-positive-managed-finish",
+      "prompt": "Найди и исправь все проблемы этого репозитория, веди проверку до доказанного конечного состояния.",
+      "should_trigger": true,
+      "rationale": "Нужен управляемый сквозной проход до завершения."
+    },
+    {
+      "id": "ait-project-revalidation-boundary-ambiguous-project",
+      "prompt": "Проверь проект.",
+      "should_trigger": false,
+      "rationale": "Неясно, нужна ли дорогая полная проверка или одна область."
+    },
+    {
+      "id": "ait-project-revalidation-negative-requirements",
+      "prompt": "Полностью перепроверь требования проекта.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к профильной перепроверке требований."
+    },
+    {
+      "id": "ait-project-revalidation-negative-architecture",
+      "prompt": "Полностью проверь архитектурную документацию.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к профильной перепроверке архитектуры."
+    },
+    {
+      "id": "ait-project-revalidation-negative-code-review",
+      "prompt": "Проверь изменения в этом pull request.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к обзору ограниченного набора изменений."
+    },
+    {
+      "id": "ait-project-revalidation-negative-agents",
+      "prompt": "Проверь AGENTS.md и исправь его правила.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к профильной проверке одного вида правил."
+    }
+  ]
+}

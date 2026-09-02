@@ -1,0 +1,83 @@
+{
+  "skill_name": "ait-req-refactoring",
+  "cases": [
+    {
+      "id": "ait-req-refactoring-positive-explicit-refactoring",
+      "prompt": "Выполни рефакторинг требований без изменения их смысла.",
+      "should_trigger": true,
+      "rationale": "Навык должен исследовать набор, но запрос не гарантирует, что файлы нужно изменить."
+    },
+    {
+      "id": "ait-req-refactoring-positive-reduce-count",
+      "prompt": "Сократи количество требований: замени частные требования одним общим там, где обязательства сохранятся.",
+      "should_trigger": true,
+      "rationale": "Нужно обобщить существующий набор без изменения обязательств."
+    },
+    {
+      "id": "ait-req-refactoring-positive-move-details",
+      "prompt": "Подними уровень требований и вынеси повторяющиеся перечни в справочник, сохранив нормативную силу.",
+      "should_trigger": true,
+      "rationale": "Нужны повышение уровня и перенос деталей с сохранением смысла."
+    },
+    {
+      "id": "ait-req-refactoring-positive-shorter-clearer",
+      "prompt": "Сделай готовые требования короче и понятнее, но не меняй поведение продукта.",
+      "should_trigger": true,
+      "rationale": "Запрошено улучшение формы существующих требований."
+    },
+    {
+      "id": "ait-req-refactoring-positive-structure-dry",
+      "prompt": "Перестрой набор требований по DRY и связности, не добавляя и не удаляя обязательств.",
+      "should_trigger": true,
+      "rationale": "Запрошено структурное преобразование при сохранении содержания."
+    },
+    {
+      "id": "ait-req-refactoring-boundary-generalize-if-safe",
+      "prompt": "Проверь, можно ли безопасно объединить эти требования. Примени объединение только при доказанной эквивалентности.",
+      "should_trigger": true,
+      "rationale": "Проверка кандидата входит в процедуру рефакторинга и может закончиться остановкой."
+    },
+    {
+      "id": "ait-req-refactoring-boundary-mixed-change",
+      "prompt": "Сократи эти требования и заодно увеличь обязательный срок хранения с 30 до 90 дней.",
+      "should_trigger": true,
+      "rationale": "Смешанная задача требует отделить рефакторинг формы от содержательного изменения через соседний навык."
+    },
+    {
+      "id": "ait-req-refactoring-negative-validation",
+      "prompt": "Проверь требования и найди ошибки, противоречия и пропуски.",
+      "should_trigger": false,
+      "rationale": "Поиск содержательных дефектов относится к проверке требований."
+    },
+    {
+      "id": "ait-req-refactoring-negative-fix-meaning",
+      "prompt": "Исправь неверное требование и измени срок хранения с года на три года.",
+      "should_trigger": false,
+      "rationale": "Запрос меняет обязательство и относится к управлению изменением."
+    },
+    {
+      "id": "ait-req-refactoring-negative-write-new",
+      "prompt": "Напиши требования к восстановлению пароля с нуля.",
+      "should_trigger": false,
+      "rationale": "Создание новых требований относится к их выявлению и записи."
+    },
+    {
+      "id": "ait-req-refactoring-negative-full-revalidation",
+      "prompt": "Полностью перепроверь все требования проекта от источников до критериев приёмки.",
+      "should_trigger": false,
+      "rationale": "Сквозной проход относится к полной перепроверке требований."
+    },
+    {
+      "id": "ait-req-refactoring-negative-code",
+      "prompt": "Отрефактори модуль авторизации и сохрани его поведение.",
+      "should_trigger": false,
+      "rationale": "Рефакторинг кода не относится к требованиям."
+    },
+    {
+      "id": "ait-req-refactoring-negative-general-doc",
+      "prompt": "Сократи архитектурный обзор без изменения смысла.",
+      "should_trigger": false,
+      "rationale": "Редактура обычного проектного документа относится к техническому письму."
+    }
+  ]
+}

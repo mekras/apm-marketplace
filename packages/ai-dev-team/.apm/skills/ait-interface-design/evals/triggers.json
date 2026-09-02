@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-interface-design",
+  "cases": [
+    {
+      "id": "ait-interface-design-interface-design-positive-new-screen",
+      "prompt": "Спроектируй и реализуй экран входа для Android-приложения: нужен опрятный интерфейс, состояния ошибки и загрузки.",
+      "should_trigger": true,
+      "rationale": "Нужно придать сценарию интерфейсную форму и применить платформенные правила Android."
+    },
+    {
+      "id": "ait-interface-design-interface-design-positive-polish-existing-ui",
+      "prompt": "Улучши существующую веб-форму: сейчас она выглядит сырой, плохо читается и не похожа на цельный продукт.",
+      "should_trigger": true,
+      "rationale": "Нужно улучшить готовый интерфейс, проверить визуальную систему, доступность и результат."
+    },
+    {
+      "id": "ait-interface-design-interface-design-positive-design-md",
+      "prompt": "Помоги создать DESIGN.md для продукта, чтобы агенты держали единый стиль интерфейса.",
+      "should_trigger": true,
+      "rationale": "Создание рекомендованного DESIGN.md входит в навык."
+    },
+    {
+      "id": "ait-interface-design-interface-design-positive-style-direction",
+      "prompt": "Стиля пока нет. Помоги выбрать визуальное направление для iOS-приложения и объясни последствия вариантов.",
+      "should_trigger": true,
+      "rationale": "Навык помогает сформировать стиль через варианты и платформенные правила iOS."
+    },
+    {
+      "id": "ait-interface-design-interface-design-negative-personas-only",
+      "prompt": "Опиши персонажей продукта и их цели, отделив устойчивые цели от задач.",
+      "should_trigger": false,
+      "rationale": "Это пользовательское основание без проектирования интерфейсной формы — навык ait-ux-design."
+    },
+    {
+      "id": "ait-interface-design-interface-design-negative-requirements-doc",
+      "prompt": "Запиши функциональные требования к восстановлению пароля и проверь их на противоречия.",
+      "should_trigger": false,
+      "rationale": "Это запись и проверка требований — навыки ait-req-*."
+    },
+    {
+      "id": "ait-interface-design-interface-design-negative-ux-traceability-only",
+      "prompt": "Проверь, прослеживается ли каждое решение готового экрана до персонажа, цели и сценария.",
+      "should_trigger": false,
+      "rationale": "Это аудит обоснованности UX-решения — навык ait-ux-audit."
+    }
+  ]
+}

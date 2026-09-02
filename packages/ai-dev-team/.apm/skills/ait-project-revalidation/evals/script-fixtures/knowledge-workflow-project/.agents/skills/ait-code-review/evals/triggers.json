@@ -1,0 +1,17 @@
+{
+  "skill_name": "ait-code-review",
+  "cases": [
+    {
+      "id": "ait-code-review-knowledge-fixture-positive",
+      "prompt": "Проверь готовый код.",
+      "should_trigger": true,
+      "rationale": "Фикстура обозначает доступность обзора кода."
+    },
+    {
+      "id": "ait-code-review-knowledge-fixture-negative",
+      "prompt": "Напиши новый модуль.",
+      "should_trigger": false,
+      "rationale": "Создание кода не является обзором."
+    }
+  ]
+}

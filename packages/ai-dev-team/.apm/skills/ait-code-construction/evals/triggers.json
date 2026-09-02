@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-code-construction",
+  "cases": [
+    {
+      "id": "ait-code-construction-construction-positive-method",
+      "prompt": "Помоги спроектировать метод: одна цель, ограниченный объём и аккуратные параметры.",
+      "should_trigger": true,
+      "rationale": "Проектирование метода на уровне реализации — суть навыка."
+    },
+    {
+      "id": "ait-code-construction-construction-positive-defensive",
+      "prompt": "Добавь защитное программирование: обработай неправильные входные данные и исключения, не теряя читаемости.",
+      "should_trigger": true,
+      "rationale": "Защитное программирование входит в конструирование кода."
+    },
+    {
+      "id": "ait-code-construction-construction-positive-refactor",
+      "prompt": "Проведи пошаговый рефакторинг функции, сохраняя поведение и улучшая имена.",
+      "should_trigger": true,
+      "rationale": "Пошаговый рефакторинг и чистота кода входят в навык."
+    },
+    {
+      "id": "ait-code-construction-construction-negative-review",
+      "prompt": "Проверь готовый код коллеги на запахи и соответствие критериям готовности.",
+      "should_trigger": false,
+      "rationale": "Это обзор готового кода — задача ait-code-review, а не конструирования."
+    },
+    {
+      "id": "ait-code-construction-construction-negative-architecture",
+      "prompt": "Определи архитектурные границы и направление зависимостей между компонентами системы.",
+      "should_trigger": false,
+      "rationale": "Выбор архитектурных границ относится к ait-architecture."
+    }
+  ]
+}

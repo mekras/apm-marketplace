@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-sec-access-control",
+  "cases": [
+    {
+      "id": "ait-sec-access-control-security-access-control-positive-microservice-api",
+      "prompt": "Спроектируй управление доступом к API между микросервисами: какие токены и границы доверия использовать.",
+      "should_trigger": true,
+      "rationale": "Прямой запрос на проектирование контроля доступа к API."
+    },
+    {
+      "id": "ait-sec-access-control-security-access-control-positive-oauth-oidc",
+      "prompt": "Нужно решить, где применить OAuth 2.0, а где OpenID Connect для доступа внешних клиентов к нашему API.",
+      "should_trigger": true,
+      "rationale": "Выбор механизмов аутентификации и авторизации API."
+    },
+    {
+      "id": "ait-sec-access-control-security-access-control-positive-trust-domains",
+      "prompt": "Разграничь трастовые домены и определи граничные и внутренние эндпойнты для нашей системы сервисов.",
+      "should_trigger": true,
+      "rationale": "Проектирование доменной иерархии доверия (DHARMA)."
+    },
+    {
+      "id": "ait-sec-access-control-security-access-control-negative-threat-model",
+      "prompt": "Построй полную модель угроз для системы и найди, что может пойти не так.",
+      "should_trigger": false,
+      "rationale": "Это задача навыка security-threat-modeling."
+    },
+    {
+      "id": "ait-sec-access-control-security-access-control-negative-tooling",
+      "prompt": "Какой инструмент или продукт выбрать для управления токенами и шлюзом?",
+      "should_trigger": false,
+      "rationale": "Выбор конкретного средства — задача security-tooling."
+    }
+  ]
+}

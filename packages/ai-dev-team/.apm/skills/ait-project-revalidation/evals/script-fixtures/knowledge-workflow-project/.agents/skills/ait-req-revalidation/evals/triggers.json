@@ -1,0 +1,17 @@
+{
+  "skill_name": "ait-req-revalidation",
+  "cases": [
+    {
+      "id": "ait-req-revalidation-recheck",
+      "prompt": "Перепроверь требования проекта от начала и до конца.",
+      "should_trigger": true,
+      "rationale": "Сценарий проверяет известный навык."
+    },
+    {
+      "id": "ait-req-revalidation-one-item",
+      "prompt": "Проверь одно требование на проверяемость.",
+      "should_trigger": false,
+      "rationale": "Один элемент не требует полной перепроверки."
+    }
+  ]
+}

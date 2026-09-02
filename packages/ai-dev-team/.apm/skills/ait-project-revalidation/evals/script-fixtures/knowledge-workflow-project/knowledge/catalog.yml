@@ -1,0 +1,4 @@
+sources:
+  - id: TEST
+    title: Тестовый источник
+    path: data/test

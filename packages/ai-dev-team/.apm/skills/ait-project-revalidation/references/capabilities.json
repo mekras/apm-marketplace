@@ -1,0 +1,701 @@
+{
+  "version": 1,
+  "stages": ["repository", "requirements", "design", "code", "tests", "assurance", "impact"],
+  "capabilities": [
+    {
+      "id": "role-analyst",
+      "kind": "role",
+      "name": "analyst",
+      "purpose": "Анализ оснований, требований и смысловых связей",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "role-coder",
+      "kind": "role",
+      "name": "coder",
+      "purpose": "Проверка и исправление реализации и тестов",
+      "participation": "check",
+      "stage": "code",
+      "applicability": "model"
+    },
+    {
+      "id": "role-documentation-reader",
+      "kind": "role",
+      "name": "documentation-reader",
+      "purpose": "Проверка документации глазами целевого читателя",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model",
+      "decision_paths": ["README.md"]
+    },
+    {
+      "id": "role-legal",
+      "kind": "role",
+      "name": "legal",
+      "purpose": "Проверка юридически значимых ограничений",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "role-normalizer",
+      "kind": "role",
+      "name": "normalizer",
+      "purpose": "Подготовка производных представлений первичных данных",
+      "participation": "preparation",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "role-project-manager",
+      "kind": "role",
+      "name": "project-manager",
+      "purpose": "Маршрутизация этапов и решений человека",
+      "participation": "preparation",
+      "stage": "repository",
+      "applicability": "always"
+    },
+    {
+      "id": "role-reliability-engineer",
+      "kind": "role",
+      "name": "reliability-engineer",
+      "purpose": "Проверка надёжности и эксплуатации",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "role-security-engineer",
+      "kind": "role",
+      "name": "security-engineer",
+      "purpose": "Проверка безопасности и управления доступом",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "role-software-architect",
+      "kind": "role",
+      "name": "software-architect",
+      "purpose": "Проверка архитектурных границ и решений",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "role-source-inventory",
+      "kind": "role",
+      "name": "source-inventory",
+      "purpose": "Проверка происхождения и учёта источников",
+      "participation": "check",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "role-statement-extractor",
+      "kind": "role",
+      "name": "statement-extractor",
+      "purpose": "Извлечение проверяемых утверждений из источников",
+      "participation": "preparation",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "role-technical-writer",
+      "kind": "role",
+      "name": "technical-writer",
+      "purpose": "Проверка и исправление документации",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model",
+      "decision_paths": ["README.md"]
+    },
+    {
+      "id": "role-ux-specialist",
+      "kind": "role",
+      "name": "ux-specialist",
+      "purpose": "Проверка пользовательского опыта и дизайна",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-analysis",
+      "kind": "skill",
+      "name": "ait-analysis",
+      "purpose": "Анализ материалов, выводов и пробелов",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-arch-revalidation",
+      "kind": "skill",
+      "name": "ait-arch-revalidation",
+      "purpose": "Поэтапная перепроверка архитектуры",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-architecture",
+      "kind": "skill",
+      "name": "ait-architecture",
+      "purpose": "Проверка архитектуры и значимых решений",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-changelog",
+      "kind": "skill",
+      "name": "ait-changelog",
+      "purpose": "Проверка журнала изменений",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-code-construction",
+      "kind": "skill",
+      "name": "ait-code-construction",
+      "purpose": "Исправление реализации",
+      "participation": "correction",
+      "stage": "code",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-code-review",
+      "kind": "skill",
+      "name": "ait-code-review",
+      "purpose": "Обзор готового кода",
+      "participation": "check",
+      "stage": "code",
+      "applicability": "model",
+      "activation_patterns": [
+        "**/*.c", "**/*.cc", "**/*.cpp", "**/*.cs", "**/*.go",
+        "**/*.h", "**/*.hpp", "**/*.java", "**/*.js", "**/*.jsx",
+        "**/*.kt", "**/*.kts", "**/*.php", "**/*.py", "**/*.rb",
+        "**/*.rs", "**/*.swift", "**/*.ts", "**/*.tsx"
+      ],
+      "required_subject_patterns": [
+        "**/*.c", "**/*.cc", "**/*.cpp", "**/*.cs", "**/*.go",
+        "**/*.h", "**/*.hpp", "**/*.java", "**/*.js", "**/*.jsx",
+        "**/*.kt", "**/*.kts", "**/*.php", "**/*.py", "**/*.rb",
+        "**/*.rs", "**/*.swift", "**/*.ts", "**/*.tsx"
+      ],
+      "subject_discovery_required": true,
+      "semantic_required": true,
+      "review_criteria": [
+        {
+          "id": "implementation-quality",
+          "description": "Исходный код читаем, обрабатывает ошибки в своей границе и не распространяет детали внешних API без необходимости.",
+          "coverage": "each_subject"
+        },
+        {
+          "id": "implementation-traceability",
+          "description": "Реализация и её тесты прослеживаются к требованиям, архитектуре и пользовательским сценариям либо имеют проверяемое основание отсутствия влияния.",
+          "coverage": "surface"
+        }
+      ]
+    },
+    {
+      "id": "skill-ait-code-testing",
+      "kind": "skill",
+      "name": "ait-code-testing",
+      "purpose": "Проектирование и проверка тестов разработчика",
+      "participation": "check",
+      "stage": "tests",
+      "applicability": "model",
+      "activation_patterns": [
+        "**/*Test.*", "**/*Tests.*", "**/*test.*", "**/*tests.*",
+        "**/test_*.py"
+      ],
+      "required_subject_patterns": [
+        "**/*Test.*", "**/*Tests.*", "**/*test.*", "**/*tests.*",
+        "**/test_*.py"
+      ],
+      "subject_discovery_required": true,
+      "semantic_required": true,
+      "review_criteria": [
+        {
+          "id": "test-quality",
+          "description": "Тесты читаемы, независимы, повторяемы и проверяют наблюдаемое поведение на нужной границе.",
+          "coverage": "each_subject"
+        },
+        {
+          "id": "test-risk-coverage",
+          "description": "Набор тестов покрывает значимые риски реализации либо содержит проверяемое обоснование остаточного риска.",
+          "coverage": "surface"
+        }
+      ]
+    },
+    {
+      "id": "skill-ait-commit-messages",
+      "kind": "skill",
+      "name": "ait-commit-messages",
+      "purpose": "Проверка сообщений коммитов",
+      "participation": "constraint",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-decisions",
+      "kind": "skill",
+      "name": "ait-decisions",
+      "purpose": "Проверка значимых проектных решений",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-docs-concept",
+      "kind": "skill",
+      "name": "ait-docs-concept",
+      "purpose": "Проверка концепции проекта",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "always",
+      "review_criteria": [
+        {
+          "id": "problem-goal-method-result",
+          "description": "Концепция согласованно объясняет проблему, цель, способ достижения и ожидаемый итог проекта.",
+          "coverage": "surface"
+        },
+        {
+          "id": "essential-frames",
+          "description": "Концепция называет существенные рамки, если без них замысел проекта становится неоднозначным, и не подменяет нормативные требования.",
+          "coverage": "surface"
+        },
+        {
+          "id": "meaning-and-modality",
+          "description": "Тезисы концепции не противоречат друг другу, сохраняют различие текущего состояния и цели и не подменены перечнем функций или технологий.",
+          "coverage": "surface"
+        }
+      ]
+    },
+    {
+      "id": "skill-ait-docs-structure-audit",
+      "kind": "skill",
+      "name": "ait-docs-structure-audit",
+      "purpose": "Проверка структуры документации",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model",
+      "activation_patterns": ["docs/*.md", "docs/**/*.md"],
+      "required_subject_patterns": ["docs/*.md", "docs/**/*.md"],
+      "subject_discovery_required": true,
+      "semantic_required": true,
+      "review_criteria": [
+        {"id": "document-role-and-authority", "description": "Каждый документ имеет установленное смысловое назначение и понятный источник авторитета.", "coverage": "each_subject"},
+        {"id": "structure-navigation-and-dependencies", "description": "Структура, входные точки и связи документов помогают читателю находить нужный материал и не скрывают производителей или потребителей артефактов.", "coverage": "surface"}
+      ]
+    },
+    {
+      "id": "skill-ait-docs-structure-design",
+      "kind": "skill",
+      "name": "ait-docs-structure-design",
+      "purpose": "Исправление структуры документации",
+      "participation": "correction",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-docs-structure-rules",
+      "kind": "skill",
+      "name": "ait-docs-structure-rules",
+      "purpose": "Ограничения структуры документации",
+      "participation": "constraint",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-hypotheses",
+      "kind": "skill",
+      "name": "ait-hypotheses",
+      "purpose": "Проверка проектных гипотез",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-impact-analysis",
+      "kind": "skill",
+      "name": "ait-impact-analysis",
+      "purpose": "Сквозной анализ влияния по общему графу проекта",
+      "participation": "check",
+      "stage": "impact",
+      "applicability": "always",
+      "decision_paths": [".ai-dev-team/project-impact.json"],
+      "required_subject_patterns": [".ai-dev-team/project-impact.json"],
+      "semantic_required": true,
+      "review_criteria": [
+        {"id": "graph-artifact-and-edge-truth", "description": "Узлы графа соответствуют реальным артефактам, а каждое существенное ребро выражает действительную зависимость, а не только формальную ссылку.", "coverage": "surface"},
+        {"id": "graph-coverage-and-transitivity", "description": "Граф охватывает существенные зависимости между основаниями, требованиями, дизайном, реализацией, проверками и документацией и позволяет вычислить их транзитивное влияние.", "coverage": "surface"}
+      ]
+    },
+    {
+      "id": "skill-ait-session-analysis",
+      "kind": "skill",
+      "name": "ait-session-analysis",
+      "purpose": "Анализ локальных журналов реальных сессий по явному запросу",
+      "participation": "not_applicable",
+      "applicability": "never"
+    },
+    {
+      "id": "skill-ait-session-report-review",
+      "kind": "skill",
+      "name": "ait-session-report-review",
+      "purpose": "Проверка отдельно переданного отчёта о сессиях",
+      "participation": "not_applicable",
+      "applicability": "never"
+    },
+    {
+      "id": "skill-ait-interface-design",
+      "kind": "skill",
+      "name": "ait-interface-design",
+      "purpose": "Проверка и исправление интерфейсов",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-licensing",
+      "kind": "skill",
+      "name": "ait-licensing",
+      "purpose": "Проверка лицензий и совместимости",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-personal-data",
+      "kind": "skill",
+      "name": "ait-personal-data",
+      "purpose": "Проверка обработки персональных данных",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-private-knowledge",
+      "kind": "skill",
+      "name": "ait-private-knowledge",
+      "purpose": "Проверка границы приватных знаний",
+      "participation": "check",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-project-revalidation",
+      "kind": "skill",
+      "name": "ait-project-revalidation",
+      "purpose": "Координация полной проверки",
+      "participation": "preparation",
+      "stage": "repository",
+      "applicability": "always"
+    },
+    {
+      "id": "skill-kc-validation",
+      "kind": "skill",
+      "name": "kc-validation",
+      "external": true,
+      "purpose": "Проверка целостности и применимости корпуса знаний",
+      "participation": "check",
+      "stage": "repository",
+      "applicability": "model",
+      "activation_patterns": ["knowledge/**"],
+      "subject_discovery_required": true,
+      "semantic_required": true
+    },
+    {
+      "id": "skill-ait-readme",
+      "kind": "skill",
+      "name": "ait-readme",
+      "purpose": "Проверка главного пользовательского входа",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model",
+      "decision_paths": ["README.md"]
+    },
+    {
+      "id": "skill-ait-reconstructability",
+      "kind": "skill",
+      "name": "ait-reconstructability",
+      "purpose": "Проверка реконструируемости проекта",
+      "participation": "check",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-reliability",
+      "kind": "skill",
+      "name": "ait-reliability",
+      "purpose": "Проверка надёжности и устойчивости",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-req-analysis",
+      "kind": "skill",
+      "name": "ait-req-analysis",
+      "purpose": "Анализ требований",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-req-elicitation",
+      "kind": "skill",
+      "name": "ait-req-elicitation",
+      "purpose": "Проверка источников и выявления требований",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-req-management",
+      "kind": "skill",
+      "name": "ait-req-management",
+      "purpose": "Проверка статусов, связей и изменений требований",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-req-refactoring",
+      "kind": "skill",
+      "name": "ait-req-refactoring",
+      "purpose": "Исправление структуры требований без изменения смысла",
+      "participation": "correction",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-req-revalidation",
+      "kind": "skill",
+      "name": "ait-req-revalidation",
+      "purpose": "Поэтапная перепроверка требований",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model",
+      "ontology_scope": {
+        "node_kinds": ["requirements"]
+      },
+      "subject_discovery_required": true,
+      "review_criteria": [
+        {
+          "id": "level-and-solution-boundary",
+          "description": "Уровень требования определён правильно, а потребность, функция и проектное решение не смешаны.",
+          "coverage": "each_subject"
+        },
+        {
+          "id": "source-and-necessity",
+          "description": "У требования есть проверяемое основание, необходимость и владелец значимого решения.",
+          "coverage": "each_subject"
+        },
+        {
+          "id": "clarity-and-verifiability",
+          "description": "Обязательство сформулировано однозначно и допускает проверку без домысливания.",
+          "coverage": "each_subject"
+        },
+        {
+          "id": "set-consistency-and-traceability",
+          "description": "Набор не содержит противоречий, циклических оснований и необъяснённых разрывов связей между уровнями.",
+          "coverage": "surface"
+        }
+      ]
+    },
+    {
+      "id": "skill-ait-req-specification",
+      "kind": "skill",
+      "name": "ait-req-specification",
+      "purpose": "Исправление записи требований",
+      "participation": "correction",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-req-validation",
+      "kind": "skill",
+      "name": "ait-req-validation",
+      "purpose": "Проверка требований и критериев приёмки",
+      "participation": "check",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-routing",
+      "kind": "skill",
+      "name": "ait-routing",
+      "purpose": "Построение маршрута полной проверки",
+      "participation": "preparation",
+      "stage": "repository",
+      "applicability": "always"
+    },
+    {
+      "id": "skill-ait-scrum",
+      "kind": "skill",
+      "name": "ait-scrum",
+      "purpose": "Проверка организации разработки по Scrum",
+      "participation": "check",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-sdd",
+      "kind": "skill",
+      "name": "ait-sdd",
+      "purpose": "Ограничения принятой разработки на основе спецификаций",
+      "participation": "constraint",
+      "stage": "requirements",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-sec-access-control",
+      "kind": "skill",
+      "name": "ait-sec-access-control",
+      "purpose": "Проверка управления доступом",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-sec-ai",
+      "kind": "skill",
+      "name": "ait-sec-ai",
+      "purpose": "Проверка безопасности использования ИИ",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-sec-audit",
+      "kind": "skill",
+      "name": "ait-sec-audit",
+      "purpose": "Аудит внедрённых мер защиты",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-sec-threat-modeling",
+      "kind": "skill",
+      "name": "ait-sec-threat-modeling",
+      "purpose": "Проверка модели угроз",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-sec-tooling",
+      "kind": "skill",
+      "name": "ait-sec-tooling",
+      "purpose": "Проверка средств безопасности",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-setup",
+      "kind": "skill",
+      "name": "ait-setup",
+      "purpose": "Исправление настроек проекта",
+      "participation": "correction",
+      "stage": "repository",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-twelve-factor",
+      "kind": "skill",
+      "name": "ait-twelve-factor",
+      "purpose": "Проверка применимости The Twelve-Factor App",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-ui-kit",
+      "kind": "skill",
+      "name": "ait-ui-kit",
+      "purpose": "Проверка и исправление UI Kit",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-ux-audit",
+      "kind": "skill",
+      "name": "ait-ux-audit",
+      "purpose": "Проверка обоснованности пользовательского опыта",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model",
+      "activation_patterns": ["**/persona*/**", "**/personas/**", "**/персонаж*/**", "**/ux/**"],
+      "required_subject_patterns": ["**/persona*/**", "**/personas/**", "**/персонаж*/**", "**/ux/**"],
+      "subject_discovery_required": true,
+      "semantic_required": true,
+      "review_criteria": [
+        {"id": "persona-goals-and-specificity", "description": "Каждый персонаж различим по целям, мотивам, контексту и значимым особенностям, а не по должности или перечню функций.", "coverage": "each_subject", "subject_types": ["persona"]},
+        {"id": "external-actor-scenario-link", "description": "Каждый внешний актор связан с пользовательским сценарием и не выдаётся за персонажа без подтверждённой пользовательской модели.", "coverage": "each_subject", "subject_types": ["external-actor"]},
+        {"id": "ux-traceability", "description": "Цели персонажей и сценарии прослеживаются до решений продукта без подмены целей функциями.", "coverage": "surface"}
+      ]
+    },
+    {
+      "id": "skill-ait-ux-design",
+      "kind": "skill",
+      "name": "ait-ux-design",
+      "purpose": "Проверка и исправление пользовательских сценариев",
+      "participation": "check",
+      "stage": "design",
+      "applicability": "model"
+    },
+    {
+      "id": "skill-ait-writing",
+      "kind": "skill",
+      "name": "ait-writing",
+      "purpose": "Проверка и исправление технического текста",
+      "participation": "check",
+      "stage": "assurance",
+      "applicability": "model",
+      "decision_paths": ["README.md"],
+      "activation_patterns": ["docs/*.md", "docs/**/*.md"],
+      "required_subject_patterns": ["docs/*.md", "docs/**/*.md"],
+      "subject_discovery_required": true,
+      "semantic_required": true,
+      "review_criteria": [
+        {"id": "document-purpose-and-clarity", "description": "Каждый документ сохраняет своё назначение, не противоречит авторитетным основаниям и даёт читателю понятное следующее действие или вывод.", "coverage": "each_subject"}
+      ]
+    },
+    {
+      "id": "rule-ai-dev-team-connection",
+      "kind": "rule",
+      "name": "ai-dev-team-connection",
+      "purpose": "Ограничения подключения и маршрутизации продукта",
+      "participation": "constraint",
+      "stage": "repository",
+      "applicability": "always"
+    },
+    {
+      "id": "rule-agents",
+      "kind": "rule",
+      "name": "AGENTS",
+      "external": true,
+      "purpose": "Локальные инструкции агента целевого проекта",
+      "participation": "not_applicable",
+      "applicability": "never"
+    },
+    {
+      "id": "rule-claude",
+      "kind": "rule",
+      "name": "CLAUDE",
+      "external": true,
+      "purpose": "Локальные инструкции Claude целевого проекта",
+      "participation": "not_applicable",
+      "applicability": "never"
+    }
+  ]
+}

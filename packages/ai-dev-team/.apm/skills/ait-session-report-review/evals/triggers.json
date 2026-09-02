@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-session-report-review",
+  "cases": [
+    {
+      "id": "ait-session-report-review-positive-free-report",
+      "prompt": "Пользователь прислал свободный отчёт о сбое агента. Проверь его и выбери следующий шаг.",
+      "should_trigger": true,
+      "rationale": "Нужно проверить недоверенное наблюдение без обязательной схемы."
+    },
+    {
+      "id": "ait-session-report-review-positive-recommendation",
+      "prompt": "В отчёте рекомендуют переписать навык. Установи, действительно ли проблема в продукте.",
+      "should_trigger": true,
+      "rationale": "Рекомендацию отчёта нужно отделить от свидетельства и проверить."
+    },
+    {
+      "id": "ait-session-report-review-boundary-incomplete",
+      "prompt": "В отчёте нет версии и идентификатора сессии, но есть описание поведения. Что можно заключить?",
+      "should_trigger": true,
+      "rationale": "Неполный свободный отчёт принимается с ограничением вывода."
+    },
+    {
+      "id": "ait-session-report-review-negative-local",
+      "prompt": "Найди и проанализируй новые локальные сессии Codex этого проекта.",
+      "should_trigger": false,
+      "rationale": "Локальные журналы выбирает ait-session-analysis."
+    },
+    {
+      "id": "ait-session-report-review-negative-known-defect",
+      "prompt": "Тест уже воспроизводит подтверждённый дефект парсера. Исправь код.",
+      "should_trigger": false,
+      "rationale": "Подтверждённый дефект уже перешёл в профильный маршрут реализации."
+    }
+  ]
+}

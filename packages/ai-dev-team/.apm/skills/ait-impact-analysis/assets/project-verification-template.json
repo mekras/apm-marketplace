@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "verification": {
+    "name": "Пример целевого проекта",
+    "impact_graph": ".ai-dev-team/project-impact.json",
+    "full_checks": ["python-tests"],
+    "full_coverage_paths": [
+      ".ai-dev-team/project-impact.json",
+      ".ai-dev-team/project-verification.json",
+      "pyproject.toml",
+      "uv.lock",
+      "package.json",
+      "package-lock.json",
+      "Makefile",
+      ".github/**"
+    ],
+    "global_inputs": [
+      ".ai-dev-team/project-impact.json",
+      ".ai-dev-team/project-verification.json",
+      "pyproject.toml",
+      "uv.lock"
+    ],
+    "output_limit": 2000
+  },
+  "areas": [
+    {
+      "id": "application",
+      "title": "Код приложения и его тесты",
+      "impact_nodes": ["implementation", "tests"],
+      "checks": ["python-tests"]
+    }
+  ],
+  "checks": [
+    {
+      "id": "python-tests",
+      "title": "Тесты Python",
+      "command": ["python3", "-m", "pytest", "tests"],
+      "cwd": ".",
+      "inputs": ["src/**", "tests/**", "pyproject.toml", "uv.lock"],
+      "environment": {
+        "inherit": ["PATH"],
+        "set": {
+          "PYTHONHASHSEED": "0"
+        }
+      },
+      "tool_version_command": ["python3", "--version"]
+    }
+  ]
+}

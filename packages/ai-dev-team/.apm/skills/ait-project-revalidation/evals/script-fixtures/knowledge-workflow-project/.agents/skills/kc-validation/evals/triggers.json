@@ -1,0 +1,17 @@
+{
+  "skill_name": "kc-validation",
+  "cases": [
+    {
+      "id": "kc-validation-full-check",
+      "prompt": "Проверь корпус знаний на целостность и полноту.",
+      "should_trigger": true,
+      "rationale": "Сценарий проверяет известный навык."
+    },
+    {
+      "id": "kc-validation-one-file",
+      "prompt": "Проверь синтаксис одного файла корпуса.",
+      "should_trigger": false,
+      "rationale": "Одна техническая проверка не заменяет проверку корпуса."
+    }
+  ]
+}

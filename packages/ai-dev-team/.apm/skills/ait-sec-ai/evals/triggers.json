@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-sec-ai",
+  "cases": [
+    {
+      "id": "ait-sec-ai-positive-threat-model",
+      "prompt": "Построй модель угроз для помощника с RAG и MCP, который читает договоры и создаёт заявки в CRM.",
+      "should_trigger": true,
+      "rationale": "Запрос охватывает ИИ, данные, поиск, средства агента и действия от имени человека."
+    },
+    {
+      "id": "ait-sec-ai-positive-policy",
+      "prompt": "На основе модели угроз подготовь корпоративные и проектные правила безопасного использования внешнего ИИ.",
+      "should_trigger": true,
+      "rationale": "Нужно вывести два вида правил из модели угроз и сохранить их границу."
+    },
+    {
+      "id": "ait-sec-ai-positive-audit",
+      "prompt": "Проверь навыки, AGENTS.md, поставщиков и настройки агента на соответствие нашим правилам ИБ ИИ.",
+      "should_trigger": true,
+      "rationale": "Это аудит использования ИИ по принятым правилам."
+    },
+    {
+      "id": "ait-sec-ai-positive-development",
+      "prompt": "Спроектируй безопасную разработку ИИ-системы, которая дообучает модель на обращениях поддержки и предоставляет агенту доступ к внутренним API.",
+      "should_trigger": true,
+      "rationale": "Запрос относится к разработке ИИ-системы, данным обучения и действиям агента."
+    },
+    {
+      "id": "ait-sec-ai-negative-legal",
+      "prompt": "Можно ли по закону передавать персональные данные в этот ИИ-сервис?",
+      "should_trigger": false,
+      "rationale": "Правовое заключение относится к роли legal."
+    },
+    {
+      "id": "ait-sec-ai-negative-general-threat-model",
+      "prompt": "Построй модель угроз для обычного REST API без компонентов ИИ.",
+      "should_trigger": false,
+      "rationale": "Это общая модель угроз через ait-sec-threat-modeling."
+    },
+    {
+      "id": "ait-sec-ai-negative-structure-audit",
+      "prompt": "Проверь, не противоречит ли AGENTS.md сам себе.",
+      "should_trigger": false,
+      "rationale": "Без контекста ИБ ИИ это аудит структуры правил агента."
+    }
+  ]
+}

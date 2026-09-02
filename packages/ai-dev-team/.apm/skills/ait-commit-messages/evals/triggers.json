@@ -1,0 +1,41 @@
+{
+  "skill_name": "ait-commit-messages",
+  "cases": [
+    {
+      "id": "ait-commit-messages-positive-compose",
+      "prompt": "Подготовь сообщение коммита по выбранной схеме проекта.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо относится к созданию сообщения коммита."
+    },
+    {
+      "id": "ait-commit-messages-positive-check",
+      "prompt": "Проверь, соответствует ли этот заголовок Conventional Commits.",
+      "should_trigger": true,
+      "rationale": "Нужно проверить сообщение по выбранной схеме."
+    },
+    {
+      "id": "ait-commit-messages-positive-commit",
+      "prompt": "Делай коммит подготовленных изменений, соблюдая правила проекта.",
+      "should_trigger": true,
+      "rationale": "Перед git commit нужно составить сообщение по правилам проекта."
+    },
+    {
+      "id": "ait-commit-messages-negative-changelog",
+      "prompt": "Обнови CHANGELOG.md перед выпуском версии.",
+      "should_trigger": false,
+      "rationale": "Журнал изменений сопровождает ait-changelog."
+    },
+    {
+      "id": "ait-commit-messages-negative-pull-request",
+      "prompt": "Напиши описание запроса на слияние по сделанным изменениям.",
+      "should_trigger": false,
+      "rationale": "Описание запроса на слияние не является сообщением коммита."
+    },
+    {
+      "id": "ait-commit-messages-boundary-setup",
+      "prompt": "Настрой новый проект и предложи выбрать схему коммитов.",
+      "should_trigger": false,
+      "rationale": "Выбор проектной схемы относится к ait-setup."
+    }
+  ]
+}

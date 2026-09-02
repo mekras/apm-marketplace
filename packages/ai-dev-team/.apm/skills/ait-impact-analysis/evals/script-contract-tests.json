@@ -1,0 +1,199 @@
+{
+  "version": 2,
+  "operations": [
+    {
+      "id": "impact-graph-validate",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": ["validate"],
+      "inputs": []
+    },
+    {
+      "id": "impact-graph-trace",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": ["trace"],
+      "inputs": []
+    },
+    {
+      "id": "impact-graph-assess",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": ["assess"],
+      "inputs": []
+    },
+    {
+      "id": "impact-graph-coverage",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": ["coverage"],
+      "inputs": []
+    },
+    {
+      "id": "selective-verification-validate",
+      "script": "scripts/selective_verification.py",
+      "command_prefix": ["validate"],
+      "inputs": []
+    },
+    {
+      "id": "selective-verification-run",
+      "script": "scripts/selective_verification.py",
+      "command_prefix": ["run"],
+      "inputs": []
+    }
+  ],
+  "cases": [
+    {
+      "id": "validate-minimal-impact-graph",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "validate",
+        "--graph",
+        "{fixture}/.ai-dev-team/project-impact.json"
+      ],
+      "covers": ["impact-graph-validate"],
+      "expect": {
+        "stdout_contains": ["\"status\": \"ok\""]
+      }
+    },
+    {
+      "id": "trace-minimal-impact-graph",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "trace",
+        "--graph",
+        "{fixture}/.ai-dev-team/project-impact.json",
+        "--changed-path",
+        "src/module.py",
+        "--facet",
+        "quality"
+      ],
+      "covers": ["impact-graph-trace"],
+      "expect": {
+        "stdout_contains": ["\"id\": \"tests\""]
+      }
+    },
+    {
+      "id": "trace-minimal-impact-graph-by-node",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "trace",
+        "--graph",
+        "{fixture}/.ai-dev-team/project-impact.json",
+        "--changed-node",
+        "implementation:quality"
+      ],
+      "covers": ["impact-graph-trace"],
+      "expect": {
+        "stdout_contains": ["\"id\": \"tests\""]
+      }
+    },
+    {
+      "id": "assess-minimal-impact-graph",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "assess",
+        "--graph",
+        "{fixture}/.ai-dev-team/project-impact.json",
+        "--changed-path",
+        "src/module.py",
+        "--facet",
+        "quality",
+        "--status",
+        "tests=verified_no_impact"
+      ],
+      "covers": ["impact-graph-assess"],
+      "expect": {
+        "stdout_contains": ["\"complete\": true"]
+      }
+    },
+    {
+      "id": "cover-minimal-impact-graph",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "coverage",
+        "--graph",
+        "{fixture}/.ai-dev-team/project-impact.json",
+        "--repo",
+        "{fixture}"
+      ],
+      "covers": ["impact-graph-coverage"],
+      "expect": {
+        "stdout_contains": ["\"complete\": true"]
+      }
+    },
+    {
+      "id": "validate-minimal-verification-config",
+      "script": "scripts/selective_verification.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "command": [
+        "{python}",
+        "{script}",
+        "validate",
+        "--repo",
+        "{fixture}",
+        "--config",
+        "{fixture}/.ai-dev-team/project-verification.json"
+      ],
+      "covers": ["selective-verification-validate"],
+      "expect": {
+        "stdout_contains": ["\"status\": \"passed\""]
+      }
+    },
+    {
+      "id": "run-minimal-verification-config",
+      "script": "scripts/selective_verification.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "prepare": [
+        ["git", "init", "{fixture}"],
+        ["git", "-C", "{fixture}", "add", "."],
+        [
+          "git",
+          "-C",
+          "{fixture}",
+          "-c",
+          "user.email=contract@example.invalid",
+          "-c",
+          "user.name=Contract",
+          "commit",
+          "-m",
+          "Initial fixture"
+        ],
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path; path = Path('src/module.py'); path.parent.mkdir(exist_ok=True); path.write_text('changed\\n', encoding='utf-8')"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "run",
+        "--repo",
+        "{fixture}",
+        "--config",
+        "{fixture}/.ai-dev-team/project-verification.json",
+        "--base",
+        "HEAD"
+      ],
+      "covers": ["selective-verification-run"],
+      "expect": {
+        "stdout_contains": [
+          "\"status\": \"passed\"",
+          "\"status\": \"executed\""
+        ]
+      }
+    }
+  ]
+}

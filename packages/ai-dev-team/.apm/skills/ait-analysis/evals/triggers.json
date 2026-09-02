@@ -1,0 +1,29 @@
+{
+  "skill_name": "ait-analysis",
+  "cases": [
+    {
+      "id": "ait-analysis-analysis-positive-findings",
+      "prompt": "Сопоставь собранные утверждения и выяви противоречия, пробелы и кандидаты в требования.",
+      "should_trigger": true,
+      "rationale": "Переход от утверждений к выводам — суть навыка."
+    },
+    {
+      "id": "ait-analysis-analysis-positive-readiness",
+      "prompt": "Определи, достаточно ли оснований, чтобы перейти к проектному решению.",
+      "should_trigger": true,
+      "rationale": "Оценка достаточности оснований входит в навык."
+    },
+    {
+      "id": "ait-analysis-analysis-negative-corpus",
+      "prompt": "Проанализируй состояние корпуса знаний: источники, нормализацию и влияние.",
+      "should_trigger": false,
+      "rationale": "Анализ корпуса — задача kc-analysis, а не этого навыка."
+    },
+    {
+      "id": "ait-analysis-analysis-negative-write",
+      "prompt": "Оформи уже утверждённое решение в проектный документ.",
+      "should_trigger": false,
+      "rationale": "Это документирование (ait-writing), а не анализ."
+    }
+  ]
+}

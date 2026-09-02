@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Сессия</title>
+    <style>
+      .session-id {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 8px;
+        max-width: 720px;
+      }
+
+      .session-id code {
+        overflow-wrap: anywhere;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="session-id">
+      <span>Идентификатор</span>
+      <code>123e4567-e89b-12d3-a456-426614174000</code>
+      <button id="copy-session-id" type="button" aria-label="Скопировать идентификатор сессии">
+        ⧉
+      </button>
+    </div>
+    <p id="message" role="status"></p>
+    <script>
+      const button = document.querySelector("#copy-session-id");
+      const identifier = document.querySelector(".session-id code");
+      const message = document.querySelector("#message");
+
+      button.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(identifier.textContent);
+        } catch {
+          message.textContent = "Не удалось скопировать идентификатор сессии.";
+        }
+      });
+    </script>
+  </body>
+</html>

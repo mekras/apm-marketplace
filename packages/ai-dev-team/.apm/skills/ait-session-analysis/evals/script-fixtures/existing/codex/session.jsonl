@@ -1,0 +1,3 @@
+{"timestamp":"2026-08-25T10:00:00Z","type":"session_meta","payload":{"id":"codex-session","cwd":"project"}}
+{"timestamp":"2026-08-25T10:01:00Z","type":"event_msg","payload":{"type":"user_message","message":"Find the defect."}}
+{"timestamp":"2026-08-25T10:02:00Z","type":"event_msg","payload":{"type":"task_complete","turn_id":"codex-turn-1","last_agent_message":"Validation ran twice."}}

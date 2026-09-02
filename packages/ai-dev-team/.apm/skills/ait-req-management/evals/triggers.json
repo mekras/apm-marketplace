@@ -1,0 +1,65 @@
+{
+  "skill_name": "ait-req-management",
+  "cases": [
+    {
+      "id": "ait-req-management-requirements-management-positive-prioritize",
+      "prompt": "Помоги расставить приоритеты требований по бизнес-ценности, риску, стоимости и зависимости.",
+      "should_trigger": true,
+      "rationale": "Приоритизация требований относится к управлению требованиями."
+    },
+    {
+      "id": "ait-req-management-requirements-management-positive-baseline",
+      "prompt": "Создай базовую версию требований для релиза и опиши, как дальше вносить изменения.",
+      "should_trigger": true,
+      "rationale": "Базовая версия и правило изменений относятся к requirements-management."
+    },
+    {
+      "id": "ait-req-management-requirements-management-positive-change-impact",
+      "prompt": "Оцени запрос на изменение: какие требования, тесты, сроки, риски и документы он затрагивает.",
+      "should_trigger": true,
+      "rationale": "Анализ влияния изменения относится к управлению требованиями."
+    },
+    {
+      "id": "ait-req-management-requirements-management-positive-status-workflow",
+      "prompt": "Предложи статусы требований и правила переходов для команды: черновик, согласовано, реализовано, принято.",
+      "should_trigger": true,
+      "rationale": "Статусы требований и переходы относятся к requirements-management."
+    },
+    {
+      "id": "ait-req-management-requirements-management-positive-traceability",
+      "prompt": "Построй матрицу отслеживаемости: бизнес-цели, требования, задачи, тесты и релизы.",
+      "should_trigger": true,
+      "rationale": "Отслеживаемость требований относится к requirements-management."
+    },
+    {
+      "id": "ait-req-management-requirements-management-positive-risk-card",
+      "prompt": "Заведи риск требований: пользователи мало участвуют, оцени вероятность, влияние, владельца и план смягчения.",
+      "should_trigger": true,
+      "rationale": "Риск требований и его сопровождение относятся к requirements-management."
+    },
+    {
+      "id": "ait-req-management-requirements-management-negative-elicitation",
+      "prompt": "Составь план интервью с пользователями, чтобы впервые собрать требования к сервису.",
+      "should_trigger": false,
+      "rationale": "Первичный сбор требований относится к requirements-elicitation."
+    },
+    {
+      "id": "ait-req-management-requirements-management-negative-analysis",
+      "prompt": "Разбери заметки и отдели пользовательские задачи от функциональных требований и бизнес-правил.",
+      "should_trigger": false,
+      "rationale": "Смысловой анализ требований относится к requirements-analysis."
+    },
+    {
+      "id": "ait-req-management-requirements-management-negative-specification",
+      "prompt": "Запиши эти требования в спецификацию с идентификаторами и измеримыми критериями.",
+      "should_trigger": false,
+      "rationale": "Запись требований относится к requirements-specification."
+    },
+    {
+      "id": "ait-req-management-requirements-management-negative-architecture-impact",
+      "prompt": "Из-за нового требования нужно выбрать: событийная интеграция или синхронный API. Оформи ADR.",
+      "should_trigger": false,
+      "rationale": "Архитектурный выбор и ADR относятся к software-architecture."
+    }
+  ]
+}

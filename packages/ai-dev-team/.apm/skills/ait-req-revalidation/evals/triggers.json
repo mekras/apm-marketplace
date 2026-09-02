@@ -1,0 +1,53 @@
+{
+  "skill_name": "ait-req-revalidation",
+  "cases": [
+    {
+      "id": "ait-req-revalidation-req-revalidation-positive-recheck",
+      "prompt": "Перепроверь требования проекта от начала и до конца.",
+      "should_trigger": true,
+      "rationale": "Запрос на сквозную перепроверку требований."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-positive-full-check",
+      "prompt": "Полностью проверь требования: от корпуса знаний и концепции до детальных требований.",
+      "should_trigger": true,
+      "rationale": "Нужен сквозной проход по слоям от первичных данных к деталям."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-positive-staged",
+      "prompt": "Проведи постепенную перепроверку требований: закрывай дефекты каждого слоя до перехода к следующему.",
+      "should_trigger": true,
+      "rationale": "Постепенный проход по слоям с закрытием каждого слоя — назначение навыка."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-positive-from-primary",
+      "prompt": "Проверь требования начиная с первичных материалов проекта и доведи проверку до детальных требований.",
+      "should_trigger": true,
+      "rationale": "Сквозная проверка от первичных оснований к детальным требованиям."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-negative-single-requirement",
+      "prompt": "Проверь одно требование на проверяемость и наличие критериев приёмки.",
+      "should_trigger": false,
+      "rationale": "Проверка одного требования относится к ait-req-validation."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-negative-change-request",
+      "prompt": "Зарегистрируй запрос на изменение требования и оцени влияние на выпуск.",
+      "should_trigger": false,
+      "rationale": "Один запрос на изменение относится к ait-req-management."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-negative-corpus-only",
+      "prompt": "Проверь только корпус знаний на целостность и полноту обработки.",
+      "should_trigger": false,
+      "rationale": "Проверка только корпуса относится к kc-validation."
+    },
+    {
+      "id": "ait-req-revalidation-req-revalidation-negative-write-requirements",
+      "prompt": "Напиши функциональные требования для сценария восстановления пароля.",
+      "should_trigger": false,
+      "rationale": "Написание требований относится к ait-req-specification."
+    }
+  ]
+}

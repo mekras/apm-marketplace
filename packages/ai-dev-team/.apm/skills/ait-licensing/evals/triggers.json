@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-licensing",
+  "cases": [
+    {
+      "id": "ait-licensing-licensing-positive-choose",
+      "prompt": "Помоги выбрать лицензию с открытым кодом для нашего публичного проекта.",
+      "should_trigger": true,
+      "rationale": "Выбор лицензии проекта — суть навыка."
+    },
+    {
+      "id": "ait-licensing-licensing-positive-compatibility",
+      "prompt": "Проверь, совместима ли GPL-зависимость с лицензией нашего проекта.",
+      "should_trigger": true,
+      "rationale": "Совместимость лицензий и обязательства входят в навык."
+    },
+    {
+      "id": "ait-licensing-licensing-positive-organize",
+      "prompt": "Как правильно организовать тексты лицензий и заголовки файлов в репозитории?",
+      "should_trigger": true,
+      "rationale": "Организация лицензионных сведений входит в навык."
+    },
+    {
+      "id": "ait-licensing-licensing-negative-impl",
+      "prompt": "Реализуй функцию разбора заголовков HTTP.",
+      "should_trigger": false,
+      "rationale": "Задача реализации кода, без правового вопроса."
+    },
+    {
+      "id": "ait-licensing-licensing-negative-add-source",
+      "prompt": "Технически добавь новый источник в корпус знаний.",
+      "should_trigger": false,
+      "rationale": "Это задача kc-sources-add, а не лицензионного анализа."
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "skill_name": "ait-req-analysis",
+  "cases": [
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-separate-levels",
+      "prompt": "Разбери черновик требований: отдели бизнес-цели, пользовательские задачи, функции, ограничения и решения.",
+      "should_trigger": true,
+      "rationale": "Нужно проанализировать и разделить уровни требований."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-use-cases",
+      "prompt": "Из заметок пользователей выдели варианты использования, основные сценарии и исключения.",
+      "should_trigger": true,
+      "rationale": "Анализ пользовательских задач через варианты использования относится к requirements-analysis."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-use-case-quality-gaps",
+      "prompt": "Разбери черновик варианта использования: где область действия, уровень цели, основной сценарий, расширения и гарантии смешаны или пропущены.",
+      "should_trigger": true,
+      "rationale": "Нужно проанализировать структуру и пробелы чернового варианта использования."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-business-rules",
+      "prompt": "Найди в описании процесса бизнес-правила и покажи, какие требования к системе из них следуют.",
+      "should_trigger": true,
+      "rationale": "Нужно отделить бизнес-правила от требований и вывести требования."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-quality-attributes",
+      "prompt": "Помоги уточнить нефункциональные требования: производительность, доступность и безопасность сейчас слишком расплывчаты.",
+      "should_trigger": true,
+      "rationale": "Уточнение атрибутов качества относится к анализу требований."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-find-gaps",
+      "prompt": "Разбери черновые сведения о требованиях и найди пробелы, дубли, конфликтующие правила и функции вне границ проекта.",
+      "should_trigger": true,
+      "rationale": "Нужно аналитически разобрать черновые сведения до готовой спецификации."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-positive-project-type-cots",
+      "prompt": "Разбери требования к выбору серийного продукта: соответствие, настройка, интеграция, миграция данных и ограничения поставщика.",
+      "should_trigger": true,
+      "rationale": "Нужно проанализировать требования с учётом класса проекта: серийный продукт."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-negative-ready-requirements-review",
+      "prompt": "Проверь готовый набор требований на полноту, противоречия, дубли и непроверяемые формулировки.",
+      "should_trigger": false,
+      "rationale": "Проверка готового набора требований относится к requirements-validation."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-negative-write-use-case",
+      "prompt": "Оформи согласованный сценарий как полный вариант использования с гарантиями и расширениями.",
+      "should_trigger": false,
+      "rationale": "Запись согласованного варианта использования относится к requirements-specification."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-negative-plan-interview",
+      "prompt": "Составь список вопросов для интервью с операторами склада перед сбором требований.",
+      "should_trigger": false,
+      "rationale": "Подготовка интервью относится к requirements-elicitation."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-negative-final-spec",
+      "prompt": "Запиши согласованные функциональные требования в виде спецификации с идентификаторами.",
+      "should_trigger": false,
+      "rationale": "Финальная запись требований относится к requirements-specification."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-negative-architecture",
+      "prompt": "Реши, выделять ли отдельный сервис уведомлений или оставить модуль внутри монолита.",
+      "should_trigger": false,
+      "rationale": "Архитектурное решение относится к software-architecture."
+    },
+    {
+      "id": "ait-req-analysis-requirements-analysis-negative-baseline",
+      "prompt": "Создай базовую версию требований для релиза и настрой статусы согласования.",
+      "should_trigger": false,
+      "rationale": "Базовая версия и статусы относятся к requirements-management."
+    }
+  ]
+}

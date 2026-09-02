@@ -1,0 +1,35 @@
+{
+  "skill_name": "ait-code-testing",
+  "cases": [
+    {
+      "id": "ait-code-testing-testing-positive-coverage",
+      "prompt": "Помоги решить, что покрыть модульными тестами в этом модуле и как сделать их независимыми.",
+      "should_trigger": true,
+      "rationale": "Выбор покрытия и независимые тесты разработчика — суть навыка."
+    },
+    {
+      "id": "ait-code-testing-testing-positive-failure-case",
+      "prompt": "Нашли дефект в продакшене; оформи его как новый проверочный случай, чтобы ошибка не вернулась.",
+      "should_trigger": true,
+      "rationale": "Превращение провала в проверочный случай входит в навык (XEM7)."
+    },
+    {
+      "id": "ait-code-testing-testing-positive-refactor-safety",
+      "prompt": "Перед рефакторингом нужны тесты, которые удержат текущее поведение функции.",
+      "should_trigger": true,
+      "rationale": "Поддержка безопасного рефакторинга тестами входит в навык."
+    },
+    {
+      "id": "ait-code-testing-testing-negative-architecture",
+      "prompt": "Спроектируй тестируемость системы через архитектурные границы и порты.",
+      "should_trigger": false,
+      "rationale": "Тестируемость на уровне архитектурных границ относится к ait-architecture."
+    },
+    {
+      "id": "ait-code-testing-testing-negative-review",
+      "prompt": "Проверь читаемость и обработку ошибок в готовом коде коллеги.",
+      "should_trigger": false,
+      "rationale": "Это обзор готового кода — задача ait-code-review."
+    }
+  ]
+}

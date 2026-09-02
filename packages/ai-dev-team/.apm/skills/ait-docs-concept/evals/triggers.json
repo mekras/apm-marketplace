@@ -1,0 +1,71 @@
+{
+  "skill_name": "ait-docs-concept",
+  "cases": [
+    {
+      "id": "ait-docs-concept-positive-write",
+      "prompt": "Напиши концепцию проекта.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо просит создать концепцию проекта."
+    },
+    {
+      "id": "ait-docs-concept-positive-dialogue",
+      "prompt": "Помоги через вопросы сформулировать концепцию нового продукта.",
+      "should_trigger": true,
+      "rationale": "Нужно выяснить концепцию через диалог."
+    },
+    {
+      "id": "ait-docs-concept-positive-sources",
+      "prompt": "Собери концепцию по файлам проекта без диалога, но пометь допущения.",
+      "should_trigger": true,
+      "rationale": "Пользователь явно задал источниковый режим составления концепции."
+    },
+    {
+      "id": "ait-docs-concept-positive-update",
+      "prompt": "Измени концепцию: добавь новые границы проекта и открытые вопросы.",
+      "should_trigger": true,
+      "rationale": "Нужно сопровождать существующую концепцию."
+    },
+    {
+      "id": "ait-docs-concept-positive-audit-includes-concept",
+      "prompt": "Проверь и исправь все вводные документы, включая существующую концепцию проекта.",
+      "should_trigger": true,
+      "rationale": "Общий аудит прямо включает проверку и возможное изменение самой концепции."
+    },
+    {
+      "id": "ait-docs-concept-positive-find-and-link",
+      "prompt": "Найди, где в проекте зафиксирована концепция, и закрепи для агентов точный указатель.",
+      "should_trigger": true,
+      "rationale": "Нужно обнаружить существующее представление концепции и сделать его доступным агентам."
+    },
+    {
+      "id": "ait-docs-concept-negative-readme",
+      "prompt": "Создай README.md проекта с установкой и быстрым стартом.",
+      "should_trigger": false,
+      "rationale": "README сопровождается отдельным навыком."
+    },
+    {
+      "id": "ait-docs-concept-negative-adr",
+      "prompt": "Оформи ADR о выборе базы данных для проекта.",
+      "should_trigger": false,
+      "rationale": "Архитектурные решения не относятся к концепции."
+    },
+    {
+      "id": "ait-docs-concept-negative-requirements",
+      "prompt": "Напиши функциональные требования и критерии приёмки.",
+      "should_trigger": false,
+      "rationale": "Это спецификация требований, а не концепция проекта."
+    },
+    {
+      "id": "ait-docs-concept-negative-audit-all-docs",
+      "prompt": "Проверь все документы проекта на соответствие концепции.",
+      "should_trigger": false,
+      "rationale": "Подробная проверка документов относится к навыкам их сопровождения."
+    },
+    {
+      "id": "ait-docs-concept-negative-readme-links-concept",
+      "prompt": "Улучши README, используя существующую концепцию как источник смысла.",
+      "should_trigger": false,
+      "rationale": "Концепция остаётся неизменяемым основанием, а работа направлена на README."
+    }
+  ]
+}

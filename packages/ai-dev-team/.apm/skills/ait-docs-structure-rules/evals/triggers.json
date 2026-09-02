@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-docs-structure-rules",
+  "cases": [
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-positive-save",
+      "prompt": "Зафиксируй выбранную структуру документации в правилах проекта.",
+      "should_trigger": true,
+      "rationale": "Нужно сохранить принятое решение о структуре как правило."
+    },
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-positive-update",
+      "prompt": "Обнови AGENTS.md, чтобы агенты поддерживали новую структуру документации.",
+      "should_trigger": true,
+      "rationale": "Задача меняет правила, поддерживающие структуру документации."
+    },
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-positive-purpose",
+      "prompt": "Добавь правило, что структура документации должна сохранять связь с целью проекта и задачами читателей.",
+      "should_trigger": true,
+      "rationale": "Нужно обновить правило, поддерживающее выбранную структуру документации."
+    },
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-positive-numbered",
+      "prompt": "Зафиксируй правило: папки docs нумеруются по приоритету, а концепция идёт первой.",
+      "should_trigger": true,
+      "rationale": "Нужно сохранить правило структуры документации."
+    },
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-negative-design",
+      "prompt": "Выбери, какая структура документации лучше подходит проекту.",
+      "should_trigger": false,
+      "rationale": "Это проектирование структуры, а не фиксация уже выбранных правил."
+    },
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-negative-readme",
+      "prompt": "Перепиши README так, чтобы пользователь быстрее понял установку.",
+      "should_trigger": false,
+      "rationale": "Это задача навыка project-readme, а не правил структуры корпуса."
+    },
+    {
+      "id": "ait-docs-structure-rules-documentation-structure-rules-negative-concept",
+      "prompt": "Подготовь исходное описание проекта для команды: проблема, цель, способ достижения и итог.",
+      "should_trigger": false,
+      "rationale": "Это исходная проектная документация, а не фиксация правил структуры."
+    }
+  ]
+}

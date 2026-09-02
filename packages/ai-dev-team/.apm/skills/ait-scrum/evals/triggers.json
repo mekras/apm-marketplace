@@ -1,0 +1,101 @@
+{
+  "skill_name": "ait-scrum",
+  "cases": [
+    {
+      "id": "ait-scrum-scrum-positive-organize-team",
+      "prompt": "Помоги организовать работу команды по Scrum: какие нужны роли, события и артефакты, чтобы начать поставку короткими циклами.",
+      "should_trigger": true,
+      "rationale": "Запрос про организацию работы по Scrum: роли, события, артефакты."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-sprint-planning",
+      "prompt": "Нужно провести планирование спринта: как задать цель спринта, выбрать истории и оценить их.",
+      "should_trigger": true,
+      "rationale": "Запрос про событие планирования спринта, цель и оценку."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-backlog-estimation",
+      "prompt": "Соберём бэклог продукта из историй и оценим относительно покером планирования. Как это вести и приоритизировать?",
+      "should_trigger": true,
+      "rationale": "Запрос про бэклог, истории, относительную оценку и приоритизацию."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-velocity",
+      "prompt": "Как спрогнозировать, сколько работы команда возьмёт в спринт, по скорости и фокус-фактору?",
+      "should_trigger": true,
+      "rationale": "Запрос про скорость (velocity), фокус-фактор и прогноз объёма спринта."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-adoption",
+      "prompt": "Мы внедряем Scrum в команде, есть сопротивление. С чего начать переход и как снизить сопротивление?",
+      "should_trigger": true,
+      "rationale": "Запрос про внедрение Scrum как изменение и работу с сопротивлением."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-scaling",
+      "prompt": "Над продуктом работают пять команд. Как координировать спринты, зависимости и единый бэклог?",
+      "should_trigger": true,
+      "rationale": "Запрос про масштабирование Scrum на несколько команд и координацию."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-retrospective",
+      "prompt": "Проведи ретроспективу спринта: как структурировать обсуждение и превратить выводы в действия.",
+      "should_trigger": true,
+      "rationale": "Запрос про событие ретроспективы и улучшение процесса."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-distributed",
+      "prompt": "Команда распределена по трём городам и подрядчику. Как наладить работу по Scrum в распределённой команде?",
+      "should_trigger": true,
+      "rationale": "Запрос про распределённые команды в Scrum и их спаянность."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-justify-decision",
+      "prompt": "Обоснуй со ссылками на источники, почему лучше держать таймбокс спринта неизменным и не менять цель в середине.",
+      "should_trigger": true,
+      "rationale": "Запрос про обоснование решения процесса Scrum со ссылкой на источники."
+    },
+    {
+      "id": "ait-scrum-scrum-positive-definition-of-done",
+      "prompt": "Как договориться о критерии «Сделано» и что считать потенциально готовым инкрементом в конце спринта?",
+      "should_trigger": true,
+      "rationale": "Запрос про критерий «Сделано» и потенциально готовый инкремент в Scrum."
+    },
+    {
+      "id": "ait-scrum-scrum-negative-requirements-spec",
+      "prompt": "Запиши требования к модулю уведомлений в проверяемом виде с критериями приёмки.",
+      "should_trigger": false,
+      "rationale": "Это запись требований — навык ait-req-specification, а не организация процесса Scrum."
+    },
+    {
+      "id": "ait-scrum-scrum-negative-architecture-adr",
+      "prompt": "Помоги оформить ADR: выносить ли платежи в отдельный сервис.",
+      "should_trigger": false,
+      "rationale": "Это архитектурное решение — навык ait-architecture."
+    },
+    {
+      "id": "ait-scrum-scrum-negative-bugfix",
+      "prompt": "Исправь падение валидации при пустом email в обработчике формы.",
+      "should_trigger": false,
+      "rationale": "Обычная реализация исправления кода без задачи организации работы по Scrum."
+    },
+    {
+      "id": "ait-scrum-scrum-negative-task-routing",
+      "prompt": "Прими задачу, выбери режим и маршрут через нужные роли и точки подтверждения человека.",
+      "should_trigger": false,
+      "rationale": "Это маршрутизация задачи агента — навык ait-routing, а не методология Scrum."
+    },
+    {
+      "id": "ait-scrum-scrum-negative-code-testing",
+      "prompt": "Напиши модульные тесты для сервиса расчёта скидок и добавь проверочный случай на найденный баг.",
+      "should_trigger": false,
+      "rationale": "Это тестирование разработчика — навык ait-code-testing."
+    },
+    {
+      "id": "ait-scrum-scrum-negative-readme",
+      "prompt": "Обнови README: добавь команды установки и запуска.",
+      "should_trigger": false,
+      "rationale": "Документация проекта без организации работы по Scrum."
+    }
+  ]
+}

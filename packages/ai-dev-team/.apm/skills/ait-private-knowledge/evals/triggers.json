@@ -1,0 +1,77 @@
+{
+  "skill_name": "ait-private-knowledge",
+  "cases": [
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-positive-secret-knowledge",
+      "prompt": "Создай в проекте тайные знания для агента: локальные правила, которые не должны попасть в Git.",
+      "should_trigger": true,
+      "rationale": "Нужно создать приватный локальный слой правил проекта вне VCS."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-positive-rules-local",
+      "prompt": "Заведи rules.local с правилами для Codex и проверь, что папка исключена из контроля версий.",
+      "should_trigger": true,
+      "rationale": "Запрос явно касается локальной директории правил и проверки VCS."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-positive-agents-local",
+      "prompt": "Хочу AGENTS.local.md для приватных инструкций, которые нельзя коммитить.",
+      "should_trigger": true,
+      "rationale": "Нужна настройка неотслеживаемого локального файла инструкций."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-positive-leak-check",
+      "prompt": "Проверь, не попали ли мои приватные правила агента в staged-файлы.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка утечки локальных правил в VCS."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-positive-hidden-agents-include",
+      "prompt": "Подключи локальные знания через AGENTS.md, но так, чтобы сам факт их наличия не был виден в репозитории.",
+      "should_trigger": true,
+      "rationale": "Нужно обработать конфликт между подключением через tracked-файл и скрытием существования."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-positive-private-project-context",
+      "prompt": "Перенеси приватные сведения о рабочем окружении проекта в локальный файл для ассистента.",
+      "should_trigger": true,
+      "rationale": "Нужно вынести проектные знания в локальный слой для агента."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-negative-public-agents",
+      "prompt": "Обнови AGENTS.md и добавь правило запускать тесты перед финальным ответом.",
+      "should_trigger": false,
+      "rationale": "Это обычное публичное правило проекта, не приватный локальный слой."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-negative-skill-create",
+      "prompt": "Создай новый навык для аудита правил проекта.",
+      "should_trigger": false,
+      "rationale": "Это создание навыка, а не настройка приватных знаний проекта."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-negative-secret-manager",
+      "prompt": "Настрой хранение ключа API в менеджере секретов для деплоя.",
+      "should_trigger": false,
+      "rationale": "Это задача управления секретами, а не правила для агента в проекте."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-negative-gitignore-cache",
+      "prompt": "Добавь cache/ в .gitignore.",
+      "should_trigger": false,
+      "rationale": "Обычная настройка игнорирования файлов не связана с приватными знаниями агента."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-negative-code-review",
+      "prompt": "Проверь код на ошибки безопасности и предложи исправления.",
+      "should_trigger": false,
+      "rationale": "Это проверка кода, не управление локальными правилами агента."
+    },
+    {
+      "id": "ait-private-knowledge-private-project-knowledge-negative-docs",
+      "prompt": "Напиши внутреннюю документацию проекта для новых разработчиков.",
+      "should_trigger": false,
+      "rationale": "Документация для разработчиков не обязательно является приватным локальным слоем для агента."
+    }
+  ]
+}

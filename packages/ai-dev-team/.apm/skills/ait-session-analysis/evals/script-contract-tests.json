@@ -1,0 +1,331 @@
+{
+  "version": 2,
+  "unexercised_functions": [
+    {
+      "script": "scripts/session_analysis.py",
+      "function": "public_error",
+      "reason": "Функция сворачивает диагностику только в отрицательных ветвях. Они покрыты модульными тестами, а успешный внешний договор не должен имитировать ошибку."
+    }
+  ],
+  "operations": [
+    {
+      "id": "session-analysis-prepare",
+      "script": "scripts/session_analysis.py",
+      "command_prefix": ["prepare"],
+      "inputs": [
+        "project/.ai-dev-team/local/session-analysis/state.json",
+        "project/.ai-dev-team/local/session-analysis/integrity.key"
+      ]
+    },
+    {
+      "id": "session-analysis-commit",
+      "script": "scripts/session_analysis.py",
+      "command_prefix": ["commit"],
+      "inputs": [
+        "project/.ai-dev-team/local/session-analysis/candidate-run.json",
+        "project/.ai-dev-team/local/session-analysis/integrity.key"
+      ]
+    },
+    {
+      "id": "session-analysis-reset",
+      "script": "scripts/session_analysis.py",
+      "command_prefix": ["reset"],
+      "inputs": [
+        "project/.ai-dev-team/local/session-analysis/state.json",
+        "project/.ai-dev-team/local/session-analysis/integrity.key"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "prepare-synthetic-sessions",
+      "script": "scripts/session_analysis.py",
+      "fixture": "evals/script-fixtures/basic",
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}/project"]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "prepare",
+        "--project-root",
+        "{fixture}/project",
+        "--state",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+        "--candidate",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json",
+        "--codex-root",
+        "{fixture}/codex",
+        "--claude-root",
+        "{fixture}/claude"
+      ],
+      "covers": ["session-analysis-prepare"],
+      "expect": {
+        "stdout_contains": [
+          "\"status\": \"ready\"",
+          "\"selected_parts\": 2",
+          "[REDACTED]",
+          "A required check was skipped."
+        ],
+        "files": [
+          {
+            "path": "project/.ai-dev-team/local/session-analysis/candidate-run.json",
+            "json": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "commit-synthetic-selection",
+      "script": "scripts/session_analysis.py",
+      "fixture": "evals/script-fixtures/existing",
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}/project"],
+        [
+          "chmod",
+          "600",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/integrity.key"
+        ],
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path\nPath(r'{fixture}/project/.ai-dev-team/local/session-analysis/state.json').unlink()\nPath(r'{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json').unlink()"
+        ],
+        [
+          "{python}",
+          "{script}",
+          "prepare",
+          "--project-root",
+          "{fixture}/project",
+          "--state",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+          "--candidate",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json",
+          "--codex-root",
+          "{fixture}/codex",
+          "--claude-root",
+          "{fixture}/claude"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "commit",
+        "--state",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+        "--candidate",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json"
+      ],
+      "covers": ["session-analysis-commit"],
+      "expect": {
+        "stdout_contains": ["\"status\": \"committed\""],
+        "files": [
+          {
+            "path": "project/.ai-dev-team/local/session-analysis/state.json",
+            "json": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "reset-synthetic-state",
+      "script": "scripts/session_analysis.py",
+      "fixture": "evals/script-fixtures/existing",
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}/project"],
+        [
+          "chmod",
+          "600",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/integrity.key"
+        ],
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path\nPath(r'{fixture}/project/.ai-dev-team/local/session-analysis/state.json').unlink()\nPath(r'{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json').unlink()"
+        ],
+        [
+          "{python}",
+          "{script}",
+          "prepare",
+          "--project-root",
+          "{fixture}/project",
+          "--state",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+          "--candidate",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json",
+          "--codex-root",
+          "{fixture}/codex",
+          "--claude-root",
+          "{fixture}/claude"
+        ],
+        [
+          "{python}",
+          "{script}",
+          "commit",
+          "--state",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+          "--candidate",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "reset",
+        "--state",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/state.json"
+      ],
+      "covers": ["session-analysis-reset"],
+      "expect": {
+        "stdout_contains": ["\"status\": \"reset\""]
+      }
+    },
+    {
+      "id": "prepare-with-existing-state",
+      "script": "scripts/session_analysis.py",
+      "fixture": "evals/script-fixtures/existing",
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}/project"],
+        [
+          "chmod",
+          "600",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/integrity.key"
+        ],
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path\nPath(r'{fixture}/project/.ai-dev-team/local/session-analysis/state.json').unlink()\nPath(r'{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json').unlink()"
+        ],
+        [
+          "{python}",
+          "{script}",
+          "prepare",
+          "--project-root",
+          "{fixture}/project",
+          "--state",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+          "--candidate",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json",
+          "--codex-root",
+          "{fixture}/codex",
+          "--claude-root",
+          "{fixture}/claude"
+        ],
+        [
+          "{python}",
+          "{script}",
+          "commit",
+          "--state",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+          "--candidate",
+          "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-run.json"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "prepare",
+        "--project-root",
+        "{fixture}/project",
+        "--state",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+        "--candidate",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-second.json",
+        "--codex-root",
+        "{fixture}/codex",
+        "--claude-root",
+        "{fixture}/claude"
+      ],
+      "covers": ["session-analysis-prepare"],
+      "expect": {
+        "stdout_contains": ["\"selected_parts\": 0"]
+      }
+    },
+    {
+      "id": "prepare-period-selection",
+      "script": "scripts/session_analysis.py",
+      "fixture": "evals/script-fixtures/basic",
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}/project"]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "prepare",
+        "--project-root",
+        "{fixture}/project",
+        "--state",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+        "--candidate",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-period.json",
+        "--mode",
+        "period",
+        "--period-start",
+        "2026-08-25T10:30:00Z",
+        "--period-end",
+        "2026-08-25T11:30:00Z",
+        "--codex-root",
+        "{fixture}/codex",
+        "--claude-root",
+        "{fixture}/claude"
+      ],
+      "covers": ["session-analysis-prepare"],
+      "expect": {
+        "stdout_contains": [
+          "\"mode\": \"period\"",
+          "\"selected_parts\": 1",
+          "\"start\": \"2026-08-25T10:30:00+00:00\"",
+          "A required check was skipped."
+        ],
+        "files": [
+          {
+            "path": "project/.ai-dev-team/local/session-analysis/candidate-period.json",
+            "json": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "prepare-period-excludes-end",
+      "script": "scripts/session_analysis.py",
+      "fixture": "evals/script-fixtures/basic",
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}/project"]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "prepare",
+        "--project-root",
+        "{fixture}/project",
+        "--state",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/state.json",
+        "--candidate",
+        "{fixture}/project/.ai-dev-team/local/session-analysis/candidate-period-end.json",
+        "--mode",
+        "period",
+        "--period-start",
+        "2026-08-25T10:30:00Z",
+        "--period-end",
+        "2026-08-25T11:01:00Z",
+        "--codex-root",
+        "{fixture}/codex",
+        "--claude-root",
+        "{fixture}/claude"
+      ],
+      "covers": ["session-analysis-prepare"],
+      "expect": {
+        "stdout_contains": [
+          "\"selected_parts\": 0",
+          "\"end\": \"2026-08-25T11:01:00+00:00\""
+        ],
+        "files": [
+          {
+            "path": "project/.ai-dev-team/local/session-analysis/candidate-period-end.json",
+            "json": true
+          }
+        ]
+      }
+    }
+  ]
+}

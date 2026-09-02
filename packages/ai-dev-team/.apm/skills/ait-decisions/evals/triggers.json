@@ -1,0 +1,95 @@
+{
+  "skill_name": "ait-decisions",
+  "cases": [
+    {
+      "id": "ait-decisions-decisions-positive-odr",
+      "prompt": "Нужно зафиксировать организационное решение: договорились, что релизы выпускаем только по пятницам. Оформи запись.",
+      "should_trigger": true,
+      "rationale": "Запись неархитектурного (организационного) решения по общей дисциплине."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-journal-setup",
+      "prompt": "Заведи в проекте журнал решений по документации и объясни, какие решения туда писать.",
+      "should_trigger": true,
+      "rationale": "Создание журнала решений нового вида и правило «какое решение в какой журнал»."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-project-decision-priorities",
+      "prompt": "Определи порядок факторов для проектных решений и зафиксируй его как правило для AGENTS.md.",
+      "should_trigger": true,
+      "rationale": "Выбор порядка факторов влияет на будущие значимые решения и должен идти через дисциплину записей решений."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-quality-check",
+      "prompt": "Проверь этот черновик записи решения: полны ли варианты и согласованы ли их плюсы и минусы.",
+      "should_trigger": true,
+      "rationale": "Проверка качества записи по контрольному списку."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-decision-before-action",
+      "prompt": "В задаче всплыл значимый выбор между двумя способами хранения настроек. Проведи выбор через запись решения до реализации.",
+      "should_trigger": true,
+      "rationale": "Протокол «решение до действия» для значимого выбора в ходе задачи."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-journal-audit",
+      "prompt": "Проведи ревизию журнала ADR: какие записи устарели, где не хватает условий пересмотра и каких решений нет в журнале.",
+      "should_trigger": true,
+      "rationale": "Проверка существующего журнала решений: статусы, условия пересмотра, полнота."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-retrospective",
+      "prompt": "Мы давно решили не поддерживать Windows, но записи об этом нет. Оформи ретроспективную запись решения.",
+      "should_trigger": true,
+      "rationale": "Ретроспективная запись решения, принятого без фиксации."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-first-accepted-initiative",
+      "prompt": "Договорились выпускать релизы только по пятницам. Переходим к следующей задаче.",
+      "should_trigger": true,
+      "rationale": "Первое значимое решение принято в диалоге без прямой просьбы о записи; продукт должен инициативно предложить журнал и фиксацию решения."
+    },
+    {
+      "id": "ait-decisions-decisions-positive-missing-record-initiative",
+      "prompt": "Проект давно не поддерживает Windows, записи об этом решении нет. Продолжай проверку сборки.",
+      "should_trigger": true,
+      "rationale": "Работа опирается на значимое незаписанное решение; продукт должен предложить ретроспективную запись до продолжения."
+    },
+    {
+      "id": "ait-decisions-decisions-negative-architecture-design",
+      "prompt": "Спроектируй границы компонентов и интеграции между сервисом заказов и биллингом.",
+      "should_trigger": false,
+      "rationale": "Предметная архитектурная работа — ait-architecture; записи решения не запрошено."
+    },
+    {
+      "id": "ait-decisions-decisions-negative-changelog",
+      "prompt": "Обнови CHANGELOG.md перед выпуском версии.",
+      "should_trigger": false,
+      "rationale": "Журнал изменений ведёт ait-changelog, а не журнал решений."
+    },
+    {
+      "id": "ait-decisions-decisions-negative-trivial-choice",
+      "prompt": "Переименуй переменную tmp в buffer в этой функции.",
+      "should_trigger": false,
+      "rationale": "Локальное обратимое действие без значимого решения."
+    },
+    {
+      "id": "ait-decisions-decisions-negative-local-storage-protocol",
+      "prompt": "В рамках уже принятого правила хранения выбери, как безопасно дописывать одну запись сессии: заменой файла или новой версией. Добавь проверку восстановления после сбоя.",
+      "should_trigger": false,
+      "rationale": "Локальный способ реализовать действующее решение должен попасть в план задачи и проверку, а не в запись решения."
+    },
+    {
+      "id": "ait-decisions-decisions-negative-temporary-adapter",
+      "prompt": "Добавь временный адаптер для одного текущего среза и условие его удаления после перехода на новый API.",
+      "should_trigger": false,
+      "rationale": "Временная и обратимая реализация без долговечного правила не требует записи решения."
+    },
+    {
+      "id": "ait-decisions-decisions-negative-missing-uncontested-contract-detail",
+      "prompt": "В открытом API уже внедрена и согласована структура LotImage, но записи решения нет. Разногласий нет, а изменить контракт можно обычной правкой. Укажи находку в отчёте о влиянии.",
+      "should_trigger": false,
+      "rationale": "Отсутствие записи о внедрённой, бесспорной и легко отменяемой детали контракта не делает её кандидатом на ретроспективную запись решения."
+    }
+  ]
+}

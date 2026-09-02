@@ -1,0 +1,65 @@
+name: ai-dev-team
+version: 0.27.12
+description: Команда агентной разработки ПО
+author: mekras
+license: MIT
+targets:
+  - agent-skills
+  - claude
+  - codex
+type: hybrid
+includes: auto
+dependencies:
+  apm:
+    - mekras/apm-marketplace/packages/ai-russian-language#ai-russian-language--v2.1.5
+    - mekras/apm-marketplace/packages/ai-agent-supervisor#ai-agent-supervisor--v2.3.21
+    - mekras/apm-marketplace/packages/project-knowledge-corpus#project-knowledge-corpus--v0.19.7
+scripts:
+  tests: >-
+    sh -c 'set -e; export PYTHONDONTWRITEBYTECODE=1;
+    target="${APM_EVAL_PATH:-.apm/skills}";
+    validators=".agents/skills/ai-setup-apm/scripts/eval-tools";
+    python3 tools/validate-apm-package-structure.py;
+    python3 tools/validate-project-review-capabilities.py;
+    python3 tools/validate-requirements-structure.py;
+    python3 -m unittest
+    tools/test_knowledge_tools.py
+    tools/test_impact_graph.py
+    tools/test_session_analysis.py
+    tools/test_selective_verification.py
+    tools/test_project_review.py
+    tools/test_validate_requirements_structure.py
+    tools/test_validate_apm_package_structure.py
+    tools/test_skill_deployment_portability.py
+    tools/test_validate_project_review_capabilities.py;
+    python3 .apm/skills/ait-impact-analysis/scripts/impact_graph.py
+    validate --graph .ai-dev-team/project-impact.json;
+    python3 .apm/skills/ait-impact-analysis/scripts/impact_graph.py
+    coverage --graph .ai-dev-team/project-impact.json --repo .;
+    python3 tools/run-product-evals.py --validate;
+    python3 -m unittest tools/test_product_evals.py;
+    python3
+    .agents/skills/kc-retrieval-evaluation/scripts/validate-evaluation-suite.py
+    knowledge-evaluation.yml --corpus-root knowledge;
+    python3 tools/check-knowledge-index.py;
+    if [ "${APM_PUBLIC_RELEASE:-0}" != 1 ]; then
+      python3 .agents/skills/kc-inventory/scripts/validate-corpus-layout.py
+      knowledge --strict-statements;
+      python3 tools/validate-knowledge-operational.py;
+    fi;
+    python3 "$validators/validate-hidden-unicode.py" .apm;
+    APM_SKILL_DESCRIPTION_TOTAL_MAX_CHARS=2700
+    python3 "$validators/validate-skill-descriptions.py" "$target";
+    python3 "$validators/validate-trigger-evals.py" "$target" --require-all;
+    python3 "$validators/validate-skill-result-evals.py" "$target";
+    python3 "$validators/validate-skill-portability.py" "$target";
+    python3 "$validators/run-skill-script-contract-tests.py" "$target";
+    python3 tools/validate-portable-corpus-references.py;
+    apm compile --validate --local-only --target codex;
+    apm compile --validate --local-only --target claude;
+    apm pack --dry-run'
+  evals: >-
+    python3 .agents/skills/ai-setup-apm/scripts/eval-tools/run-skill-evals.py
+    "${APM_EVAL_PATH:-.apm/skills}"
+  product-evals: >-
+    python3 tools/run-product-evals.py

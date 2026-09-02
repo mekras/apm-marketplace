@@ -1,0 +1,17 @@
+{
+  "skill_name": "ait-docs-concept",
+  "cases": [
+    {
+      "id": "ait-docs-concept-fixture-positive",
+      "prompt": "Проверь концепцию проекта.",
+      "should_trigger": true,
+      "rationale": "Фикстура обозначает доступность проверки концепции."
+    },
+    {
+      "id": "ait-docs-concept-fixture-negative",
+      "prompt": "Напиши новый модуль.",
+      "should_trigger": false,
+      "rationale": "Создание кода не относится к концепции."
+    }
+  ]
+}

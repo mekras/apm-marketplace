@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-docs-structure-audit",
+  "cases": [
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-positive-check",
+      "prompt": "Проверь текущую структуру документации и найди ошибки размещения.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка существующего корпуса документации."
+    },
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-positive-fix",
+      "prompt": "Найди проблемы в структуре docs и исправь безопасные нарушения.",
+      "should_trigger": true,
+      "rationale": "Нужно найти и выполнить структурные исправления."
+    },
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-positive-purpose",
+      "prompt": "Проверь, помогает ли текущая структура документации понять цель проекта и найти входную точку.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка существующей структуры через концепцию и находимость."
+    },
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-positive-numbering",
+      "prompt": "Проверь, что концепция идёт первым разделом, а папки docs пронумерованы по приоритету.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка структуры документации и нумерации разделов."
+    },
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-negative-design",
+      "prompt": "Спроектируй структуру документации для нового продукта.",
+      "should_trigger": false,
+      "rationale": "Это выбор структуры с нуля, а не проверка существующей."
+    },
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-negative-style",
+      "prompt": "Проверь текст одного руководства на ясность и стиль.",
+      "should_trigger": false,
+      "rationale": "Нет задачи проверить структуру корпуса документации."
+    },
+    {
+      "id": "ait-docs-structure-audit-documentation-structure-audit-negative-concept",
+      "prompt": "Проверь концепцию проекта: есть ли проблема, цель, способ достижения и итог.",
+      "should_trigger": false,
+      "rationale": "Это проверка исходной проектной документации, а не структуры корпуса."
+    }
+  ]
+}

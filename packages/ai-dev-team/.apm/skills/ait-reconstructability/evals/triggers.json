@@ -1,0 +1,71 @@
+{
+  "skill_name": "ait-reconstructability",
+  "cases": [
+    {
+      "id": "ait-reconstructability-positive-explicit-rebuild",
+      "prompt": "Проверь, можно ли удалить исходники и восстановить продукт по спецификации.",
+      "should_trigger": true,
+      "rationale": "Пользователь прямо просит проверку восстановления."
+    },
+    {
+      "id": "ait-reconstructability-positive-spec-as-source",
+      "prompt": "Хочу перейти к spec-as-source, где код считается производным артефактом.",
+      "should_trigger": true,
+      "rationale": "Прямо назван предельный уровень практики."
+    },
+    {
+      "id": "ait-reconstructability-positive-assessment",
+      "prompt": "Оцени реконструируемость проекта и полноту его канонических входов.",
+      "should_trigger": true,
+      "rationale": "Пользователь прямо просит профильную оценку."
+    },
+    {
+      "id": "ait-reconstructability-positive-spec-driven",
+      "prompt": "Подходит ли нам разработка на основе спецификаций?",
+      "should_trigger": true,
+      "rationale": "Назван подход, применимость которого должен оценить навык."
+    },
+    {
+      "id": "ait-reconstructability-positive-multiple-platforms",
+      "prompt": "На ранней стадии долгоживущего продукта проектируем один контракт и реализации для веба, iOS и Android. Как уменьшить их дрейф?",
+      "should_trigger": true,
+      "rationale": "Ранняя стадия, долгий срок жизни и несколько реализаций вместе оправдывают оценку."
+    },
+    {
+      "id": "ait-reconstructability-boundary-prototype",
+      "prompt": "Нужен ли spec-as-source для одноразового прототипа на два дня?",
+      "should_trigger": true,
+      "rationale": "Прямой запрос требует оценки, даже если подход неприменим."
+    },
+    {
+      "id": "ait-reconstructability-negative-local-codegen",
+      "prompt": "Перегенерируй клиент API по уже принятой схеме OpenAPI.",
+      "should_trigger": false,
+      "rationale": "Локальный запуск принятого генератора не требует нового решения о реконструируемости."
+    },
+    {
+      "id": "ait-reconstructability-negative-docs",
+      "prompt": "Обнови README после изменения команды запуска.",
+      "should_trigger": false,
+      "rationale": "Обычная документация не означает спецификацию как первичный артефакт."
+    },
+    {
+      "id": "ait-reconstructability-negative-long-lived-docs",
+      "prompt": "В долгоживущем проекте обнови архитектурный обзор после принятого решения.",
+      "should_trigger": false,
+      "rationale": "Срок жизни без повторяемой генерации существенного артефакта не служит основанием."
+    },
+    {
+      "id": "ait-reconstructability-negative-local-multi-codegen",
+      "prompt": "По принятой схеме сгенерируй серверную заглушку, клиент и документацию API.",
+      "should_trigger": false,
+      "rationale": "Исполнение принятой локальной генерации не требует новой оценки подхода."
+    },
+    {
+      "id": "ait-reconstructability-negative-small-fix",
+      "prompt": "Исправь обработку пустого ответа и добавь модульный тест.",
+      "should_trigger": false,
+      "rationale": "Локальная правка не меняет модель происхождения артефактов."
+    }
+  ]
+}

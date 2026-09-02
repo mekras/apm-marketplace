@@ -1,0 +1,131 @@
+{
+  "skill_name": "ait-setup",
+  "cases": [
+    {
+      "id": "ait-setup-positive-setup-project",
+      "prompt": "Настрой проект: нужны README, LICENSE, AGENTS.md и .gitignore.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо просит настроить проект и создать стартовые файлы."
+    },
+    {
+      "id": "ait-setup-positive-autonomous-agreed-series",
+      "prompt": "Выполни согласованный этап перенастройки без новых подтверждений: не останавливайся, пока не завершишь перечисленные правки или не встретишь конкретный блокер.",
+      "should_trigger": true,
+      "rationale": "Запрос продолжает настройку проекта в автономной серии и требует правил ait-setup о границах и остановке."
+    },
+    {
+      "id": "ait-setup-positive-new-project",
+      "prompt": "Начни новый проект и через вопросы собери всё, что нужно для первых файлов.",
+      "should_trigger": true,
+      "rationale": "Нужно начать новый проект в диалоговом режиме."
+    },
+    {
+      "id": "ait-setup-positive-init-project",
+      "prompt": "Инициализируй проект для работы с агентами и предложи настройку подагентов.",
+      "should_trigger": true,
+      "rationale": "Запрос касается инициализации проекта и рационального использования подагентов."
+    },
+    {
+      "id": "ait-setup-positive-bootstrap-repo",
+      "prompt": "Подготовь новый репозиторий: базовый README, правила для агентов, лицензию и gitignore.",
+      "should_trigger": true,
+      "rationale": "Нужно подготовить стартовый набор файлов нового репозитория."
+    },
+    {
+      "id": "ait-setup-positive-dialogue-missing-info",
+      "prompt": "Создай стартовые файлы проекта, но сначала уточни недостающие сведения.",
+      "should_trigger": true,
+      "rationale": "Запрос явно требует диалог перед созданием стартовых файлов."
+    },
+    {
+      "id": "ait-setup-positive-existing-project-refresh",
+      "prompt": "Перенастрой существующий проект под актуальные правила ai-dev-team.",
+      "should_trigger": true,
+      "rationale": "Запрос требует обновить существующую настройку проекта под правила продукта."
+    },
+    {
+      "id": "ait-setup-positive-after-apm-install",
+      "prompt": "Я выполнил apm install mekras/ai-dev-team#^0.3.0 --target codex. Настрой проект дальше.",
+      "should_trigger": true,
+      "rationale": "После установки продукта через APM дальнейшая настройка проекта должна идти через ait-setup."
+    },
+    {
+      "id": "ait-setup-positive-apm-consumer-project",
+      "prompt": "В проекте есть apm.yml с devDependencies.apm на ai-dev-team. Настрой проект, сохранив рукописный AGENTS.md.",
+      "should_trigger": true,
+      "rationale": "Проект является потребителем APM-пакета ai-dev-team, поэтому нужна настройка проекта через ait-setup, а не настройка коллекции APM."
+    },
+    {
+      "id": "ait-setup-positive-agents-refresh",
+      "prompt": "Обнови AGENTS.md, README и .gitignore по текущим требованиям ai-dev-team.",
+      "should_trigger": true,
+      "rationale": "Запрос касается комплексной перенастройки нескольких стартовых файлов."
+    },
+    {
+      "id": "ait-setup-positive-version-update-review",
+      "prompt": "Обнови проект под новую версию ai-dev-team.",
+      "should_trigger": true,
+      "rationale": "Это рекомендуемый пользовательский путь пересмотра проекта после установки новой версии ai-dev-team."
+    },
+    {
+      "id": "ait-setup-positive-changelog-setup",
+      "prompt": "Настрой проект и, если журнала изменений нет, предложи создать CHANGELOG.md.",
+      "should_trigger": true,
+      "rationale": "Вопрос о стартовых файлах и правилах проекта относится к настройке через ait-setup."
+    },
+    {
+      "id": "ait-setup-positive-decision-priorities",
+      "prompt": "Настрой проект и уточни, какие факторы важнее при принятии решений.",
+      "should_trigger": true,
+      "rationale": "Приоритеты проектных решений собираются при настройке проекта и закрепляются в AGENTS.md."
+    },
+    {
+      "id": "ait-setup-positive-commit-message-scheme",
+      "prompt": "Настрой проект и предложи выбрать схему сообщений коммитов.",
+      "should_trigger": true,
+      "rationale": "Выбор постоянного правила Git относится к настройке проекта."
+    },
+    {
+      "id": "ait-setup-positive-adopt-sdd",
+      "prompt": "Закрепи выбранный режим SDD в настройке проекта.",
+      "should_trigger": true,
+      "rationale": "Принятый подход нужно сохранить и сделать доступным обычным задачам."
+    },
+    {
+      "id": "ait-setup-negative-readme-only",
+      "prompt": "Обнови README.md: добавь команду установки и ссылку на документацию.",
+      "should_trigger": false,
+      "rationale": "Это правка одного README, а не инициализация проекта."
+    },
+    {
+      "id": "ait-setup-negative-subagents-only",
+      "prompt": "Настрой экономное использование подагентов в этом проекте.",
+      "should_trigger": false,
+      "rationale": "Это отдельная задача ai-setup-subagents, без стартовых файлов проекта."
+    },
+    {
+      "id": "ait-setup-negative-license-only",
+      "prompt": "Добавь MIT LICENSE в существующий репозиторий.",
+      "should_trigger": false,
+      "rationale": "Это создание одного файла лицензии, а не начало нового проекта."
+    },
+    {
+      "id": "ait-setup-negative-concept",
+      "prompt": "Помоги сформулировать концепцию проекта через вопросы.",
+      "should_trigger": false,
+      "rationale": "Это задача ait-docs-concept, а не создание стартового набора файлов."
+    },
+    {
+      "id": "ait-setup-negative-gitignore",
+      "prompt": "Добавь node_modules и .env в .gitignore.",
+      "should_trigger": false,
+      "rationale": "Это локальная правка .gitignore без инициализации проекта."
+    },
+    {
+      "id": "ait-setup-negative-apm-collection-only",
+      "prompt": "Проверь APM-коллекцию навыков: apm.yml, .apm/skills, scripts.tests и упаковку.",
+      "should_trigger": false,
+      "rationale": "Это узкая задача ai-setup-apm по коллекции APM, а не настройка проекта под ai-dev-team."
+    }
+  ]
+}

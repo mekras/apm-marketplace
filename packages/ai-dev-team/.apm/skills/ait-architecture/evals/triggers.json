@@ -1,0 +1,209 @@
+{
+  "skill_name": "ait-architecture",
+  "cases": [
+    {
+      "id": "ait-architecture-software-architecture-positive-adr",
+      "prompt": "Помоги оформить ADR: нужно решить, оставлять модульный монолит или выделять отдельный сервис для платежей.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурного решения, альтернатив и ADR."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-component-boundaries",
+      "prompt": "Проверь границы компонентов: сейчас профиль пользователя напрямую ходит в CRM, биллинг и сервис авторизации.",
+      "should_trigger": true,
+      "rationale": "Нужно оценить компонентные границы, зависимости и интеграции."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-integration-contract",
+      "prompt": "Нужно спроектировать контракт и адаптеры для нескольких внешних систем, чтобы бизнес-логика не зависела от конкретного провайдера.",
+      "should_trigger": true,
+      "rationale": "Запрос про архитектуру интеграций, контракты и адаптеры."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-architecture-review",
+      "prompt": "Сделай архитектурный обзор решения: риски, компромиссы, что закрываем и что оставляем на потом.",
+      "should_trigger": true,
+      "rationale": "Нужен архитектурный обзор решения и его последствий."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-task-protocol",
+      "prompt": "Разбери крупную функциональную задачу перед разработкой: где общая логика, где клиентская специфика, где адаптеры и временные решения.",
+      "should_trigger": true,
+      "rationale": "Запрос требует архитектурного разбора задачи до разработки."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-system-architect",
+      "prompt": "Выступи как системный архитектор и предложи варианты архитектуры для новой платформы с несколькими режимами поставки.",
+      "should_trigger": true,
+      "rationale": "Пользователь явно просит роль системного архитектора и варианты архитектуры."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-component-stability",
+      "prompt": "Проверь компоненты по Fan-in, Fan-out, устойчивости и абстрактности: кажется, доменная логика зависит от изменчивых адаптеров.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурных компонентов, направлений зависимостей и метрик устойчивости."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-competing-changes",
+      "prompt": "Команды постоянно ломают друг друга при интеграции. Проверь, какие компоненты стоит выпускать независимо и где появились циклические зависимости.",
+      "should_trigger": true,
+      "rationale": "Запрос касается конкурирующих изменений, независимого выпуска компонентов и структуры зависимостей."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-low-cohesion",
+      "prompt": "Проверь сервис: он одновременно отвечает за профиль, платежи, уведомления и синхронизацию с CRM. Кажется, у него низкая связность.",
+      "should_trigger": true,
+      "rationale": "Запрос касается связности архитектурного элемента и границ ответственности."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-architecture-views",
+      "prompt": "Нужно объяснить архитектуру команде и заказчику: выбери, какие диаграммы C4 или 4+1 нужны, а какие будут лишними.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурных представлений и выбора диаграмм под аудиторию."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-rest-style",
+      "prompt": "Проверь, правда ли наш HTTP API можно называть REST, и какие ограничения REST мы нарушаем.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурного стиля REST и его ограничений."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-requirements-gap",
+      "prompt": "Перед ADR проверь, каких требований, атрибутов качества и ограничений не хватает для выбора архитектуры.",
+      "should_trigger": true,
+      "rationale": "Запрос касается связи архитектурного решения с требованиями и ограничениями."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-real-time-requirements",
+      "prompt": "Разбери архитектуру встроенной системы: события, состояния, временные ограничения, аппаратные интерфейсы и риски требований.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурных последствий требований к встроенной системе."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-five-for-what",
+      "prompt": "Команда предлагает внедрить шину событий. Разбери через «для чего?», какая истинная цель и нужен ли этот архитектурный выбор.",
+      "should_trigger": true,
+      "rationale": "Запрос требует архитектурной проверки цели решения через цепочку «для чего?»."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-system-complexity",
+      "prompt": "Архитектура стала слишком сложной: много компонентов, состояний и связей. Раздели детальную и динамическую сложность и предложи, что упростить.",
+      "should_trigger": true,
+      "rationale": "Запрос касается управления сложностью системы как архитектурной задачи."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-feedback-loops",
+      "prompt": "После изменения релизного процесса система снова возвращается к ручным обходам. Найди петли обратной связи, задержки и точку рычага.",
+      "should_trigger": true,
+      "rationale": "Запрос требует системного архитектурного анализа обратных связей и сопротивления изменениям."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-domain-modeling",
+      "prompt": "В системе один термин «клиент» означает покупателя, арендатора и интеграционного партнёра. Помоги разделить предметную модель и ограниченные контексты.",
+      "should_trigger": true,
+      "rationale": "Запрос касается предметной модели, единого языка и границ ограниченных контекстов."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-data-modeling",
+      "prompt": "Спроектируй логическую модель данных заказа: свойства, типы, допустимые значения, кратности и ограничения. Объясни, где держать её в архитектурной документации.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурно значимой модели данных, её состава и места в документации."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-conway",
+      "prompt": "Предложенная архитектура требует независимых сервисов, но команды общие и все изменения проходят через один поток. Проверь это по закону Конвея.",
+      "should_trigger": true,
+      "rationale": "Запрос касается организационной реализуемости архитектуры и соответствия границ коммуникациям."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-solid-boundaries",
+      "prompt": "Проверь модульные границы по SOLID: кажется, интерфейсы слишком широкие, а высокоуровневая логика зависит от деталей провайдера.",
+      "should_trigger": true,
+      "rationale": "Запрос касается архитектурно значимых модульных границ, зависимостей и контрактов."
+    },
+    {
+      "id": "ait-architecture-software-architecture-positive-code-quality-smells",
+      "prompt": "Маленькое изменение постоянно требует правок в десятке мест и ломает несвязанные сценарии. Разбери, это вязкость, жёсткость или хрупкость архитектуры.",
+      "should_trigger": true,
+      "rationale": "Запрос связывает повторяющиеся проблемы качества кода с архитектурными границами и зависимостями."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-simple-bugfix",
+      "prompt": "Исправь ошибку в обработчике формы: при пустом email падает валидация.",
+      "should_trigger": false,
+      "rationale": "Обычная реализация исправления без архитектурной неопределённости."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-readme",
+      "prompt": "Обнови README: добавь команды установки и запуска локального сервера.",
+      "should_trigger": false,
+      "rationale": "Документация проекта без архитектурного решения."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-code-style",
+      "prompt": "Переименуй переменные и приведи файл к стилю проекта.",
+      "should_trigger": false,
+      "rationale": "Рефакторинг оформления не требует архитектурного навыка."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-skill-review",
+      "prompt": "Проверь SKILL.md: хорошо ли описаны триггеры и не раздут ли контекст навыка.",
+      "should_trigger": false,
+      "rationale": "Это проверка навыка агента, а не архитектурная задача."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-library-choice",
+      "prompt": "Выбери библиотеку для парсинга CSV в нашем CLI и покажи минимальный пример использования.",
+      "should_trigger": false,
+      "rationale": "Это локальный выбор зависимости без архитектурных границ, ADR или существенной неопределённости."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-local-performance",
+      "prompt": "Оптимизируй медленный SQL-запрос в отчёте пользователей и добавь индекс, если он нужен.",
+      "should_trigger": false,
+      "rationale": "Это локальная задача производительности, пока она не затрагивает форму системы или архитектурные свойства."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-ci-setup",
+      "prompt": "Настрой GitHub Actions: запуск линтера, тестов и сборки при каждом pull request.",
+      "should_trigger": false,
+      "rationale": "Это обычная настройка конвейера проверки без архитектурного решения."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-product-analysis",
+      "prompt": "Проанализируй воронку регистрации и предложи, какие поля формы мешают пользователям.",
+      "should_trigger": false,
+      "rationale": "Это продуктовая аналитика, а не проектирование формы программной системы."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-api-client-implementation",
+      "prompt": "Реализуй клиент внешнего API для загрузки профиля пользователя и покрой его тестами.",
+      "should_trigger": false,
+      "rationale": "Это реализация интеграции без запроса на архитектурные контракты, границы или варианты решения."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-refactor-one-module",
+      "prompt": "Разбей большой файл helpers.ts на несколько модулей и сохрани текущее поведение.",
+      "should_trigger": false,
+      "rationale": "Это локальный рефакторинг кода, если пользователь не просит оценить компонентные границы системы."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-session-write-protocol",
+      "prompt": "Для одной сессии выбери между заменой файла и созданием новой версии при сохранении записи. Политика долговечности уже принята, нужно добавить тест восстановления.",
+      "should_trigger": false,
+      "rationale": "Это локальная реализация принятой политики, а не новый архитектурный выбор."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-deployment-instructions",
+      "prompt": "Напиши инструкцию, как задеплоить сервис на staging через существующий Helm chart.",
+      "should_trigger": false,
+      "rationale": "Это эксплуатационная документация по существующей схеме, а не выбор архитектуры развёртывания."
+    },
+    {
+      "id": "ait-architecture-software-architecture-negative-requirements-copyedit",
+      "prompt": "Отредактируй требования к уведомлениям: убери повторы, сохрани смысл и структуру раздела.",
+      "should_trigger": false,
+      "rationale": "Это редактура требований без анализа архитектурного влияния или выбора решения."
+    }
+  ]
+}

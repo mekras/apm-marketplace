@@ -1,0 +1,321 @@
+{
+  "skill_name": "ait-commit-messages",
+  "source_basis": [
+    {
+      "claim_id": "CCMT-001",
+      "statement_path": "knowledge/data/ccmt/items/specification/statements.yml"
+    },
+    {
+      "claim_id": "GTMJ-001",
+      "statement_path": "knowledge/data/gtmj/items/specification/statements.yml"
+    },
+    {
+      "claim_id": "GTMJ-002",
+      "statement_path": "knowledge/data/gtmj/items/specification/statements.yml"
+    },
+    {
+      "claim_id": "PGIT-001",
+      "statement_path": "knowledge/data/pgit/items/commit-guidelines/statements.yml"
+    },
+    {
+      "claim_id": "PGIT-002",
+      "statement_path": "knowledge/data/pgit/items/commit-guidelines/statements.yml"
+    },
+    {
+      "claim_id": "ASKL-010",
+      "statement_path": "knowledge/data/askl/items/normalized-askl-pages-evaluating-skills-index.md/statements.yml"
+    }
+  ],
+  "cases": [
+    {
+      "id": "ait-commit-messages-result-conventional-commits",
+      "prompt": "В AGENTS.md выбрана conventional-commits. В индексе Git добавлен выбор схем сообщений коммитов в настройку проекта. Подготовь сообщение.",
+      "input_files": [
+        {
+          "path": ".apm/skills/ait-commit-messages/SKILL.md",
+          "purpose": "задаёт порядок проверки правила и состава индекса"
+        },
+        {
+          "path": ".apm/skills/ait-commit-messages/references/schemes.md",
+          "purpose": "задаёт синтаксис Conventional Commits"
+        }
+      ],
+      "required_corpus_claims": ["CCMT-001", "ASKL-010"],
+      "expected_output": {
+        "report_structure": [
+          "названа схема conventional-commits",
+          "предложен заголовок с типом feat и описанием настройки",
+          "сообщение связано с фактическим составом индекса",
+          "не добавлено неподтверждённое несовместимое изменение"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "corpus_claims": ["CCMT-001"],
+            "observed_problem": "обобщающий заголовок не содержит обязательного типа Conventional Commits.",
+            "expected_conclusion": "сообщение должно начинаться с типа и описывать добавленную возможность настройки",
+            "acceptable_fix_direction": "использовать заголовок вида feat(setup): offer commit message schemes"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который предлагает Update project или помечает изменение как breaking без основания.",
+        "expected_failure": "Такой ответ должен провалиться по синтаксису схемы и связи с индексом Git."
+      },
+      "oracle": {
+        "success_criteria": [
+          "заголовок начинается с feat или согласованного проектом типа",
+          "описание относится к выбору схем сообщений коммитов",
+          "несовместимость не выдумана"
+        ],
+        "failure_indicators": [
+          "тип отсутствует",
+          "описание не связано с индексом Git",
+          "добавлен знак ! или BREAKING CHANGE без основания"
+        ]
+      },
+      "application_evidence": [
+        "результат называет выбранную схему",
+        "готовое сообщение проходит форму из справки",
+        "результат соблюдает assertions и не нарушает must_not"
+      ],
+      "evaluation_surface": "подготовка сообщения Conventional Commits по фактическому изменению",
+      "assertions": [
+        "Результат применяет Conventional Commits.",
+        "Результат связывает описание с добавленной настройкой.",
+        "Результат не выдумывает несовместимое изменение."
+      ],
+      "must_not": [
+        "не опускать тип",
+        "не смешивать схему с Gitmoji",
+        "не добавлять BREAKING CHANGE без основания"
+      ]
+    },
+    {
+      "id": "ait-commit-messages-result-gitmoji-shortcode",
+      "prompt": "Проект выбрал gitmoji и emoji_format: shortcode. В индексе исправление ошибки входа. Подготовь сообщение коммита.",
+      "input_files": [
+        {
+          "path": ".apm/skills/ait-commit-messages/references/schemes.md",
+          "purpose": "задаёт форму Gitmoji и представление эмодзи"
+        }
+      ],
+      "required_corpus_claims": ["GTMJ-001", "GTMJ-002", "ASKL-010"],
+      "expected_output": {
+        "report_structure": [
+          "названа схема gitmoji",
+          "использован короткий код эмодзи ошибки",
+          "после намерения дано краткое описание исправления"
+        ],
+        "findings": [
+          {
+            "severity": "medium",
+            "corpus_claims": ["GTMJ-001", "GTMJ-002"],
+            "observed_problem": "Unicode-эмодзи нарушает выбранный проектом формат shortcode.",
+            "expected_conclusion": "форма Gitmoji должна учитывать отдельный выбор представления эмодзи",
+            "acceptable_fix_direction": "использовать :bug: перед кратким описанием"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который использует Unicode-эмодзи или тип fix: без Gitmoji.",
+        "expected_failure": "Ответ должен провалиться по выбранной схеме и формату эмодзи."
+      },
+      "oracle": {
+        "success_criteria": [
+          "сообщение начинается с :bug:",
+          "описание относится к исправлению входа"
+        ],
+        "failure_indicators": [
+          "использован Unicode-эмодзи",
+          "отсутствует намерение Gitmoji",
+          "добавлен неподтверждённый тип Conventional Commits"
+        ]
+      },
+      "application_evidence": [
+        "готовое сообщение содержит :bug:",
+        "результат называет формат shortcode",
+        "результат соблюдает assertions и не нарушает must_not"
+      ],
+      "evaluation_surface": "применение Gitmoji с выбранным представлением эмодзи",
+      "assertions": ["Результат применяет Gitmoji.", "Результат соблюдает формат shortcode."],
+      "must_not": [
+        "не заменять короткий код Unicode-эмодзи",
+        "не смешивать Gitmoji с Conventional Commits"
+      ]
+    },
+    {
+      "id": "ait-commit-messages-result-pro-git-russian",
+      "prompt": "Проект выбрал pro-git и русский язык. В индексе добавлена проверка пустого адреса электронной почты. Сделай коммит.",
+      "input_files": [
+        {
+          "path": ".apm/skills/ait-commit-messages/references/schemes.md",
+          "purpose": "задаёт рекомендации Pro Git и форму русского заголовка"
+        }
+      ],
+      "required_corpus_claims": ["PGIT-001", "PGIT-002", "ASKL-010"],
+      "expected_output": {
+        "report_structure": [
+          "названа схема pro-git",
+          "заголовок описывает завершённый результат кратким страдательным причастием",
+          "тело не добавлено без необходимости"
+        ],
+        "findings": [
+          {
+            "severity": "medium",
+            "corpus_claims": ["PGIT-001", "PGIT-002"],
+            "observed_problem": "русский заголовок в инфинитиве или повелительном наклонении расходится с языковой адаптацией схемы.",
+            "expected_conclusion": "заголовок должен кратко описывать завершённый результат",
+            "acceptable_fix_direction": "использовать Добавлена проверка пустого адреса электронной почты"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с сообщением Добавить проверку пустого адреса электронной почты и лишним телом, повторяющим заголовок.",
+        "expected_failure": "Ответ должен провалиться по форме действия и отсутствию пользы тела."
+      },
+      "oracle": {
+        "success_criteria": [
+          "заголовок начинается с Добавлена проверка",
+          "заголовок описывает проверку пустого адреса",
+          "тело отсутствует либо добавляет новую причину"
+        ],
+        "failure_indicators": [
+          "заголовок начинается с Добавить или Добавь",
+          "тело повторяет заголовок"
+        ]
+      },
+      "application_evidence": [
+        "готовое сообщение использует краткое страдательное причастие",
+        "результат называет схему pro-git",
+        "результат соблюдает assertions и не нарушает must_not"
+      ],
+      "evaluation_surface": "подготовка человекочитаемого сообщения по Pro Git",
+      "assertions": [
+        "Результат описывает завершённый результат по правилам ru-lang.",
+        "Результат не добавляет повторяющее тело."
+      ],
+      "must_not": [
+        "не использовать инфинитив или повелительное наклонение в русском заголовке",
+        "не выдавать ориентир длины за синтаксис Git"
+      ]
+    },
+    {
+      "id": "ait-commit-messages-result-custom",
+      "prompt": "Проект выбрал custom. В AGENTS.md и .ai-dev-team/state.yml закреплено правило: «<категория> — <результат>». Примеры: «Документация — добавлено описание API», «Тесты — исправлена проверка входа». В индексе добавлена проверка пустого адреса электронной почты. Подготовь сообщение коммита.",
+      "input_files": [
+        {
+          "path": ".apm/skills/ait-commit-messages/SKILL.md",
+          "purpose": "задаёт проверку собственной схемы по формату и примерам"
+        },
+        {
+          "path": ".apm/skills/ait-commit-messages/references/schemes.md",
+          "purpose": "задаёт требования к собственной схеме"
+        }
+      ],
+      "required_corpus_claims": ["ASKL-010"],
+      "expected_output": {
+        "report_structure": [
+          "названа схема custom",
+          "предложен заголовок по закреплённому формату",
+          "категория и результат относятся к составу индекса",
+          "не добавлено правило другой схемы"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "corpus_claims": ["ASKL-010"],
+            "observed_problem": "агент игнорирует закреплённый формат собственной схемы и подставляет тип Conventional Commits.",
+            "expected_conclusion": "сообщение должно соблюдать формат и примеры, подтверждённые проектом",
+            "acceptable_fix_direction": "использовать заголовок вида «Тесты — добавлена проверка пустого адреса электронной почты»"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом fix: add email validation или с запросом новой схемы без попытки применить закреплённый формат.",
+        "expected_failure": "Такой ответ нарушает собственное рабочее правило проекта."
+      },
+      "oracle": {
+        "success_criteria": [
+          "заголовок начинается с категории Тесты",
+          "заголовок содержит тире и описание добавленной проверки",
+          "не использован тип Conventional Commits"
+        ],
+        "failure_indicators": [
+          "заголовок начинается с feat, fix или другого неподтверждённого типа",
+          "формат <категория> — <результат> не соблюдён",
+          "описание не связано с составом индекса"
+        ]
+      },
+      "application_evidence": [
+        "готовое сообщение повторяет структуру закреплённой собственной схемы",
+        "результат называет custom и использует примеры как ориентир",
+        "результат соблюдает assertions и не нарушает must_not"
+      ],
+      "evaluation_surface": "подготовка сообщения по собственной проектной схеме",
+      "assertions": [
+        "Результат применяет собственную схему проекта.",
+        "Результат связывает сообщение с фактическим составом индекса.",
+        "Результат не смешивает собственную схему с Conventional Commits."
+      ],
+      "must_not": [
+        "не выдумывать правила внешней схемы",
+        "не менять подтверждённый формат",
+        "не добавлять неподтверждённые последствия"
+      ]
+    },
+    {
+      "id": "ait-commit-messages-result-conflicting-settings-stop",
+      "prompt": "В AGENTS.md выбрана gitmoji, а в .ai-dev-team/state.yml записана conventional-commits. Подготовь сообщение коммита.",
+      "input_files": [
+        {
+          "path": ".apm/skills/ait-commit-messages/SKILL.md",
+          "purpose": "задаёт остановку при расхождении источников правила"
+        }
+      ],
+      "required_corpus_claims": ["ASKL-010"],
+      "expected_output": {
+        "report_structure": [
+          "названо расхождение двух источников настройки",
+          "сообщение коммита не выбрано",
+          "запрошено решение владельца проекта"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "corpus_claims": ["ASKL-010"],
+            "observed_problem": "рабочая инструкция и файл состояния задают разные схемы.",
+            "expected_conclusion": "автоматический выбор одной схемы создаст непроверяемое расхождение истории",
+            "acceptable_fix_direction": "остановиться и запросить одно решение владельца"
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Сравнить с ответом, который молча предпочитает AGENTS.md или файл состояния.",
+        "expected_failure": "Такой ответ должен провалиться по обязательной остановке."
+      },
+      "oracle": {
+        "success_criteria": [
+          "обе схемы названы",
+          "готовое сообщение не предложено",
+          "запрошено решение владельца"
+        ],
+        "failure_indicators": [
+          "одна схема выбрана молча",
+          "сообщение подготовлено до разрешения конфликта"
+        ]
+      },
+      "application_evidence": [
+        "результат явно называет AGENTS.md и .ai-dev-team/state.yml",
+        "результат не содержит готового сообщения",
+        "результат соблюдает assertions и не нарушает must_not"
+      ],
+      "evaluation_surface": "остановка при конфликте источников проектного правила",
+      "assertions": [
+        "Результат останавливается до решения владельца.",
+        "Результат не выбирает схему по скрытому приоритету."
+      ],
+      "must_not": ["не выбирать схему молча", "не готовить сообщение до разрешения конфликта"]
+    }
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "skill_name": "ait-req-validation",
+  "cases": [
+    {
+      "id": "ait-req-validation-requirements-validation-positive-review-quality",
+      "prompt": "Проверь требования на полноту, корректность, осуществимость, необходимость, недвусмысленность и проверяемость.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка качества требований."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-acceptance-criteria",
+      "prompt": "Проверь критерии приёмки: не повторяют ли они требования и можно ли по ним принять результат.",
+      "should_trigger": true,
+      "rationale": "Запрос касается проверки критериев приёмки."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-use-case-review",
+      "prompt": "Проверь готовый вариант использования: не смешаны ли сценарий, детали интерфейса, предусловия, гарантии и расширения.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка качества готового варианта использования."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-use-case-responsibility",
+      "prompt": "Проверь, не приписывают ли гарантии системе решения и действия человека.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка готовности гарантий варианта использования."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-conceptual-tests",
+      "prompt": "Составь концептуальные тесты по этим требованиям, чтобы найти пропущенные сценарии и неоднозначности.",
+      "should_trigger": true,
+      "rationale": "Концептуальные тесты применяются для проверки требований."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-defect-list",
+      "prompt": "Сделай список дефектов спецификации требований: вопрос, пропуск, дубль, конфликт, непроверяемость.",
+      "should_trigger": true,
+      "rationale": "Нужно классифицировать дефекты требований."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-ready-for-approval",
+      "prompt": "Проверь, можно ли отдавать этот набор требований на утверждение заказчику.",
+      "should_trigger": true,
+      "rationale": "Подготовка к утверждению требований относится к requirements-validation."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-positive-real-time-states",
+      "prompt": "Проверь требования к системе реального времени: покрыты ли события, состояния, временные ограничения и критерии приёмки.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка готовых требований с учётом класса проекта."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-negative-write-requirements",
+      "prompt": "Напиши функциональные требования для сценария восстановления пароля.",
+      "should_trigger": false,
+      "rationale": "Написание требований относится к requirements-specification."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-negative-analyze-draft-use-case",
+      "prompt": "Из черновых заметок выдели варианты использования, границы, роли и открытые вопросы.",
+      "should_trigger": false,
+      "rationale": "Разбор черновых сведений относится к requirements-analysis."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-negative-product-testing",
+      "prompt": "Протестируй готовую форму регистрации и найди ошибки в интерфейсе.",
+      "should_trigger": false,
+      "rationale": "Тестирование готового продукта не является проверкой требований."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-negative-change-control",
+      "prompt": "Зарегистрируй запрос на изменение требования и оцени влияние на релиз.",
+      "should_trigger": false,
+      "rationale": "Запросы на изменение относятся к requirements-management."
+    },
+    {
+      "id": "ait-req-validation-requirements-validation-negative-source-sync",
+      "prompt": "Синхронизируй внешний источник требований и подготовь технический отчёт по изменениям.",
+      "should_trigger": false,
+      "rationale": "Техническая синхронизация источников относится к специализированному навыку учёта источников, а не к проверке требований."
+    }
+  ]
+}

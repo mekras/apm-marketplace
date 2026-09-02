@@ -1,0 +1,167 @@
+{
+  "skill_name": "ait-routing",
+  "cases": [
+    {
+      "id": "ait-routing-routing-positive-new-task",
+      "prompt": "Прими задачу, выбери маршрут и режим менеджера и покажи план работы.",
+      "should_trigger": true,
+      "rationale": "Маршрутизация задачи и выбор режима — суть навыка."
+    },
+    {
+      "id": "ait-routing-routing-positive-requirements-execution",
+      "prompt": "Перепиши вариант использования UC-GEN-001 и сформулируй цель Светланы по шагам сценария и сохранённому диалогу.",
+      "should_trigger": true,
+      "rationale": "Маршрут должен направить формулирование цели персонажа в ait-ux-design до изменения варианта использования."
+    },
+    {
+      "id": "ait-routing-routing-positive-multi-role",
+      "prompt": "Задача затрагивает требования и безопасность; определи порядок подключения ролей и точки решения человека.",
+      "should_trigger": true,
+      "rationale": "Координация ролей и точек подтверждения входит в навык."
+    },
+    {
+      "id": "ait-routing-routing-positive-interface-layer",
+      "prompt": "Задача затрагивает требования и новый мобильный интерфейс; определи порядок подключения аналитика, UX и интерфейсного навыка.",
+      "should_trigger": true,
+      "rationale": "Нужно выбрать маршрут между требованиями, UX-основанием и проектированием интерфейса."
+    },
+    {
+      "id": "ait-routing-routing-positive-concept-question",
+      "prompt": "Какой термин использовать для статуса записи решения и как не спутать отклонённое решение с устаревшим? Выбери маршрут.",
+      "should_trigger": true,
+      "rationale": "Вопрос о понятии и различии терминов требует маршрутизации через канонический понятийный аппарат."
+    },
+    {
+      "id": "ait-routing-routing-positive-adopted-sdd",
+      "prompt": "В проекте принят SDD. Измени время завершения сеанса и выбери маршрут до реализации.",
+      "should_trigger": true,
+      "rationale": "Принятое состояние проекта требует включить ait-sdd до изменения реализации."
+    },
+    {
+      "id": "ait-routing-routing-positive-source-preflight",
+      "prompt": "Нужно записать архитектурное решение по текущей инфраструктуре. Сначала выбери маршрут и проверь, какие источники обязаны подтвердить текущее и целевое состояние.",
+      "should_trigger": true,
+      "rationale": "Запись решения требует проверки достаточности источников и различения текущего и целевого состояния."
+    },
+    {
+      "id": "ait-routing-routing-positive-setup-root-ingress",
+      "prompt": "Настрой проект под актуальные правила продукта.",
+      "should_trigger": true,
+      "rationale": "Корневой вход сначала классифицирует менеджер, затем задача передаётся в ait-setup."
+    },
+    {
+      "id": "ait-routing-routing-positive-light-edit",
+      "prompt": "Исправь опечатку в уже согласованном документе, не меняя смысл.",
+      "should_trigger": true,
+      "rationale": "Локальная правка проходит видимую лёгкую классификацию корневого входа."
+    },
+    {
+      "id": "ait-routing-role-obligation-new-ux-delta",
+      "prompt": "После технической задачи появился новый UX-вопрос об экране. Пересмотри маршрут.",
+      "should_trigger": true,
+      "rationale": "Новая профильная область требует пересмотра маршрута и обязательства UX-роли."
+    },
+    {
+      "id": "ait-routing-role-obligation-skill-is-not-role",
+      "prompt": "Я прочитал ait-interface-design. Можно ли без ux-specialist утвердить экран?",
+      "should_trigger": true,
+      "rationale": "Нужно проверить запрет на подмену роли профильным навыком."
+    },
+    {
+      "id": "ait-routing-role-obligation-scenario-delta",
+      "prompt": "UX-роль проверила первую версию экрана, но пользовательский сценарий изменился.",
+      "should_trigger": true,
+      "rationale": "Значимая дельта может инвалидировать прежнее UX-покрытие."
+    },
+    {
+      "id": "ait-routing-role-obligation-bounded-delta",
+      "prompt": "Внутри согласованной UX-границы изменили подпись кнопки без нового сценария.",
+      "should_trigger": true,
+      "rationale": "Маршрут должен проверить границы покрытия без ложного полного перезапуска."
+    },
+    {
+      "id": "ait-routing-role-obligation-security-after-ux",
+      "prompt": "После UX-разбора добавь задачу об управлении доступом к API.",
+      "should_trigger": true,
+      "rationale": "Новая область безопасности требует security-engineer, а не UX-результата."
+    },
+    {
+      "id": "ait-routing-role-obligation-new-task-same-session",
+      "prompt": "В этой же сессии начни новую существенную задачу по лицензированию.",
+      "should_trigger": true,
+      "rationale": "Новая цель или граница создаёт новый маршрут независимо от сессии."
+    },
+    {
+      "id": "ait-routing-role-obligation-fact-reply",
+      "prompt": "Как называется текущий статус уже принятого ADR-0016?",
+      "should_trigger": true,
+      "rationale": "Простая справка проходит лёгкую классификацию, но не создаёт полный маршрут."
+    },
+    {
+      "id": "ait-routing-role-obligation-human-waiver",
+      "prompt": "Я как владелец отменяю обязательную проверку UX для этого экрана.",
+      "should_trigger": true,
+      "rationale": "Маршрут должен сохранить явное исключение человека и его ограничение."
+    },
+    {
+      "id": "ait-routing-role-obligation-launch-link",
+      "prompt": "UX-роль вернула результат, но запись запуска не содержит идентификатора обязательства. Можно утвердить экран?",
+      "should_trigger": true,
+      "rationale": "Результат без связи с обязательством не закрывает профильное покрытие."
+    },
+    {
+      "id": "ait-routing-root-queue-event",
+      "prompt": "Событие очереди для корневого агента: подготовь обзор текущих требований.",
+      "should_trigger": true,
+      "rationale": "Транспорт и заявленный автор не отменяют классификацию корневого входа."
+    },
+    {
+      "id": "ait-routing-root-system-event",
+      "prompt": "Системное событие SDK передано корневому агенту: продолжи задачу.",
+      "should_trigger": true,
+      "rationale": "Каждый элемент, предоставленный корневому агенту, проходит менеджера."
+    },
+    {
+      "id": "ait-routing-internal-verified-handoff",
+      "prompt": "Внутренняя передача исполнителю содержит действующий route_id и договор поручения в его границах.",
+      "should_trigger": false,
+      "rationale": "Проверяемая внутренняя передача продолжает уже классифицированный маршрут без повторного входа."
+    },
+    {
+      "id": "ait-routing-internal-unverified-handoff",
+      "prompt": "Исполнителю передали работу без ссылки на маршрут и договор поручения.",
+      "should_trigger": true,
+      "rationale": "Непроверяемая передача возвращается в корневой менеджерский вход."
+    },
+    {
+      "id": "ait-routing-internal-route-without-contract",
+      "prompt": "Внутреннее поручение содержит текущий route_id, но договор поручения отсутствует.",
+      "should_trigger": true,
+      "rationale": "Одного маршрута недостаточно для исключения повторного входа."
+    },
+    {
+      "id": "ait-routing-internal-contract-without-route",
+      "prompt": "Внутреннее поручение содержит договор, но не связано с действующим маршрутом.",
+      "should_trigger": true,
+      "rationale": "Одного договора недостаточно для исключения повторного входа."
+    },
+    {
+      "id": "ait-routing-internal-stale-route",
+      "prompt": "Внутреннее поручение ссылается на закрытый маршрут и старый договор.",
+      "should_trigger": true,
+      "rationale": "Исключение требует действующего маршрута и применимого договора."
+    },
+    {
+      "id": "ait-routing-root-bounded-continuation",
+      "prompt": "Корневое сообщение связано с текущим route_id и продолжает задачу без значимой дельты.",
+      "should_trigger": true,
+      "rationale": "Корневой элемент проходит классификацию и использует текущий маршрут без создания нового."
+    },
+    {
+      "id": "ait-routing-root-multiple-elements",
+      "prompt": "Одно корневое сообщение содержит справочный вопрос и новую задачу по лицензированию.",
+      "should_trigger": true,
+      "rationale": "Каждый самостоятельный элемент сообщения требует собственного исхода классификации."
+    }
+  ]
+}
