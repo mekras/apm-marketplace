@@ -34,6 +34,6 @@ marketplace:
     - name: ai-dev-team
       description: "Команда агентной разработки ПО"
       source: ./packages/ai-dev-team
-      version: "0.27.12"
+      version: "0.27.13"
       tag_pattern: "{name}--v{version}"
       category: Productivity
