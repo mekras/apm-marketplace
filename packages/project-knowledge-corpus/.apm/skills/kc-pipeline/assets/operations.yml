@@ -4,6 +4,11 @@
 
 operations_version: 1
 
+# Логические профили разрешаются только локально. Файл должен быть исключён из
+# Git и не должен содержать секреты в выводе или отчёте контроллера.
+access_profiles:
+  path: .local/access-profiles.yml
+
 # Отчёт описывает конкретный запуск, поэтому должен находиться вне Git.
 report:
   path: .local/reports/corpus-operations.md
@@ -104,6 +109,25 @@ adapters:
     argv: [python3, tools/adapter-web-index.py, --source-id, "{source_id}", --locator, "{locator}"]
     working_directory: .
     write_paths: [knowledge/data]
+  project.restricted-source:
+    contract_version: 2
+    operations:
+      probe:
+        argv: [python3, tools/restricted-source-adapter.py, probe, --source-id, "{source_id}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: []
+      fetch:
+        argv: [python3, tools/restricted-source-adapter.py, fetch, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: [knowledge/data]
+      verify:
+        argv: [python3, tools/restricted-source-adapter.py, verify, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: [knowledge/data]
+      authorize:
+        argv: [python3, tools/restricted-source-adapter.py, authorize, --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: []
 
 # Для предзапусковой проверки можно передать отдельный файл:
 # --operational-check --operational-policy knowledge/operational-check.yml.

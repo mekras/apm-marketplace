@@ -17,6 +17,23 @@ copy_policy: no_bulk_copy # full_copy_allowed | fragments_only | metadata_only |
 allowed_use: "Точечная проверка с ссылкой на первоисточник."
 requires_access_check: true
 
+# Постоянные требования к доступу. Текущая готовность профиля хранится локально.
+access_requirements:
+  authorization_kind: account_session
+  required_capabilities: [read_item]
+  profile_name: source-reader # логическое имя без секрета
+  interactive_setup: allowed # allowed | prohibited
+
+# Условия использования задаются для конкретного действия и не заменяют
+# проверку совпадения снимка.
+use_policy:
+  action: store_snapshot
+  status: unknown # permitted | restricted | unknown | prohibited
+  basis: "Условия для этого действия ещё не проверены."
+  scope: "Один выбранный материал."
+  checked_at: YYYY-MM-DD
+  restrictions: []
+
 url: "https://example.org/"
 locator: "https://example.org/"
 public_reference: "https://example.org/"
@@ -30,6 +47,8 @@ refresh_policy: manual # none | manual | periodic | event-driven
 refresh_interval_days:
 
 retrieved_at: YYYY-MM-DD
+# Дата ниже относится только к старому договору. Для нового снимка используйте
+# verification.yml рядом с item.yml.
 last_checked_at: YYYY-MM-DD
 checked_by:
 content_hash:

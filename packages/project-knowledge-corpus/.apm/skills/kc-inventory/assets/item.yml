@@ -2,13 +2,14 @@
 # Скопируйте файл в data/<source>/<units>/<unit>/item.yml.
 
 id: SOURCE-ID-ITEM
+item_contract_version: 2
 title: "Название или краткая тема"
 url: "https://example.org/item"
 date_published: YYYY-MM-DD
 access: "Текстовое описание доступа к этой единице источника."
 
 status: candidate # candidate | confirmed | rejected | archived
-workflow_stage: indexed
+workflow_stage: indexed # после оценки снимка: verification_assessed
 # Для workflow_stage: blocked укажите один код из закрытого перечня договора.
 # blocker_code: owner_decision_required
 # action_required: "Выбрать один из двух несовместимых вариантов применения."
@@ -21,6 +22,12 @@ retrieval_mode: on_demand # synced | on_demand | external_reference | blocked
 copy_policy: no_bulk_copy # full_copy_allowed | fragments_only | metadata_only | no_bulk_copy | local_only
 allowed_use: "Точечная проверка с ссылкой на первоисточник."
 requires_access_check: true
+
+access_requirements:
+  authorization_kind: account_session
+  required_capabilities: [read_item]
+  profile_name: source-reader # логическое имя без секрета
+  interactive_setup: allowed # allowed | prohibited
 
 # files.local — неотслеживаемые файлы этой единицы рядом с её артефактами.
 # Маркер в имени: постоянное сырьё — *.local.* (запись.local.mp4),

@@ -271,6 +271,25 @@
       "required_corpus_claims": [
         "KCSTATEMENTS-1"
       ]
+    },
+    {
+      "id": "kc-statements-result-access-independent-evidence",
+      "prompt": "Извлеки утверждения из предоставленного снимка закрытого сообщения. В текущем окружении доступа нет, текст раньше вручную сверили, но актуальность нормы и независимое подтверждение не проверяли.",
+      "input_files": [{"path": ".apm/skills/kc-statements/SKILL.md", "purpose": "договор раздельной оценки утверждений"}],
+      "expected_output": {
+        "report_structure": ["утверждение о тексте снимка", "оценка основания", "актуальность", "подтверждение и ограничения"],
+        "findings": [{"severity": "high", "observed_problem": "Совпадение текста не доказывает действующую норму.", "expected_conclusion": "evidence_strength не зависит от локального доступа, temporal_status остаётся unknown, corroboration остаётся single_source.", "acceptable_fix_direction": "Разделить утверждение о содержимом и утверждение о действующей норме.", "corpus_claims": ["KCSTATEMENTS-1"]}]
+      },
+      "negative_control": {"description": "Ответ понижает силу из-за отсутствия профиля или считает повторное открытие независимым подтверждением.", "expected_failure": "Нарушается договор версии 2."},
+      "oracle": {
+        "success_criteria": ["evidence_strength независим от доступности", "corroboration не усиливается тем же источником", "temporal_status не следует из даты доступа", "границы двух утверждений различены"],
+        "failure_indicators": ["access-limited превращён в weak", "manual verification превращена в independently_confirmed", "дата probe стала датой актуальности"]
+      },
+      "application_evidence": ["результат использует независимые поля договора версии 2", "ограничения сохранены явно"],
+      "evaluation_surface": "качество результата и границы утверждения",
+      "assertions": ["В сообщении сказано X не равно X действует сейчас.", "Локальный сбой не создаёт ручную очередь сам по себе."],
+      "must_not": ["не выводить temporal_status из попытки доступа", "не считать тот же источник независимым подтверждением"],
+      "required_corpus_claims": ["KCSTATEMENTS-1"]
     }
   ]
 }

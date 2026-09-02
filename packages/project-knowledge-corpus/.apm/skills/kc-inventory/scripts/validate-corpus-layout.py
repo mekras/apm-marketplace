@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import json
 import re
 import subprocess
@@ -112,6 +113,7 @@ DEFAULT_ALLOWED_STAGES = {
     "normalized",
     "statements_extracted",
     "source_checked",
+    "verification_assessed",
     "blocked",
     "rejected",
 }
@@ -120,12 +122,52 @@ NORMALIZED_OR_LATER_STAGES = {
     "normalized",
     "statements_extracted",
     "source_checked",
+    "verification_assessed",
 }
 
 STATEMENTS_OR_LATER_STAGES = {
     "statements_extracted",
     "source_checked",
+    "verification_assessed",
 }
+
+ITEM_CONTRACT_VERSIONS = {1, 2}
+VERIFICATION_ACQUISITION_METHODS = {
+    "adapter_fetch",
+    "provider_export",
+    "local_file",
+    "user_provided",
+    "manual_copy",
+    "unknown_legacy",
+}
+VERIFICATION_METHODS = {
+    "direct_reopen",
+    "export_comparison",
+    "manual_confirmation",
+    "local_integrity_only",
+    "no_source_comparison",
+}
+VERIFICATION_CONTENT_SCOPES = {"full_text", "fragment", "none"}
+VERIFICATION_METADATA_FIELDS = {"locator", "author", "publication_date"}
+VERIFICATION_MATCH_RESULTS = {"verified", "partially_verified", "unverified", "mismatch"}
+VERIFICATION_METADATA_RESULTS = {"verified", "unverified", "mismatch"}
+VERIFICATION_OVERALL_RESULTS = {"verified", "partially_verified", "unverified"}
+VERIFICATION_COMPLETENESS_RESULTS = {"complete", "partial", "not_assessed"}
+VERIFICATION_FORBIDDEN_FIELDS = {
+    "availability",
+    "access_status",
+    "profile",
+    "profile_name",
+    "secret",
+    "token",
+    "password",
+    "cookie",
+    "session",
+    "evidence_strength",
+    "corroboration",
+    "legal_conclusion",
+}
+USE_POLICY_STATUSES = {"permitted", "restricted", "unknown", "prohibited"}
 
 DEFAULT_STATEMENT_KINDS = {
     "fact",
@@ -385,6 +427,10 @@ def nonempty_string(value: Any) -> bool:
     return isinstance(value, str) and bool(value.strip())
 
 
+def nonempty_date_or_text(value: Any) -> bool:
+    return isinstance(value, date) or nonempty_string(value)
+
+
 def is_bad_absolute_path(value: str) -> bool:
     return value.startswith("/") and "://" not in value
 
@@ -435,17 +481,20 @@ class Validator:
         *,
         strict_statements: bool = False,
         strict_concepts: bool = False,
+        strict_verification: bool = False,
         operational: bool = False,
         operational_policy: Path | None = None,
     ) -> None:
         self.root = root.resolve()
         self.strict_statements = strict_statements
         self.strict_concepts = strict_concepts
+        self.strict_verification = strict_verification
         self.operational = operational
         self.operational_policy = operational_policy
         self.contract_path = self.root / "corpus.yml"
         self.catalog_path = self.root / "catalog.yml"
         self.errors: list[str] = []
+        self.contract_warnings: list[str] = []
         self.warnings: list[OperationalFinding] = []
         self.blockers: list[OperationalFinding] = []
         self.suppressed: list[OperationalFinding] = []
@@ -491,11 +540,13 @@ class Validator:
                 json.dumps(
                     {
                         "contract_errors": self.errors,
+                        "contract_warnings": self.contract_warnings,
                         "blockers": [finding.__dict__ for finding in self.blockers],
                         "quality_warnings": [finding.__dict__ for finding in self.warnings],
                         "suppressed": [finding.__dict__ for finding in self.suppressed],
                         "counts": {
                             "contract_errors": len(self.errors),
+                            "contract_warnings": len(self.contract_warnings),
                             "blockers": len(self.blockers),
                             "quality_warnings": len(self.warnings),
                             "suppressed": len(self.suppressed),
@@ -515,6 +566,10 @@ class Validator:
             print("Operational blockers:")
             for finding in self.blockers:
                 print(f"- {finding.path}:{finding.line}: {finding.kind}")
+        if self.contract_warnings:
+            print("Contract warnings:")
+            for warning in self.contract_warnings:
+                print(f"- {warning}")
         if self.warnings:
             print("Quality warnings:")
             for finding in self.warnings:
@@ -1049,11 +1104,57 @@ class Validator:
         if long_source is not None and not isinstance(long_source, bool):
             self.errors.append(f"{rel}: long_source must be boolean when present")
 
+        self.validate_access_requirements(source.get("access_requirements"), rel)
+        self.validate_use_policy(source.get("use_policy"), rel)
         self.validate_external_corpus_source(source, rel)
         self.add_value_errors(rel, source)
         self.validate_items(source_dir, source_id, source)
         self.validate_unit_dirs(source_dir, source_id)
         self.validate_long_source(source_dir, source_id, source)
+
+    def validate_access_requirements(self, value: Any, prefix: str) -> None:
+        if value is None:
+            return
+        if not isinstance(value, dict):
+            self.errors.append(f"{prefix}: access_requirements must be a mapping")
+            return
+        for field in ("authorization_kind", "profile_name"):
+            if field in value and not nonempty_string(value.get(field)):
+                self.errors.append(f"{prefix}: access_requirements.{field} must be non-empty text")
+        capabilities = value.get("required_capabilities")
+        if capabilities is not None and (
+            not isinstance(capabilities, list)
+            or not all(nonempty_string(item) for item in capabilities)
+        ):
+            self.errors.append(
+                f"{prefix}: access_requirements.required_capabilities must be a list of texts"
+            )
+        interactive = value.get("interactive_setup")
+        if interactive is not None and interactive not in {"allowed", "prohibited"}:
+            self.errors.append(
+                f"{prefix}: access_requirements.interactive_setup must be allowed or prohibited"
+            )
+
+    def validate_use_policy(self, value: Any, prefix: str) -> None:
+        if value is None:
+            return
+        if not isinstance(value, dict):
+            self.errors.append(f"{prefix}: use_policy must be a mapping")
+            return
+        for field in ("action", "basis", "scope"):
+            if not nonempty_string(value.get(field)):
+                self.errors.append(f"{prefix}: use_policy.{field} must be non-empty text")
+        if not nonempty_date_or_text(value.get("checked_at")):
+            self.errors.append(f"{prefix}: use_policy.checked_at must be a date or non-empty text")
+        status = value.get("status")
+        if status not in USE_POLICY_STATUSES:
+            allowed = ", ".join(sorted(USE_POLICY_STATUSES))
+            self.errors.append(f"{prefix}: use_policy.status must be one of: {allowed}")
+        restrictions = value.get("restrictions")
+        if not isinstance(restrictions, list) or not all(
+            nonempty_string(item) for item in restrictions
+        ):
+            self.errors.append(f"{prefix}: use_policy.restrictions must be a list of texts")
 
     def validate_external_corpus_source(self, source: dict[str, Any], rel: str) -> None:
         source_kind = source.get("source_kind")
@@ -1138,6 +1239,8 @@ class Validator:
         if stage and stage not in self.allowed_stages:
             self.errors.append(f"{prefix}: unknown workflow_stage: {stage}")
         self.validate_blocker_code(item, prefix, stage == "blocked")
+        self.validate_item_contract(item, prefix)
+        self.validate_access_requirements(item.get("access_requirements"), prefix)
 
         long_source = item.get("long_source")
         if long_source is not None and not isinstance(long_source, bool):
@@ -1165,6 +1268,10 @@ class Validator:
                 if item_path.exists():
                     item = load_yaml(item_path)
                     self.validate_unit_item(item, source_id, item_path)
+                elif (unit_dir / "verification.yml").exists():
+                    self.errors.append(
+                        f"{self.rel(unit_dir / 'verification.yml')}: verification requires item.yml"
+                    )
                 self.validate_unit_artifacts(unit_dir)
                 statements_path = unit_dir / "statements.yml"
                 if statements_path.exists():
@@ -1208,6 +1315,8 @@ class Validator:
         if stage and stage not in self.allowed_stages:
             self.errors.append(f"{rel}: unknown workflow_stage: {stage}")
         self.validate_blocker_code(item, rel, stage == "blocked")
+        self.validate_item_contract(item, rel)
+        self.validate_access_requirements(item.get("access_requirements"), rel)
 
         long_source = item.get("long_source")
         if long_source is not None and not isinstance(long_source, bool):
@@ -1228,6 +1337,180 @@ class Validator:
                 self.errors.append(
                     f"{rel}: local file must use *.local.* or *.tmp.* name: {artifact}"
                 )
+
+        verification_path = path.parent / "verification.yml"
+        if verification_path.exists():
+            self.validate_verification(verification_path)
+        elif item.get("item_contract_version", 1) == 2:
+            message = f"{rel}: item contract version 2 has no verification.yml"
+            if stage == "verification_assessed":
+                self.errors.append(message)
+            elif self.strict_verification:
+                self.contract_warnings.append(message)
+
+    def validate_item_contract(self, item: dict[str, Any], prefix: str) -> None:
+        version = item.get("item_contract_version", 1)
+        if version not in ITEM_CONTRACT_VERSIONS:
+            self.errors.append(f"{prefix}: unsupported item_contract_version: {version}")
+            return
+        stage = item.get("workflow_stage")
+        if version == 1 and stage == "verification_assessed":
+            self.errors.append(
+                f"{prefix}: verification_assessed requires item_contract_version: 2"
+            )
+        if version == 2 and stage == "source_checked":
+            self.errors.append(
+                f"{prefix}: item contract version 2 uses verification_assessed instead of source_checked"
+            )
+
+    def validate_verification(self, path: Path) -> None:
+        rel = self.rel(path)
+        data = load_yaml(path)
+        if not isinstance(data, dict):
+            self.errors.append(f"{rel}: verification must be a mapping")
+            return
+        if data.get("verification_contract_version") != 1:
+            self.errors.append(
+                f"{rel}: unsupported verification_contract_version: "
+                f"{data.get('verification_contract_version')}"
+            )
+            return
+
+        self.add_value_errors(rel, data)
+        self.validate_verification_forbidden_fields(data, rel)
+        artifact = data.get("artifact")
+        artifact_path: Path | None = None
+        if not nonempty_string(artifact):
+            self.errors.append(f"{rel}: artifact must be non-empty text")
+        elif is_bad_absolute_path(artifact) or ".." in PurePosixPath(artifact).parts:
+            self.errors.append(f"{rel}: artifact must be relative to the unit")
+        else:
+            artifact_path = path.parent / artifact
+            if not artifact_path.is_file():
+                self.errors.append(f"{rel}: verified artifact does not exist: {artifact}")
+                artifact_path = None
+
+        hash_data = data.get("hash")
+        if not isinstance(hash_data, dict):
+            self.errors.append(f"{rel}: hash must be a mapping")
+        else:
+            if hash_data.get("algorithm") != "sha256":
+                self.errors.append(f"{rel}: hash.algorithm must be sha256")
+            hash_value = hash_data.get("value")
+            if not isinstance(hash_value, str) or not re.fullmatch(r"[0-9a-f]{64}", hash_value):
+                self.errors.append(f"{rel}: hash.value must be a lowercase sha256 digest")
+            elif artifact_path is not None:
+                actual = hashlib.sha256(artifact_path.read_bytes()).hexdigest()
+                if actual != hash_value:
+                    self.errors.append(f"{rel}: artifact hash does not match verification.yml")
+
+        acquisition = data.get("acquisition")
+        acquisition_method: Any = None
+        if not isinstance(acquisition, dict):
+            self.errors.append(f"{rel}: acquisition must be a mapping")
+        else:
+            acquisition_method = acquisition.get("method")
+            if acquisition_method not in VERIFICATION_ACQUISITION_METHODS:
+                allowed = ", ".join(sorted(VERIFICATION_ACQUISITION_METHODS))
+                self.errors.append(f"{rel}: acquisition.method must be one of: {allowed}")
+            if not nonempty_date_or_text(acquisition.get("recorded_at")):
+                self.errors.append(f"{rel}: acquisition.recorded_at must be non-empty text")
+
+        verification = data.get("verification")
+        if not isinstance(verification, dict):
+            self.errors.append(f"{rel}: verification must be a mapping")
+            return
+        method = verification.get("method")
+        if method not in VERIFICATION_METHODS:
+            allowed = ", ".join(sorted(VERIFICATION_METHODS))
+            self.errors.append(f"{rel}: verification.method must be one of: {allowed}")
+        if not nonempty_date_or_text(verification.get("checked_at")):
+            self.errors.append(f"{rel}: verification.checked_at must be non-empty text")
+        checked_by = verification.get("checked_by")
+        if not isinstance(checked_by, dict) or not nonempty_string(checked_by.get("role")):
+            self.errors.append(f"{rel}: verification.checked_by.role must be non-empty text")
+
+        scope = verification.get("scope")
+        content_scope: Any = None
+        metadata_scope: set[str] = set()
+        if not isinstance(scope, dict):
+            self.errors.append(f"{rel}: verification.scope must be a mapping")
+        else:
+            content_scope = scope.get("content")
+            if content_scope not in VERIFICATION_CONTENT_SCOPES:
+                allowed = ", ".join(sorted(VERIFICATION_CONTENT_SCOPES))
+                self.errors.append(f"{rel}: verification.scope.content must be one of: {allowed}")
+            if content_scope == "fragment" and not nonempty_string(scope.get("fragment")):
+                self.errors.append(f"{rel}: fragment content scope requires scope.fragment")
+            metadata = scope.get("metadata")
+            if not isinstance(metadata, list) or not all(
+                item in VERIFICATION_METADATA_FIELDS for item in metadata
+            ):
+                allowed = ", ".join(sorted(VERIFICATION_METADATA_FIELDS))
+                self.errors.append(f"{rel}: verification.scope.metadata may contain: {allowed}")
+            else:
+                metadata_scope = set(metadata)
+
+        result = verification.get("result")
+        if not isinstance(result, dict):
+            self.errors.append(f"{rel}: verification.result must be a mapping")
+            return
+        overall = result.get("overall")
+        content_match = result.get("content_match")
+        completeness = result.get("scope_completeness")
+        if overall not in VERIFICATION_OVERALL_RESULTS:
+            self.errors.append(f"{rel}: verification.result.overall has an unsupported value")
+        if content_match not in VERIFICATION_MATCH_RESULTS:
+            self.errors.append(f"{rel}: verification.result.content_match has an unsupported value")
+        if completeness not in VERIFICATION_COMPLETENESS_RESULTS:
+            self.errors.append(
+                f"{rel}: verification.result.scope_completeness has an unsupported value"
+            )
+        metadata_results = result.get("metadata")
+        if not isinstance(metadata_results, dict) or set(metadata_results) != VERIFICATION_METADATA_FIELDS:
+            self.errors.append(
+                f"{rel}: verification.result.metadata must contain locator, author and publication_date"
+            )
+        else:
+            for field, value in metadata_results.items():
+                if value not in VERIFICATION_METADATA_RESULTS:
+                    self.errors.append(f"{rel}: unsupported metadata result for {field}: {value}")
+                if value != "unverified" and field not in metadata_scope:
+                    self.errors.append(
+                        f"{rel}: metadata result for {field} exceeds the declared verification scope"
+                    )
+
+        if method in {"local_integrity_only", "no_source_comparison"} and (
+            overall != "unverified" or content_match != "unverified"
+        ):
+            self.errors.append(
+                f"{rel}: {method} cannot confirm correspondence with the external source"
+            )
+        if acquisition_method == "user_provided" and method == "no_source_comparison" and (
+            overall != "unverified" or content_match != "unverified"
+        ):
+            self.errors.append(
+                f"{rel}: user-provided material is not verified without source comparison"
+            )
+        if content_scope == "none" and content_match != "unverified":
+            self.errors.append(f"{rel}: content result exceeds the declared none scope")
+
+        limitations = verification.get("limitations")
+        if not isinstance(limitations, list) or not all(
+            nonempty_string(item) for item in limitations
+        ):
+            self.errors.append(f"{rel}: verification.limitations must be a list of texts")
+
+    def validate_verification_forbidden_fields(self, value: Any, prefix: str) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                normalized = key.lower().replace("-", "_") if isinstance(key, str) else ""
+                if normalized in VERIFICATION_FORBIDDEN_FIELDS:
+                    self.errors.append(f"{prefix}: forbidden verification field: {key}")
+                self.validate_verification_forbidden_fields(child, prefix)
+        elif isinstance(value, list):
+            for child in value:
+                self.validate_verification_forbidden_fields(child, prefix)
 
     def validate_unit_artifacts(self, unit_dir: Path) -> None:
         for artifact_path in sorted(unit_dir.iterdir()):
@@ -2026,6 +2309,14 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--strict-verification",
+        action="store_true",
+        help=(
+            "Warn when an item contract version 2 has no verification.yml and require "
+            "a valid hash-bound verification for verification_assessed items."
+        ),
+    )
+    parser.add_argument(
         "--operational",
         action="store_true",
         help=(
@@ -2055,6 +2346,7 @@ def main() -> int:
         Path(args.root),
         strict_statements=args.strict_statements,
         strict_concepts=args.strict_concepts,
+        strict_verification=args.strict_verification,
         operational=args.operational,
         operational_policy=args.operational_policy,
     ).validate(output=args.output)

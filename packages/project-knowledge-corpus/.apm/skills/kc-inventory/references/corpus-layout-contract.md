@@ -217,6 +217,103 @@ sources:
 проверки конкретной единицы рядом с её артефактами. Не дублируй там то, что
 уже задано каталогом, карточкой источника или естественным путём.
 
+Файл без `item_contract_version` считается договором единицы версии 1. Такая
+единица продолжает использовать прежние стадии, включая `source_checked`, и не
+обязана иметь `verification.yml`. Новая или явно мигрированная единица
+использует `item_contract_version: 2` и после завершённой оценки происхождения
+получает стадию `verification_assessed`.
+
+## Проверка текущего снимка
+
+Необязательный `verification.yml` лежит рядом с `item.yml` и проверяемым
+артефактом. Первая версия хранит проверочное основание только текущего снимка.
+Полную историю проект может вести по отдельной политике, но она не входит в
+обязательный договор.
+
+Минимальный файл:
+
+```yaml
+verification_contract_version: 1
+artifact: message.md
+hash:
+  algorithm: sha256
+  value: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+acquisition:
+  method: user_provided
+  recorded_at: 2026-09-02
+verification:
+  method: no_source_comparison
+  checked_at: 2026-09-02
+  checked_by:
+    role: corpus_maintainer
+  scope:
+    content: full_text
+    metadata: []
+  result:
+    overall: unverified
+    content_match: unverified
+    scope_completeness: complete
+    metadata:
+      locator: unverified
+      author: unverified
+      publication_date: unverified
+  limitations:
+    - Материал предоставлен пользователем и не сопоставлен с первоисточником.
+```
+
+Допустимые способы получения:
+
+- `adapter_fetch` — прямое получение зарегистрированным адаптером;
+- `provider_export` — экспорт поставщика;
+- `local_file` — локальный файл;
+- `user_provided` — материал предоставил пользователь;
+- `manual_copy` — ручное копирование;
+- `unknown_legacy` — неизвестный способ старого корпуса.
+
+Допустимые способы проверки:
+
+- `direct_reopen` — прямое повторное открытие первоисточника;
+- `export_comparison` — сопоставление с экспортом;
+- `manual_confirmation` — ручное подтверждение точно указанной области;
+- `local_integrity_only` — только проверка локальной целостности;
+- `no_source_comparison` — сверка с первоисточником не выполнялась.
+
+`verification.scope.content` принимает `full_text`, `fragment` или `none`.
+Для `fragment` обязателен проверенный фрагмент. В `scope.metadata` можно явно
+включить `locator`, `author` и `publication_date`. Результат для каждого
+метаданного записывается отдельно как `verified`, `unverified` или `mismatch`.
+Проверенное совпадение содержимого принимает `verified`,
+`partially_verified`, `unverified` или `mismatch`, полнота области —
+`complete`, `partial` или `not_assessed`, общий результат — `verified`,
+`partially_verified` или `unverified`.
+
+Ручное подтверждение не расширяется за пределы `scope`. Передача материала
+пользователем сама по себе не является сверкой. `local_integrity_only` и
+`no_source_comparison` не могут давать `verified` или `partially_verified` для
+совпадения с внешним источником. Проверка автора, даты, локатора и прав не
+выводится из совпадения текста.
+
+При изменении хэша проверка перестаёт применяться к новому снимку. Локальная
+недоступность другого окружения не меняет сохранённый результат для
+совпадающего хэша, но может отложить следующую проверку актуальности.
+
+В `verification.yml` нельзя хранить текущую доступность окружения, локальный
+профиль, секрет, силу утверждения, независимое подтверждение утверждения,
+правовой вывод или общее доверие. Разрешение на получение, хранение, обработку
+и публикацию принадлежит политике источника, а не результату совпадения.
+
+Для явной записи или миграции одной единицы используй:
+
+```bash
+python3 .apm/skills/kc-inventory/scripts/record-snapshot-verification.py \
+  knowledge/data/source/pages/item knowledge/data/source/pages/item/message.md \
+  --acquisition-method user_provided \
+  --verification-method no_source_comparison \
+  --content-scope full_text --content-match unverified \
+  --scope-completeness complete --overall-result unverified \
+  --checked-by-role corpus_maintainer
+```
+
 ## Source Map для длинного источника
 
 `data/<source>/source-map.yml` — один tracked-файл, который описывает ход
@@ -370,6 +467,8 @@ sources:
 - `normalized` — материал очищен и пригоден для извлечения утверждений.
 - `statements_extracted` — утверждения извлечены с опорой на источник.
 - `source_checked` — источник и артефакты повторно проверены.
+- `verification_assessed` — для договора единицы версии 2 результат проверки
+  происхождения текущего снимка определён и записан в `verification.yml`.
 - `blocked` — дальнейшее действие недоступно по одному из допустимых
   `blocker_code`. Для внешней эскалации также укажи точное
   `action_required` и список выполненных `automatic_attempts`.

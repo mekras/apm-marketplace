@@ -1,14 +1,12 @@
 # Исполняемый договор адаптеров
 
-Этот договор связывает поле `adapter` из `source.yml` с проектной командой, но
-не включает код получения конкретного носителя в коллекцию. Он позволяет
-подключать новый источник добавлением карточки и определения адаптера в
-настройки операций.
+Договор связывает поле `adapter` из `source.yml` с проектными командами. Код
+конкретного носителя остаётся в проекте-потребителе. Коллекция поставляет
+переносимый договор, исполнитель и проверки границ.
 
-## Реестр
+## Версия 1
 
-В файле, передаваемом через `--operations`, добавьте `adapters`. Ключ должен
-совпадать с `adapter` в карточке источника.
+Определение без `contract_version` считается адаптером версии 1:
 
 ```yaml
 adapters:
@@ -16,69 +14,114 @@ adapters:
     argv: [python3, tools/adapter-local-file.py, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}"]
     working_directory: .
     write_paths: [knowledge/data]
-  project.web-index:
-    argv: [python3, tools/adapter-web-index.py, --source-id, "{source_id}", --locator, "{locator}"]
-    working_directory: .
-    write_paths: [knowledge/data]
 ```
 
-`argv` передаётся без оболочки. Доступны только подстановки `{source_id}`,
-`{source_dir}` и `{locator}`. `working_directory` и `write_paths` задаются
-относительно корня проекта. Средство запуска проверяет через Git, что адаптер
-не изменил файлы вне `write_paths`.
+Такой адаптер поддерживает только получение. Результат сохраняет прежний
+формат с `contract_version: 1` и статусами `synced`, `partial`, `changed`,
+`unchanged`, `new`, `removed`, `manual-required`, `access-limited`,
+`fetch-error`, `unsupported-adapter` или `invalid-registry`.
 
-Не записывайте в отслеживаемые настройки токены, cookies, пароли, ключи API,
-заголовки авторизации или закрытые адреса. Средство отклоняет явные поля
-секретов и URL с `?token=`; остальные секреты должны поступать из локального
-неотслеживаемого слоя, среды процесса или защищённого хранилища проекта.
+## Версия 2
 
-## Запуск
+Адаптер версии 2 объявляет отдельные операции:
 
-Обычное планирование не запускает адаптеры. Выполнение требует явного флага:
+```yaml
+adapters:
+  project.restricted-source:
+    contract_version: 2
+    operations:
+      probe:
+        argv: [python3, tools/restricted-source-adapter.py, probe, --source-id, "{source_id}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: []
+      fetch:
+        argv: [python3, tools/restricted-source-adapter.py, fetch, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: [knowledge/data]
+      verify:
+        argv: [python3, tools/restricted-source-adapter.py, verify, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: [knowledge/data]
+      authorize:
+        argv: [python3, tools/restricted-source-adapter.py, authorize, --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: []
+```
+
+- `probe` проверяет готовность и авторизацию без изменения корпуса;
+- `fetch` получает конкретный снимок;
+- `verify` сопоставляет сохранённый снимок с источником;
+- `authorize` выполняет необязательную интерактивную настройку и никогда не
+  запускается конвейером автоматически.
+
+Перед `fetch` и `verify` исполнитель сам запускает `probe`. Целевая операция
+начинается только после статуса `ready`. Явный запуск:
 
 ```bash
 python3 .apm/skills/kc-pipeline/scripts/run-corpus-operations.py \
-  knowledge --operations knowledge/operations.yml --run-adapters
+  knowledge --operations knowledge/operations.yml --run-adapters \
+  --adapter-operation verify --source SOURCE-ID
 ```
 
-Чтобы ограничить запуск одним или несколькими источниками, повторяйте
-`--source SOURCE-ID`. Неизвестный идентификатор источника — ошибка запуска.
-Неизвестное имя адаптера не подменяется похожим способом: оно попадает в отчёт
-со статусом `unsupported-adapter`.
+Для интерактивной настройки пользователь должен явно выбрать
+`--adapter-operation authorize`.
 
-## Результат
+## Локальные профили
 
-Адаптер с нулевым кодом завершения обязан вывести в стандартный вывод ровно
-один JSON-объект:
+Карточка источника может хранить только вид авторизации, необходимые
+возможности, логическое `profile_name` и допустимость интерактивной настройки.
+Текущая готовность, секрет и данные сессии принадлежат игнорируемому локальному
+слою проекта, например `.local/access-profiles.yml` или защищённому хранилищу.
+Адаптер сам разрешает логическое имя в локальные учётные данные. Секрет нельзя
+передавать через `argv`, стандартный вывод, отчёт или Git.
+
+`probe` различает статусы `ready`, `profile-missing`,
+`interactive-login-required`, `permission-denied`, `terms-decision-required`,
+`technical-unavailable` и `unsupported-adapter`. Это локальное наблюдение. Оно
+не записывается в переносимый `verification.yml` и не меняет прежнюю успешную
+проверку снимка.
+
+## Результат версии 2
+
+Команда с нулевым кодом завершения выводит один JSON-объект:
 
 ```json
 {
-  "contract_version": 1,
+  "contract_version": 2,
+  "operation": "probe",
   "source_id": "SOURCE-ID",
-  "adapter": "project.web-index",
-  "status": "unchanged",
-  "message": "В индекс добавлены только метаданные; полного содержимого не сохранено.",
-  "artifacts": ["knowledge/data/example-source/items.yml"]
+  "adapter": "project.restricted-source",
+  "status": "ready",
+  "message": "Локальный профиль готов к чтению.",
+  "artifacts": []
 }
 ```
 
-`source_id` и `adapter` должны совпадать с карточкой источника. `message`
-объясняет результат следующему запуску. `artifacts` содержит репо-относительные
-пути созданных или проверенных артефактов; это список для отчёта, а не разрешение
-на запись вне `write_paths`.
+Для `fetch` используются статусы версии 1. Для `verify` допустимы `verified`,
+`partially-verified`, `unverified`, `mismatch`, `access-limited` и
+`fetch-error`. Успешная `verify` записывает `verification.yml` по договору
+`kc-inventory`. Для `authorize` допустимы `ready`,
+`interactive-login-required`, `permission-denied` и `technical-unavailable`.
 
-Допустимые статусы: `synced`, `partial`, `changed`, `unchanged`, `new`,
-`removed`, `manual-required`, `access-limited`, `fetch-error`,
-`unsupported-adapter`, `invalid-registry`. Ненулевой код команды превращается в
-`fetch-error`; при этом средство сохраняет текст ошибки в локальном отчёте.
+`source_id`, `adapter` и `operation` должны совпадать с вызовом. `artifacts`
+перечисляет репо-относительные созданные или проверенные пути, но не расширяет
+`write_paths`.
 
-## Примеры границ
+## Границы исполнения
 
-`builtin.local-file` может проверить наличие локального файла, обновить его
-паспорт и вернуть `unchanged` или `changed`. Сам файл остаётся в локальном
-слое, если политика копирования не разрешает его публикацию.
+`argv` передаётся без оболочки. Доступны только `{source_id}`, `{source_dir}`,
+`{locator}` и `{profile_name}`. `working_directory` и `write_paths` задаются
+относительно корня проекта. `probe` не может менять Git или корпус. После
+команды исполнитель проверяет изменения относительно `write_paths`.
 
-`project.web-index` может получить sitemap или индекс страниц и записать только
-метаданные в `items.yml`. Sitemap — необязательный механизм обнаружения, а не
-отдельный вид источника. Адаптер не сохраняет полное содержимое страницы, пока
-стратегия хранения и политика копирования этого не разрешают.
+Неуспешная операция не может менять `verification.yml`. Неизвестная версия
+договора отклоняется. Неизвестный адаптер получает `unsupported-adapter`.
+`adapter: manual` без регистрации не считается успешной синхронизацией.
+
+Не храните в настройках токены, cookies, пароли, ключи API, заголовки
+авторизации и закрытые адреса. Исполнитель отклоняет явные поля секретов,
+обезличивает похожие значения в сообщении об ошибке и не выводит их в отчёт.
+
+`builtin.local-file` может проверить локальный файл и обновить его паспорт, не
+публикуя сам файл. Проектный индексный адаптер может получить только список
+единиц. Частные сервисы не требуют специальных значений общего договора.

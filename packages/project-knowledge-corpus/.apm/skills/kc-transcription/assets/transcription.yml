@@ -18,5 +18,7 @@ preflight:
   io_priority: idle
 
 result:
+  # По умолчанию transcript.txt. Укажите временное имя из раскладки проекта,
+  # чтобы передать его проверяющему скрипту через --transcript.
   raw_transcript: transcript.txt
   metadata: transcription.yml

@@ -1,0 +1,31 @@
+# Проверка текущего снимка единицы источника.
+# Скопируйте рядом с item.yml и замените значения по фактической проверке.
+
+verification_contract_version: 1
+artifact: message.md
+hash:
+  algorithm: sha256
+  value: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+acquisition:
+  method: user_provided
+  recorded_at: YYYY-MM-DD
+verification:
+  method: no_source_comparison
+  checked_at: YYYY-MM-DD
+  checked_by:
+    role: corpus_maintainer
+  scope:
+    content: full_text # full_text | fragment | none
+    # fragment: "Точно проверенный фрагмент."
+    metadata: [] # locator | author | publication_date
+  result:
+    overall: unverified # verified | partially_verified | unverified
+    content_match: unverified # verified | partially_verified | unverified | mismatch
+    scope_completeness: complete # complete | partial | not_assessed
+    metadata:
+      locator: unverified # verified | unverified | mismatch
+      author: unverified
+      publication_date: unverified
+  limitations:
+    - Материал не сопоставлен с первоисточником.
+# next_check_at: YYYY-MM-DD

@@ -13,6 +13,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -114,7 +115,40 @@ ADAPTER_STATUSES = {
     "unsupported-adapter",
     "invalid-registry",
 }
+ADAPTER_OPERATIONS = {"probe", "fetch", "verify", "authorize"}
+ADAPTER_PROBE_STATUSES = {
+    "ready",
+    "profile-missing",
+    "interactive-login-required",
+    "permission-denied",
+    "terms-decision-required",
+    "technical-unavailable",
+    "unsupported-adapter",
+}
+ADAPTER_VERIFY_STATUSES = {
+    "verified",
+    "partially-verified",
+    "unverified",
+    "mismatch",
+    "access-limited",
+    "fetch-error",
+}
+ADAPTER_AUTHORIZE_STATUSES = {
+    "ready",
+    "interactive-login-required",
+    "permission-denied",
+    "technical-unavailable",
+}
+ADAPTER_SUCCESS_STATUSES = {
+    "probe": {"ready"},
+    "fetch": {"synced", "partial", "changed", "unchanged", "new", "removed"},
+    "verify": {"verified", "partially-verified", "unverified"},
+    "authorize": {"ready"},
+}
 SENSITIVE_SETTING_NAMES = {"token", "password", "cookie", "secret", "authorization", "api_key", "apikey"}
+SENSITIVE_OUTPUT_PATTERN = re.compile(
+    r"(?i)\b(token|password|secret|cookie|authorization|api[_-]?key)\b\s*[:=]\s*\S+"
+)
 
 
 class OperationsError(RuntimeError):
@@ -183,6 +217,15 @@ class CorpusItem:
         value = self.source_card.get("storage_strategy")
         return value if isinstance(value, str) else ""
 
+    @property
+    def contract_version(self) -> int:
+        value = self.value("item_contract_version", 1)
+        if value not in {1, 2}:
+            raise OperationsError(
+                f"Единица {self.item_id} содержит неподдерживаемую item_contract_version: {value}"
+            )
+        return value
+
 
 @dataclass(frozen=True)
 class CorpusSource:
@@ -200,6 +243,12 @@ class CorpusSource:
         value = self.card.get("locator", self.card.get("url", ""))
         return value if isinstance(value, str) else ""
 
+    @property
+    def profile_name(self) -> str:
+        requirements = self.card.get("access_requirements")
+        value = requirements.get("profile_name") if isinstance(requirements, dict) else ""
+        return value if isinstance(value, str) else ""
+
 
 @dataclass(frozen=True)
 class CommandResult:
@@ -213,6 +262,7 @@ class CommandResult:
 class AdapterResult:
     source_id: str
     adapter: str
+    operation: str
     status: str
     message: str
     changed_paths: tuple[str, ...]
@@ -379,6 +429,15 @@ def load_operations(path: Path | None) -> dict[str, Any]:
 
 
 def validate_operation_extensions(data: dict[str, Any]) -> None:
+    profiles = data.get("access_profiles")
+    if profiles is not None:
+        if not isinstance(profiles, dict) or not isinstance(profiles.get("path"), str):
+            raise OperationsError("access_profiles должен задавать строковый path.")
+        profile_path = relative_path(profiles["path"], "access_profiles.path")
+        if ".local" not in profile_path.parts and not any(
+            part.endswith(".local") for part in profile_path.parts
+        ):
+            raise OperationsError("access_profiles.path должен находиться в локальном *.local слое.")
     attention = data.get("human_attention")
     if attention is not None:
         if not isinstance(attention, dict):
@@ -634,7 +693,12 @@ def queue_name(
             None,
         )
     if stage == "statements_extracted":
-        return "source_check", "workflow_stage=statements_extracted", None
+        reason = (
+            "нужно определить и записать проверку происхождения снимка"
+            if item.contract_version == 2
+            else "workflow_stage=statements_extracted"
+        )
+        return "source_check", reason, None
     if stage == "blocked":
         blocker_code = item.value("blocker_code")
         if blocker_code not in BLOCKER_CODES:
@@ -645,6 +709,16 @@ def queue_name(
             blocker_code, item.value("automatic_attempts"), f"Заблокированная единица {item.item_id}"
         )
         return "human_decision", "workflow_stage=blocked", blocker_code
+    if stage == "verification_assessed":
+        if item.contract_version != 2:
+            raise OperationsError(
+                f"Единица {item.item_id} использует verification_assessed без item_contract_version: 2"
+            )
+        return None
+    if stage == "source_checked" and item.contract_version == 2:
+        raise OperationsError(
+            f"Единица {item.item_id} договора версии 2 должна использовать verification_assessed."
+        )
     if stage in {"source_checked", "rejected", ""}:
         return None
     raise OperationsError(
@@ -1035,6 +1109,7 @@ def format_adapter_argv(argv: list[str], source: CorpusSource, root: Path) -> li
         "source_id": source.source_id,
         "source_dir": repo_relative(root, source.source_dir),
         "locator": source.locator,
+        "profile_name": source.profile_name,
     }
     try:
         return [part.format(**values) for part in argv]
@@ -1042,24 +1117,185 @@ def format_adapter_argv(argv: list[str], source: CorpusSource, root: Path) -> li
         raise OperationsError(f"В argv адаптера используется неизвестный параметр: {exc.args[0]}") from exc
 
 
-def validate_adapter_result(data: Any, source: CorpusSource, changed_paths: set[str]) -> AdapterResult:
+def adapter_contract_version(definition: dict[str, Any]) -> int:
+    version = definition.get("contract_version", 1)
+    if version not in {1, 2}:
+        raise OperationsError(f"Неподдерживаемая версия договора адаптера: {version}.")
+    return version
+
+
+def adapter_operation_definition(
+    definition: dict[str, Any], operation: str
+) -> dict[str, Any] | None:
+    version = adapter_contract_version(definition)
+    if version == 1:
+        return definition if operation == "fetch" else None
+    operations = definition.get("operations")
+    if not isinstance(operations, dict):
+        raise OperationsError("Адаптер версии 2 должен задавать словарь operations.")
+    value = operations.get(operation)
+    if value is None:
+        return None
+    if not isinstance(value, dict):
+        raise OperationsError(f"Операция адаптера {operation} должна быть словарём.")
+    return value
+
+
+def safe_adapter_message(value: str) -> str:
+    sanitized = SENSITIVE_OUTPUT_PATTERN.sub(lambda match: f"{match.group(1)}=[скрыто]", value)
+    sanitized = re.sub(r"(?i)([?&](?:token|key|secret|session)=)[^\s&]+", r"\1[скрыто]", sanitized)
+    return sanitized
+
+
+def verification_fingerprints(corpus_root: Path) -> dict[str, str]:
+    return {
+        path.relative_to(corpus_root).as_posix(): hashlib.sha256(path.read_bytes()).hexdigest()
+        for path in corpus_root.glob("data/*/*/*/verification.yml")
+        if path.is_file()
+    }
+
+
+def validate_adapter_result(
+    data: Any,
+    source: CorpusSource,
+    changed_paths: set[str],
+    *,
+    contract_version: int,
+    operation: str,
+) -> AdapterResult:
     if not isinstance(data, dict):
         raise OperationsError(f"Адаптер {source.adapter} источника {source.source_id} должен вернуть JSON-объект.")
-    if data.get("contract_version") != 1:
+    if data.get("contract_version") != contract_version:
         raise OperationsError(f"Адаптер {source.adapter} источника {source.source_id} вернул неподдерживаемую версию договора.")
     if data.get("source_id") != source.source_id or data.get("adapter") != source.adapter:
         raise OperationsError(f"Адаптер {source.adapter} вернул результат для другого источника.")
+    if contract_version == 2 and data.get("operation") != operation:
+        raise OperationsError(f"Адаптер {source.adapter} вернул результат другой операции.")
     status = data.get("status")
     message = data.get("message")
-    if status not in ADAPTER_STATUSES or not isinstance(message, str) or not message:
+    allowed_statuses = ADAPTER_STATUSES
+    if contract_version == 2 and operation == "probe":
+        allowed_statuses = ADAPTER_PROBE_STATUSES
+    elif contract_version == 2 and operation == "verify":
+        allowed_statuses = ADAPTER_VERIFY_STATUSES
+    elif contract_version == 2 and operation == "authorize":
+        allowed_statuses = ADAPTER_AUTHORIZE_STATUSES
+    if status not in allowed_statuses or not isinstance(message, str) or not message:
         raise OperationsError(f"Адаптер {source.adapter} источника {source.source_id} вернул неполный статус.")
     artifacts = data.get("artifacts", [])
     if not isinstance(artifacts, list) or not all(isinstance(path, str) for path in artifacts):
         raise OperationsError(f"Адаптер {source.adapter} источника {source.source_id} вернул неверный список artifacts.")
-    return AdapterResult(source.source_id, source.adapter, status, message, tuple(sorted(changed_paths)))
+    reject_sensitive_settings(data)
+    return AdapterResult(
+        source.source_id,
+        source.adapter,
+        operation,
+        status,
+        safe_adapter_message(message),
+        tuple(sorted(changed_paths)),
+    )
 
 
-def run_adapters(root: Path, corpus_root: Path, operations: dict[str, Any], selected_ids: set[str]) -> list[AdapterResult]:
+def run_adapter_operation(
+    root: Path,
+    corpus_root: Path,
+    source: CorpusSource,
+    definition: dict[str, Any],
+    operation: str,
+) -> AdapterResult:
+    version = adapter_contract_version(definition)
+    operation_definition = adapter_operation_definition(definition, operation)
+    if operation_definition is None:
+        return AdapterResult(
+            source.source_id,
+            source.adapter,
+            operation,
+            "unsupported-adapter",
+            f"Адаптер не объявляет операцию {operation}.",
+            (),
+        )
+    argv = operation_definition.get("argv")
+    write_paths = operation_definition.get("write_paths", [])
+    cwd = operation_definition.get("working_directory", ".")
+    if not isinstance(argv, list) or not argv or not all(
+        isinstance(part, str) and part for part in argv
+    ):
+        raise OperationsError(f"Адаптер {source.adapter} должен задавать непустой argv.")
+    if not isinstance(write_paths, list) or not all(
+        isinstance(path, str) and path for path in write_paths
+    ):
+        raise OperationsError(f"Адаптер {source.adapter} должен задавать write_paths списком.")
+    if operation != "probe" and not write_paths and operation != "authorize":
+        raise OperationsError(f"Операция {operation} адаптера {source.adapter} должна задавать write_paths.")
+    if not isinstance(cwd, str):
+        raise OperationsError(f"Адаптер {source.adapter} должен задавать working_directory строкой.")
+    for path in write_paths:
+        resolve_inside(root, path, f"write_paths адаптера {source.adapter}")
+    command_cwd = resolve_inside(root, cwd, f"working_directory адаптера {source.adapter}")
+    before = git_file_fingerprints(root)
+    before_verification = verification_fingerprints(corpus_root)
+    try:
+        process = subprocess.run(
+            format_adapter_argv(argv, source, root),
+            cwd=command_cwd,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as exc:
+        raise OperationsError(
+            f"Не удалось запустить адаптер {source.adapter} источника {source.source_id}: {exc}"
+        ) from exc
+    after = git_file_fingerprints(root)
+    after_verification = verification_fingerprints(corpus_root)
+    changed = changed_fingerprint_paths(before, after)
+    if operation == "probe" and changed:
+        paths = ", ".join(sorted(changed))
+        raise OperationsError(f"probe адаптера {source.adapter} изменил корпус или Git: {paths}")
+    if not command_paths_allowed(changed, write_paths):
+        paths = ", ".join(sorted(changed)) or "нет"
+        raise OperationsError(f"Адаптер {source.adapter} изменил файлы вне write_paths: {paths}")
+    if process.returncode != 0:
+        if before_verification != after_verification:
+            raise OperationsError(
+                f"Неудачная операция {operation} адаптера {source.adapter} изменила verification.yml."
+            )
+        raw_message = process.stderr.strip() or process.stdout.strip()
+        message = safe_adapter_message(raw_message or f"Команда завершилась с кодом {process.returncode}.")
+        return AdapterResult(
+            source.source_id,
+            source.adapter,
+            operation,
+            "fetch-error" if operation != "probe" else "technical-unavailable",
+            message,
+            tuple(sorted(changed)),
+        )
+    try:
+        result_data = json.loads(process.stdout)
+    except json.JSONDecodeError as exc:
+        raise OperationsError(
+            f"Адаптер {source.adapter} источника {source.source_id} вернул не JSON: {exc.msg}"
+        ) from exc
+    result = validate_adapter_result(
+        result_data,
+        source,
+        changed,
+        contract_version=version,
+        operation=operation,
+    )
+    if result.status not in ADAPTER_SUCCESS_STATUSES[operation] and before_verification != after_verification:
+        raise OperationsError(
+            f"Неуспешная операция {operation} адаптера {source.adapter} изменила verification.yml."
+        )
+    return result
+
+
+def run_adapters(
+    root: Path,
+    corpus_root: Path,
+    operations: dict[str, Any],
+    selected_ids: set[str],
+    operation: str,
+) -> list[AdapterResult]:
     definitions = adapter_definitions(operations)
     sources = load_sources(corpus_root)
     known_ids = {source.source_id for source in sources}
@@ -1072,46 +1308,39 @@ def run_adapters(root: Path, corpus_root: Path, operations: dict[str, Any], sele
             continue
         definition = definitions.get(source.adapter)
         if definition is None:
-            results.append(AdapterResult(source.source_id, source.adapter, "unsupported-adapter", "Адаптер не зарегистрирован в настройках операций.", ()))
-            continue
-        argv = definition.get("argv")
-        write_paths = definition.get("write_paths")
-        cwd = definition.get("working_directory", ".")
-        if not isinstance(argv, list) or not argv or not all(isinstance(part, str) and part for part in argv):
-            raise OperationsError(f"Адаптер {source.adapter} должен задавать непустой argv.")
-        if not isinstance(write_paths, list) or not write_paths or not all(isinstance(path, str) and path for path in write_paths):
-            raise OperationsError(f"Адаптер {source.adapter} должен задавать write_paths.")
-        if not isinstance(cwd, str):
-            raise OperationsError(f"Адаптер {source.adapter} должен задавать working_directory строкой.")
-        for path in write_paths:
-            resolve_inside(root, path, f"write_paths адаптера {source.adapter}")
-        command_cwd = resolve_inside(root, cwd, f"working_directory адаптера {source.adapter}")
-        before = git_file_fingerprints(root)
-        try:
-            process = subprocess.run(
-                format_adapter_argv(argv, source, root),
-                cwd=command_cwd,
-                capture_output=True,
-                text=True,
+            results.append(
+                AdapterResult(
+                    source.source_id,
+                    source.adapter,
+                    operation,
+                    "unsupported-adapter",
+                    "Адаптер не зарегистрирован в настройках операций.",
+                    (),
+                )
             )
-        except OSError as exc:
-            raise OperationsError(
-                f"Не удалось запустить адаптер {source.adapter} источника {source.source_id}: {exc}"
-            ) from exc
-        after = git_file_fingerprints(root)
-        changed = changed_fingerprint_paths(before, after)
-        if not command_paths_allowed(changed, write_paths):
-            paths = ", ".join(sorted(changed)) or "нет"
-            raise OperationsError(f"Адаптер {source.adapter} изменил файлы вне write_paths: {paths}")
-        if process.returncode != 0:
-            message = process.stderr.strip() or process.stdout.strip() or f"Команда завершилась с кодом {process.returncode}."
-            results.append(AdapterResult(source.source_id, source.adapter, "fetch-error", message, tuple(sorted(changed))))
             continue
-        try:
-            result_data = json.loads(process.stdout)
-        except json.JSONDecodeError as exc:
-            raise OperationsError(f"Адаптер {source.adapter} источника {source.source_id} вернул не JSON: {exc.msg}") from exc
-        results.append(validate_adapter_result(result_data, source, changed))
+        version = adapter_contract_version(definition)
+        if version == 1:
+            if operation != "fetch":
+                results.append(
+                    AdapterResult(
+                        source.source_id,
+                        source.adapter,
+                        operation,
+                        "unsupported-adapter",
+                        "Адаптер версии 1 поддерживает только получение.",
+                        (),
+                    )
+                )
+                continue
+            results.append(run_adapter_operation(root, corpus_root, source, definition, "fetch"))
+            continue
+        if operation in {"fetch", "verify"}:
+            probe = run_adapter_operation(root, corpus_root, source, definition, "probe")
+            results.append(probe)
+            if probe.status != "ready":
+                continue
+        results.append(run_adapter_operation(root, corpus_root, source, definition, operation))
     return results
 
 
@@ -1221,7 +1450,11 @@ def render_report(
         lines.extend(["", "## Адаптеры", ""])
         for result in adapter_results:
             changed = ", ".join(result.changed_paths) or "нет"
-            lines.append(f"- {result.source_id} ({result.adapter}): {result.status}; {result.message}; изменено: {changed}")
+            operation = "" if result.operation == "fetch" else f", {result.operation}"
+            lines.append(
+                f"- {result.source_id} ({result.adapter}{operation}): "
+                f"{result.status}; {result.message}; изменено: {changed}"
+            )
     if index_counts is not None:
         lines.extend(["", "## Индексы", "", f"- единиц: {index_counts[0]}", f"- утверждений: {index_counts[1]}"])
     if operational_check is not None:
@@ -1691,6 +1924,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--stage", default="source_sync", help="Стадия проектных команд для --run-commands.")
     parser.add_argument("--run-commands", action="store_true", help="Явно выполнить команды указанной стадии.")
     parser.add_argument("--run-adapters", action="store_true", help="Явно выполнить зарегистрированные адаптеры источников.")
+    parser.add_argument(
+        "--adapter-operation",
+        choices=sorted(ADAPTER_OPERATIONS),
+        default="fetch",
+        help=(
+            "Операция адаптера для --run-adapters. fetch и verify сначала выполняют probe; "
+            "authorize запускается только при явном выборе."
+        ),
+    )
     parser.add_argument("--source", action="append", default=[], help="Идентификатор источника для --run-adapters; можно повторять.")
     parser.add_argument("--rebuild-indexes", action="store_true", help="Атомарно пересобрать производные индексы.")
     parser.add_argument(
@@ -1951,7 +2193,13 @@ def main() -> int:
     if args.run_adapters:
         if not operations_path:
             raise OperationsError("Для --run-adapters нужен параметр --operations.")
-        adapter_results = run_adapters(root, corpus_root, operations, set(args.source))
+        adapter_results = run_adapters(
+            root,
+            corpus_root,
+            operations,
+            set(args.source),
+            args.adapter_operation,
+        )
         items = load_items(corpus_root)
         queues = build_run_queues(
             corpus_root,

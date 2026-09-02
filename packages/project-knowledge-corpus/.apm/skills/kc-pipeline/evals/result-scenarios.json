@@ -1149,6 +1149,25 @@
       "required_corpus_claims": [
         "KCPIPELINE-1"
       ]
+    },
+    {
+      "id": "kc-pipeline-result-adapter-v2-portable-verification",
+      "prompt": "Продолжи закрытый источник: адаптер версии 2, локального профиля в этом окружении нет, но снимок с совпадающим хэшем раньше проверен в другом окружении.",
+      "input_files": [{"path": ".apm/skills/kc-pipeline/references/adapter-contract.md", "purpose": "договор probe, fetch, verify и authorize"}],
+      "expected_output": {
+        "report_structure": ["результат probe", "сохранённая проверка снимка", "отложенная операция", "точное внешнее действие"],
+        "findings": [{"severity": "high", "observed_problem": "В текущем окружении нет локального профиля.", "expected_conclusion": "probe возвращает profile-missing, сохранённая проверка не меняется, fetch или verify не запускается, authorize не стартует автоматически.", "acceptable_fix_direction": "Показать только действие по локальному профилю, если новая сверка действительно нужна.", "corpus_claims": ["KCPIPELINE-1"]}]
+      },
+      "negative_control": {"description": "Ответ удаляет verification.yml, понижает evidence_strength или автоматически запускает authorize.", "expected_failure": "Нарушаются переносимость и граница интерактивного действия."},
+      "oracle": {
+        "success_criteria": ["probe не меняет корпус", "сбой не меняет verification.yml", "authorize не запускается автоматически", "версия 1 остаётся рабочей"],
+        "failure_indicators": ["прежняя проверка отменена", "секрет попал в отчёт", "неизвестный адаптер назван успешным"]
+      },
+      "application_evidence": ["результат различает локальную доступность и переносимую проверку", "результат называет точный статус probe"],
+      "evaluation_surface": "исполняемый договор, ограничение и совместимость",
+      "assertions": ["fetch и verify требуют успешный probe.", "Неуспешная попытка не меняет проверку снимка."],
+      "must_not": ["не передавать секрет через argv или отчёт", "не считать manual без регистрации успешной синхронизацией"],
+      "required_corpus_claims": ["KCPIPELINE-1"]
     }
   ]
 }

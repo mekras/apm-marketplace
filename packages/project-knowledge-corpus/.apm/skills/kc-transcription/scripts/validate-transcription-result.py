@@ -31,7 +31,12 @@ def temporary_media(path: Path) -> bool:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Проверить сырую расшифровку и очистить временное медиа.")
-    parser.add_argument("item_dir", type=Path, help="Папка единицы с transcript.txt.")
+    parser.add_argument("item_dir", type=Path, help="Папка единицы с сырой расшифровкой.")
+    parser.add_argument(
+        "--transcript",
+        default="transcript.txt",
+        help="Имя проверяемой сырой расшифровки внутри папки единицы.",
+    )
     parser.add_argument("--media", action="append", default=[], help="Имя временного медиа внутри папки единицы.")
     parser.add_argument("--cleanup", action="store_true", help="Удалить указанные *.tmp.* после успешной проверки.")
     return parser.parse_args()
@@ -42,9 +47,11 @@ def main() -> int:
     root = args.item_dir.resolve()
     if not root.is_dir():
         raise TranscriptionError(f"Папка единицы не найдена: {args.item_dir}")
-    transcript = root / "transcript.txt"
+    transcript = item_path(root, args.transcript)
     if not transcript.is_file() or not transcript.read_text(encoding="utf-8").strip():
-        raise TranscriptionError("Нужен непустой transcript.txt; очистка временного медиа запрещена.")
+        raise TranscriptionError(
+            f"Нужен непустой {args.transcript}; очистка временного медиа запрещена."
+        )
     media = [item_path(root, raw_path) for raw_path in args.media]
     invalid = [path.name for path in media if not temporary_media(path)]
     if invalid:
@@ -54,12 +61,17 @@ def main() -> int:
         for path in media:
             path.unlink()
             removed.append(path.name)
+    transcript_removed = transcript.name in removed
     print(
         json.dumps(
             {
                 "contract_version": 1,
-                "status": "ready_for_normalization",
-                "transcript": "transcript.txt",
+                "status": (
+                    "temporary_transcript_cleaned"
+                    if transcript_removed
+                    else "ready_for_normalization"
+                ),
+                "transcript": args.transcript,
                 "cleanup_candidates": [path.name for path in media if path.name not in removed],
                 "removed": removed,
             },
