@@ -23,7 +23,7 @@
     {
       "name": "project-knowledge-corpus",
       "description": "Коллекция навыков для создания, сопровождения и применения корпуса знаний проекта",
-      "version": "0.20.2",
+      "version": "0.20.3",
       "category": "Productivity",
       "source": "./packages/project-knowledge-corpus"
     },

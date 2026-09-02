@@ -28,7 +28,7 @@ marketplace:
     - name: project-knowledge-corpus
       description: "Коллекция навыков для создания, сопровождения и применения корпуса знаний проекта"
       source: ./packages/project-knowledge-corpus
-      version: "0.20.2"
+      version: "0.20.3"
       tag_pattern: "{name}--v{version}"
       category: Productivity
     - name: ai-dev-team

@@ -1341,12 +1341,20 @@ class Validator:
         verification_path = path.parent / "verification.yml"
         if verification_path.exists():
             self.validate_verification(verification_path)
-        elif item.get("item_contract_version", 1) == 2:
+            return
+
+        version = item.get("item_contract_version", 1)
+        if version == 2:
             message = f"{rel}: item contract version 2 has no verification.yml"
             if stage == "verification_assessed":
                 self.errors.append(message)
             elif self.strict_verification:
                 self.contract_warnings.append(message)
+        elif self.strict_verification:
+            self.contract_warnings.append(
+                f"{rel}: legacy item has no verification.yml; external verification and "
+                "freshness are not recorded"
+            )
 
     def validate_item_contract(self, item: dict[str, Any], prefix: str) -> None:
         version = item.get("item_contract_version", 1)
@@ -2312,8 +2320,9 @@ def parse_args() -> argparse.Namespace:
         "--strict-verification",
         action="store_true",
         help=(
-            "Warn when an item contract version 2 has no verification.yml and require "
-            "a valid hash-bound verification for verification_assessed items."
+            "Warn when an item has no verification.yml. For legacy items this means "
+            "external verification and freshness are not recorded; verification_assessed "
+            "items require a valid hash-bound verification."
         ),
     )
     parser.add_argument(
