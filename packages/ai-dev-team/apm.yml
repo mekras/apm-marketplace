@@ -1,5 +1,5 @@
 name: ai-dev-team
-version: 0.27.13
+version: 0.27.14
 description: Команда агентной разработки ПО
 author: mekras
 license: MIT
@@ -13,7 +13,7 @@ dependencies:
   apm:
     - mekras/apm-marketplace/packages/ai-russian-language#ai-russian-language--v2.1.5
     - mekras/apm-marketplace/packages/ai-agent-supervisor#ai-agent-supervisor--v2.3.21
-    - mekras/apm-marketplace/packages/project-knowledge-corpus#project-knowledge-corpus--v0.20.2
+    - mekras/apm-marketplace/packages/project-knowledge-corpus#project-knowledge-corpus--v0.20.4
 scripts:
   tests: >-
     sh -c 'set -e; export PYTHONDONTWRITEBYTECODE=1;
@@ -43,8 +43,7 @@ scripts:
     knowledge-evaluation.yml --corpus-root knowledge;
     python3 tools/check-knowledge-index.py;
     if [ "${APM_PUBLIC_RELEASE:-0}" != 1 ]; then
-      python3 .agents/skills/kc-inventory/scripts/validate-corpus-layout.py
-      knowledge --strict-statements;
+      python3 .agents/skills/kc-inventory/scripts/validate-corpus-layout.py knowledge --strict-statements;
       python3 tools/validate-knowledge-operational.py;
     fi;
     python3 "$validators/validate-hidden-unicode.py" .apm;
