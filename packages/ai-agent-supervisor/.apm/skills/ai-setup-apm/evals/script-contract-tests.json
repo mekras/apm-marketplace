@@ -50,13 +50,21 @@
           "не найден каталог проекта"
         ]
       }
-    }
-  ],
-  "unexercised_functions": [
+    },
     {
+      "id": "reject-tracked-apm-dependency",
       "script": "scripts/validate-apm-git-boundary.py",
-      "function": "package_owners",
-      "reason": "Функция вызывает внешнюю команду apm, которую нельзя воспроизвести внутри переносимой фикстуры; поведение проверяется в целевых проектах штатным запуском apm."
+      "fixture": "evals/script-fixtures/empty-project",
+      "covers": ["validate-git-boundary"],
+      "prepare": [
+        ["git", "init", "--quiet", "{fixture}"],
+        ["git", "-C", "{fixture}", "add", ".agents/skills/dependency/README.md"]
+      ],
+      "command": ["{python}", "{script}", "{fixture}"],
+      "expect": {
+        "exit_code": 1,
+        "stderr_contains": [".agents/skills/dependency/README.md", "example/dependency"]
+      }
     }
   ]
 }

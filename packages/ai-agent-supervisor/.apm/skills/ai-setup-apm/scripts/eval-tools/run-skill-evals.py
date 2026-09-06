@@ -28,6 +28,7 @@ import os
 import re
 import shutil
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
@@ -673,28 +674,40 @@ def make_model_call(adapter: list[str], model: str, timeout: int, workspace: Pat
                 "кодовый блок, строго соответствующий схеме:\n"
                 f"{json.dumps(schema, ensure_ascii=False)}\n"
             )
+        process: subprocess.Popen[str] | None = None
         try:
-            completed = subprocess.run(
+            process = subprocess.Popen(
                 [*adapter, model],
-                input=full_prompt,
                 text=True,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                timeout=timeout,
-                check=False,
                 env={**os.environ, **({"APM_EVAL_WORKSPACE": str(workspace)} if workspace else {})},
+                start_new_session=True,
             )
+            stdout, stderr = process.communicate(input=full_prompt, timeout=timeout)
         except FileNotFoundError as exc:
             raise RuntimeError(
                 f"Адаптер модели не найден: {' '.join(adapter)}. "
                 "Проверьте adapter в настройках evals.",
             ) from exc
-        if completed.returncode != 0:
+        except subprocess.TimeoutExpired as exc:
+            if process is not None:
+                if os.name == "posix":
+                    os.killpg(process.pid, signal.SIGTERM)
+                else:
+                    process.kill()
+                process.communicate()
             raise RuntimeError(
-                f"Адаптер вернул код {completed.returncode}.\n"
-                f"STDOUT:\n{completed.stdout}\nSTDERR:\n{completed.stderr}",
+                f"Адаптер модели превысил тайм-аут {timeout} с. "
+                f"Команда: {' '.join(adapter)} {model}",
+            ) from exc
+        if process.returncode != 0:
+            raise RuntimeError(
+                f"Адаптер вернул код {process.returncode}.\n"
+                f"STDOUT:\n{stdout}\nSTDERR:\n{stderr}",
             )
-        output, actual_metrics = unwrap_adapter_response(completed.stdout)
+        output, actual_metrics = unwrap_adapter_response(stdout)
         result = extract_answer_text(output, prompt) if schema is ANSWER_SCHEMA else extract_json(output)
         setattr(call, "last_metrics", actual_metrics)
         return result
@@ -1202,14 +1215,43 @@ def fixture_judge_prompt(case: dict[str, Any], answer: dict[str, Any], mode: str
     )
 
 
+def text_lines(path: Path) -> list[str] | None:
+    """Вернуть строки UTF-8-файла либо None для двоичного содержимого."""
+    try:
+        return path.read_text(encoding="utf-8").splitlines(keepends=True)
+    except UnicodeDecodeError:
+        return None
+
+
+def binary_change(relative: Path, old: bytes | None, new: bytes | None) -> str:
+    """Описать изменение двоичного файла в читаемом и проверяемом виде."""
+    if old is None:
+        return f"Binary file b/{relative} added (sha256 {hashlib.sha256(new or b'').hexdigest()})\n"
+    if new is None:
+        return f"Binary file a/{relative} deleted (sha256 {hashlib.sha256(old).hexdigest()})\n"
+    return (
+        f"Binary files a/{relative} and b/{relative} differ "
+        f"(sha256 {hashlib.sha256(old).hexdigest()} -> {hashlib.sha256(new).hexdigest()})\n"
+    )
+
+
 def directory_diff(before: Path, after: Path) -> str:
     """Вернуть проверяемый diff временной рабочей копии fixture."""
     paths = {item.relative_to(before) for item in before.rglob("*") if item.is_file()}
     paths.update(item.relative_to(after) for item in after.rglob("*") if item.is_file())
     chunks: list[str] = []
     for relative in sorted(paths):
-        old = (before / relative).read_text(encoding="utf-8").splitlines(keepends=True) if (before / relative).is_file() else []
-        new = (after / relative).read_text(encoding="utf-8").splitlines(keepends=True) if (after / relative).is_file() else []
+        old_path = before / relative
+        new_path = after / relative
+        old_bytes = old_path.read_bytes() if old_path.is_file() else None
+        new_bytes = new_path.read_bytes() if new_path.is_file() else None
+        if old_bytes == new_bytes:
+            continue
+        old = text_lines(old_path) if old_path.is_file() else []
+        new = text_lines(new_path) if new_path.is_file() else []
+        if old is None or new is None:
+            chunks.append(binary_change(relative, old_bytes, new_bytes))
+            continue
         chunks.extend(difflib.unified_diff(old, new, fromfile=f"a/{relative}", tofile=f"b/{relative}"))
     return "".join(chunks)
 
@@ -1313,15 +1355,20 @@ def run_fixture_evals(
                 verdicts: list[dict[str, Any]] = []
                 judge_elapsed = 0.0
                 verdict = None
+                judge_error = ""
                 for _ in range(0 if candidate_error else judge_repetitions):
                     judge_started = time.monotonic()
-                    verdict_data = judge_call(fixture_judge_prompt(case, answer, mode, workspace_diff), JUDGE_SCHEMA)
+                    try:
+                        verdict_data = judge_call(fixture_judge_prompt(case, answer, mode, workspace_diff), JUDGE_SCHEMA)
+                    except RuntimeError as error:
+                        judge_error = str(error)
+                        break
                     judge_elapsed += time.monotonic() - judge_started
                     verdict = next((item for item in verdict_data.get("results", []) if item.get("id") == case["id"]), None)
                     if verdict:
                         verdicts.append(verdict)
                 judge_actual = getattr(judge_call, "last_metrics", {})
-                passed = not candidate_error and sum(item.get("passed") is True for item in verdicts) >= judge_repetitions // 2 + 1
+                passed = not candidate_error and not judge_error and sum(item.get("passed") is True for item in verdicts) >= judge_repetitions // 2 + 1
                 diff_errors = check_required_diff(case["oracle_data"], workspace_diff) if mode != "baseline" and run.get("workspace") else []
                 passed = passed and not diff_errors
                 record = {
@@ -1329,6 +1376,7 @@ def run_fixture_evals(
                     "model": run["label"], "judge": judge["label"], "passed": passed,
                     "answer": answer, "judge_results": verdicts, "judge_quorum": judge_repetitions // 2 + 1, "diff_errors": diff_errors,
                     "candidate_error": candidate_error,
+                    "judge_error": judge_error,
                     "workspace_diff": workspace_diff,
                     "metrics": {
                         "candidate": estimate_metrics(metric_prompt, str(answer.get("answer", "")), elapsed, pricing, run["label"], candidate_actual),
@@ -1337,7 +1385,7 @@ def run_fixture_evals(
                 }
                 records.append(record)
                 if mode != "baseline" and not passed:
-                    detail = "; ".join([*diff_errors, *([candidate_error] if candidate_error else [])])
+                    detail = "; ".join([*diff_errors, *([candidate_error] if candidate_error else []), *([judge_error] if judge_error else [])])
                     errors.append(f"{case['id']} [{mode}, повтор {repetition}]: не пройдено. {detail}")
     for case in cases:
         for mode in ("skill", "catalog"):

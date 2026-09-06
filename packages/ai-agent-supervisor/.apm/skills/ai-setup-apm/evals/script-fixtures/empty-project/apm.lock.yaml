@@ -1,3 +1,11 @@
-lockfileVersion: 1
-packages: {}
-deployments: []
+lockfile_version: '2'
+dependencies:
+- repo_url: example/dependency
+  name: dependency
+  host: example.invalid
+  resolved_commit: 0000000000000000000000000000000000000000
+  resolved_ref: 1.0.0
+  version: 1.0.0
+  package_type: apm_package
+  deployed_files:
+  - .agents/skills/dependency/README.md

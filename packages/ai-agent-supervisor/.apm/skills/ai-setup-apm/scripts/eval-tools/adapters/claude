@@ -28,8 +28,18 @@ fi
 model="$1"
 prompt="$(cat)"
 
-workdir="$(mktemp -d)"
-trap 'rm -rf "$workdir"' EXIT
+workdir="${APM_EVAL_WORKSPACE:-}"
+temporary_workdir=""
+if [[ -n "$workdir" ]]; then
+  if [[ ! -d "$workdir" ]]; then
+    echo "Рабочая папка model evals не найдена: $workdir" >&2
+    exit 2
+  fi
+else
+  workdir="$(mktemp -d)"
+  temporary_workdir="$workdir"
+fi
+trap 'if [[ -n "$temporary_workdir" ]]; then rm -rf "$temporary_workdir"; fi' EXIT
 
 # В headless-режиме --print с текстовым выводом финальный ответ модели идёт
 # прямо в stdout, поэтому отдельный файл для ответа не нужен. --strict-mcp-config

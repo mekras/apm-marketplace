@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import runpy
+import os
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
 
 RUNNER = Path(__file__).with_name("run-skill-evals.py")
+CLAUDE_ADAPTER = Path(__file__).parent / "adapters" / "claude"
 runner = runpy.run_path(str(RUNNER))
 extract_answer_text = runner["extract_answer_text"]
 PROMPT = 'Сценарий: {"id": "example-result-case"}'
@@ -143,6 +146,18 @@ pricing:
         "```md\n# AGENTS.md\n```"
     )
 
+    timeout_call = runner["make_model_call"](
+        [sys.executable, "-c", "import time; time.sleep(1)"],
+        "test-model",
+        0.01,
+    )
+    try:
+        timeout_call(PROMPT, runner["ANSWER_SCHEMA"])
+    except RuntimeError as error:
+        assert "превысил тайм-аут" in str(error)
+    else:
+        raise AssertionError("Тайм-аут адаптера должен стать ошибкой модельного вызова")
+
     judge_prompt = runner["fixture_judge_prompt"](
         {
             "id": "fixture-case",
@@ -213,6 +228,63 @@ pricing:
         assert len(records) == 3
         assert all(record["candidate_error"] for record in records)
         assert len(errors) == 2
+
+        binary_before = root / "binary-before"
+        binary_after = root / "binary-after"
+        binary_before.mkdir()
+        binary_after.mkdir()
+        (binary_before / "output.bin").write_bytes(b"\xff\x00")
+        (binary_after / "output.bin").write_bytes(b"\xff\x01")
+        binary_diff = runner["directory_diff"](binary_before, binary_after)
+        assert "Binary files a/output.bin and b/output.bin differ" in binary_diff
+
+        valid_adapter = [
+            sys.executable,
+            "-c",
+            "import json,sys; prompt=sys.stdin.read(); "
+            "print(json.dumps({'selected_skill':'audit'} if '\"required\": [\"selected_skill\"]' in prompt else {'answer':'готово'}))",
+        ]
+        timed_out_judge = [sys.executable, "-c", "import time; time.sleep(1)"]
+        errors, records = runner["run_fixture_evals"](
+            repo_root=root,
+            cases=[fixture_case],
+            skill_dirs=skill_dirs,
+            run={"adapter": valid_adapter, "model": "candidate", "label": "candidate", "workspace": False},
+            judge={"adapter": timed_out_judge, "model": "judge", "label": "judge"},
+            timeout=0.2,
+            repetitions=1,
+            judge_repetitions=1,
+            pricing={},
+        )
+        assert len(records) == 3
+        assert all(record["judge_error"] for record in records)
+        assert len(errors) == 2
+
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        workspace = root / "рабочая папка"
+        workspace.mkdir()
+        fake_bin = root / "bin"
+        fake_bin.mkdir()
+        fake_claude = fake_bin / "claude"
+        fake_claude.write_text("#!/usr/bin/env sh\npwd\ntouch changed-by-claude\n", encoding="utf-8")
+        fake_claude.chmod(0o755)
+        result = subprocess.run(
+            ["bash", str(CLAUDE_ADAPTER), "fixture-model"],
+            input="проверка",
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env={
+                **os.environ,
+                "APM_EVAL_WORKSPACE": str(workspace),
+                "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+            },
+            check=False,
+        )
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.strip() == str(workspace)
+        assert (workspace / "changed-by-claude").is_file()
 
     print("Проверки разбора длинных ответов модельного прогона пройдены.")
     return 0

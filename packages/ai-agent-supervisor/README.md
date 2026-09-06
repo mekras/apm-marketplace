@@ -294,17 +294,17 @@ apm update
 
 ### Проектная документация
 
-- [Публичный договор коллекции](docs/product-contract.md)
-- [Требования](docs/requirements/README.md)
-- [Гипотезы](docs/hypotheses/README.md)
-- [Журнал решений](docs/decisions/README.md)
+- [Публичный договор коллекции](https://github.com/mekras/ai-agent-supervisor/blob/master/docs/product-contract.md)
+- [Требования](https://github.com/mekras/ai-agent-supervisor/tree/master/docs/requirements)
+- [Гипотезы](https://github.com/mekras/ai-agent-supervisor/tree/master/docs/hypotheses)
+- [Журнал решений](https://github.com/mekras/ai-agent-supervisor/tree/master/docs/decisions)
 
 ### Проверки
 
 Проверки разделены на две команды.
 
-Обязательная проверка не вызывает модель или сеть и требует Python 3 со
-стандартной библиотекой:
+Обязательная проверка не вызывает модель или сеть. Для проверки исходного
+репозитория нужны Python 3, Git, APM и пакет PyYAML:
 
 ```bash
 apm run tests
@@ -397,3 +397,18 @@ APM_EVAL_LIMIT=1 apm run evals
 оценки добавьте `--yes` напрямую к запускателю. После изменения экспортируемого
 навыка сохраните отчёт затронутых фикстур; после изменения общей маршрутизации
 или оценочной оснастки запускайте все фикстуры.
+
+## Выпуск
+
+Перед выпуском обновите `version` в `apm.yml` и перенесите изменения из раздела
+«Невыпущено» в раздел этой версии в `CHANGELOG.md`. Номер тега исходного
+репозитория должен в точности совпадать с `version`, например `2.3.22`.
+
+После отправки такого тега GitHub Actions проверяет коллекцию, переносит её
+публичный состав в `mekras/apm-marketplace`, пересобирает описания реестра и
+создаёт тег пакета `ai-agent-supervisor--v<версия>`.
+
+Для первого автоматического выпуска добавьте в настройках репозитория
+`mekras/ai-agent-supervisor` секрет Actions `APM_MARKETPLACE_TOKEN`. Это должен
+быть тонко настроенный personal access token с правом **Contents: Read and
+write** только для репозитория `mekras/apm-marketplace`.

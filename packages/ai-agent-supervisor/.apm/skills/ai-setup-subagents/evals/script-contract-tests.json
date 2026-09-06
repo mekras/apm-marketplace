@@ -356,6 +356,44 @@
       }
     },
     {
+      "id": "report-excluded-by-deterministic-failure",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); d['candidates'][1]['eligibility']['repeated_deterministic_failure']=True; json.dump(d,open(p+'/deterministic-failure.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": ["{python}", "{script}", "--input", "{fixture}/deterministic-failure.json", "--output", "{fixture}/deterministic-failure-report.json"],
+      "expect": {
+        "stdout_contains": ["insufficient_data"],
+        "files": [{"path": "deterministic-failure-report.json", "json": true, "contains": "repeated_deterministic_failure"}]
+      }
+    },
+    {
+      "id": "report-zero-baseline-review-time",
+      "script": "scripts/evaluate-model-selection.py",
+      "fixture": "evals/script-fixtures/model-selection",
+      "covers": ["evaluate-model-selection"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json,sys; p=sys.argv[1]; d=json.load(open(p+'/complete.json')); [(r.update({'review_seconds':0})) for r in d['runs']]; json.dump(d,open(p+'/zero-review.json','w'))",
+          "{fixture}"
+        ]
+      ],
+      "command": ["{python}", "{script}", "--input", "{fixture}/zero-review.json", "--output", "{fixture}/zero-review-report.json"],
+      "expect": {
+        "stdout_contains": ["confirmed"],
+        "files": [{"path": "zero-review-report.json", "json": true, "contains": "\"review_time_regression_percent\": 0.0"}]
+      }
+    },
+    {
       "id": "report-insufficient-holdout-volume",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
