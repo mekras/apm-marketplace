@@ -1,5 +1,5 @@
 name: ai-dev-team
-version: 0.27.15
+version: 0.27.17
 description: Команда агентной разработки ПО
 author: mekras
 license: MIT
@@ -37,7 +37,9 @@ scripts:
     python3 .apm/skills/ait-impact-analysis/scripts/impact_graph.py
     coverage --graph .ai-dev-team/project-impact.json --repo .;
     python3 tools/run-product-evals.py --validate;
-    python3 -m unittest tools/test_product_evals.py;
+    python3 -m unittest
+    tools/test_product_evals.py
+    tools/test_product_eval_adapters.py;
     python3
     .agents/skills/kc-retrieval-evaluation/scripts/validate-evaluation-suite.py
     knowledge-evaluation.yml --corpus-root knowledge;
