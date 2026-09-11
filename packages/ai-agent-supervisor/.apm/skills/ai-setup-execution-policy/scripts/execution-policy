@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import shutil
@@ -122,6 +123,12 @@ def project_classes(data: dict[str, Any], routes: dict[str, dict[str, Any]], cor
         criteria = require_strings(item.get("acceptance_criteria"), f"task_classes[{index}].acceptance_criteria", nonempty=True)
         evidence = require_strings(item.get("required_evidence"), f"task_classes[{index}].required_evidence", nonempty=True)
         handoff_method = require_string(item.get("handoff_method"), f"task_classes[{index}].handoff_method")
+        candidate_steps = require_strings(item.get("candidate_steps", [candidate]), f"task_classes[{index}].candidate_steps", nonempty=True)
+        candidate_conditions = require_strings(item.get("candidate_conditions", []), f"task_classes[{index}].candidate_conditions")
+        if candidate_steps[0] != candidate or any(step not in routes for step in candidate_steps):
+            raise PolicyError(f"класс {class_id}: этапы должны начинаться с кандидата и ссылаться на существующие маршруты")
+        if len(candidate_conditions) != len(candidate_steps) - 1:
+            raise PolicyError(f"класс {class_id}: для каждого перехода нужно одно условие")
         missing = sorted(set(core_evidence) - set(evidence))
         if missing:
             raise PolicyError(f"класс {class_id} ослабляет обязательные свидетельства: {', '.join(missing)}")
@@ -136,12 +143,14 @@ def project_classes(data: dict[str, Any], routes: dict[str, dict[str, Any]], cor
             "acceptance_criteria": criteria,
             "required_evidence": evidence,
             "handoff_method": handoff_method,
+            "candidate_steps": candidate_steps,
+            "candidate_conditions": candidate_conditions,
         }
     return result
 
 
 def policy_fingerprint(routes: dict[str, dict[str, Any]], task_class: dict[str, Any], core_evidence: list[str]) -> str:
-    route_ids = (task_class["reference_route"], task_class["candidate_route"])
+    route_ids = set([task_class["reference_route"], *task_class["candidate_steps"]])
     payload = {
         "core_evidence": sorted(core_evidence),
         "routes": {
@@ -157,7 +166,7 @@ def policy_fingerprint(routes: dict[str, dict[str, Any]], task_class: dict[str, 
     return hashlib.sha256(encoded).hexdigest()
 
 
-def require_result_locations(value: object, required: list[str], label: str) -> None:
+def require_result_locations(value: object, required: list[str], label: str, base: Path) -> None:
     if not isinstance(value, dict):
         raise PolicyError(f"{label} должен быть таблицей путей к результатам")
     missing = sorted(set(required) - set(value))
@@ -166,6 +175,11 @@ def require_result_locations(value: object, required: list[str], label: str) -> 
     invalid = [key for key in required if not isinstance(value.get(key), str) or not value[key].strip()]
     if invalid:
         raise PolicyError(f"{label}: пустые пути к результатам: {', '.join(invalid)}")
+    for key in required:
+        location = Path(value[key])
+        location = location if location.is_absolute() else base / location
+        if not location.is_file():
+            raise PolicyError(f"{label}: не найден файл обязательного свидетельства {key}")
 
 
 def require_criterion_results(value: object, criteria: list[str], label: str) -> None:
@@ -195,13 +209,41 @@ def check_qualification(path: Path, task_class: dict[str, Any], routes: dict[str
             errors.append(f"{path}: поле {key} не совпадает с действующей политикой")
     if data.get("outcome") != "qualified":
         errors.append(f"{path}: outcome должен быть qualified")
-    if data.get("rework_required") is not False:
-        errors.append(f"{path}: переделывание работы запрещает автоматический допуск")
+    if not isinstance(data.get("rework_required"), bool):
+        errors.append(f"{path}: rework_required должен быть true или false")
+    try:
+        location = require_string(data.get("route_evidence"), "route_evidence")
+        evidence_path = Path(location)
+        evidence_path = evidence_path if evidence_path.is_absolute() else path.parent / evidence_path
+        evidence = json.loads(evidence_path.read_bytes())
+        if not isinstance(evidence, dict) or evidence.get("scope") != "whole_route":
+            raise PolicyError("route_evidence должен описывать весь маршрут: scope = whole_route")
+        for key in ("candidate_steps", "candidate_conditions"):
+            if evidence.get(key) != task_class[key]:
+                raise PolicyError(f"route_evidence: {key} не совпадает с квалифицируемым планом")
+        if evidence.get("actual_candidate_steps") != task_class["candidate_steps"]:
+            raise PolicyError("незапланированная последовательность не наследует допуск маршрута")
+        transitions = require_strings(evidence.get("transition_evidence"), "route_evidence.transition_evidence")
+        if len(transitions) != len(task_class["candidate_conditions"]):
+            raise PolicyError("для каждого перехода нужно свидетельство срабатывания условия")
+        transition_locations = {str(index): location for index, location in enumerate(transitions)}
+        require_result_locations(transition_locations, list(transition_locations), "route_evidence.transition_evidence", evidence_path.parent)
+        if evidence.get("rework_required") is not data.get("rework_required"):
+            raise PolicyError("route_evidence: признак переделки не совпадает со свидетельством квалификации")
+        require_criterion_results(evidence.get("criterion_results"), task_class["acceptance_criteria"], "route_evidence.criterion_results")
+        require_result_locations(evidence.get("result_evidence"), task_class["required_evidence"], "route_evidence.result_evidence", evidence_path.parent)
+        require_string(evidence.get("assessment_basis"), "route_evidence.assessment_basis")
+        if data.get("rework_required"):
+            require_string(evidence.get("rework_reason"), "route_evidence.rework_reason")
+            require_strings(evidence.get("preserved_results"), "route_evidence.preserved_results")
+            require_strings(evidence.get("discarded_results"), "route_evidence.discarded_results")
+    except (PolicyError, OSError, ValueError) as error:
+        errors.append(f"{path}: неполное свидетельство всего маршрута: {error}")
     for key in ("actual_reference_route", "actual_candidate_route"):
         if not isinstance(data.get(key), str) or not data[key].strip():
             errors.append(f"{path}: отсутствует {key}")
     try:
-        require_result_locations(data.get("result_evidence"), task_class["required_evidence"], f"{path}.result_evidence")
+        require_result_locations(data.get("result_evidence"), task_class["required_evidence"], f"{path}.result_evidence", path.parent)
     except PolicyError as error:
         errors.append(str(error))
     try:
@@ -214,7 +256,7 @@ def check_qualification(path: Path, task_class: dict[str, Any], routes: dict[str
     elif escalated:
         try:
             require_string(data.get("escalation_reason"), f"{path}.escalation_reason")
-            require_strings(data.get("preserved_results"), f"{path}.preserved_results", nonempty=True)
+            require_strings(data.get("preserved_results"), f"{path}.preserved_results")
         except PolicyError as error:
             errors.append(str(error))
     if task_class["root_task"]:
@@ -320,7 +362,7 @@ def show_policy(args: argparse.Namespace) -> int:
         for error in errors:
             print(f"Ошибка политики: {error}", file=sys.stderr)
         return 1
-    print("policy_status=ready")
+    print("policy_status=ready\nevidence_check=structure_only")
     return 0
 
 
@@ -356,6 +398,7 @@ def prepare_qualification(args: argparse.Namespace) -> int:
                 f"handoff_method = {toml_string(task_class['handoff_method'])}",
                 'actual_reference_route = ""',
                 'actual_candidate_route = ""',
+                'route_evidence = ""',
                 "result_evidence = {}",
                 "criterion_results = {}",
                 'reference_trace = ""',
@@ -478,6 +521,9 @@ def check_handoff(args: argparse.Namespace) -> int:
     rework = metadata("Результат продолжения", "rework_required")
     economy_confirmed = metadata("Оценка экономии", "confirmed")
     economy_basis = metadata("Оценка экономии", "basis")
+    economy_scope = metadata("Оценка экономии", "scope")
+    economy_evidence = metadata("Оценка экономии", "evidence")
+    economy_digest = None
     errors: list[str] = []
     if continuation_status not in {"pending", "continued", "failed"}:
         errors.append("раздел «Результат продолжения» должен содержать status: pending, continued или failed")
@@ -489,19 +535,47 @@ def check_handoff(args: argparse.Namespace) -> int:
         errors.append("раздел «Оценка экономии» должен содержать confirmed: true или false")
     if not economy_basis:
         errors.append("раздел «Оценка экономии» должен содержать непустое basis")
+    if economy_scope != "whole_task":
+        errors.append("оценка экономии должна явно задавать scope: whole_task")
     if continuation_status == "pending" and economy_confirmed == "true":
         errors.append("незавершённая передача не может подтверждать экономию")
     if (full_transcript == "true" or rework == "true") and continuation_status != "failed":
         errors.append("полная стенограмма или переделывание требуют status: failed")
-    if continuation_status == "failed" and economy_confirmed == "true":
-        errors.append("неуспешная передача не может подтверждать экономию")
+    if economy_confirmed == "true":
+        try:
+            require_string(economy_evidence, "evidence")
+            evidence_path = Path(economy_evidence)
+            if not evidence_path.is_absolute():
+                evidence_path = args.input.parent / evidence_path
+            evidence_bytes = evidence_path.read_bytes()
+            evidence = json.loads(evidence_bytes)
+            if not isinstance(evidence, dict) or evidence.get("scope") != "whole_task":
+                raise PolicyError("свидетельство должно описывать всю задачу: scope = whole_task")
+            for key in ("task_completed", "quality_preserved", "constraints_preserved", "comparable_conditions", "complete_accounting"):
+                if evidence.get(key) is not True:
+                    raise PolicyError(f"свидетельство экономии требует {key} = true")
+            for key in ("acceptance_evidence", "accounting_basis", "unit"):
+                require_string(evidence.get(key), key)
+            require_result_locations(evidence, ["acceptance_evidence", "accounting_evidence"], "economy_evidence", evidence_path.parent)
+            for key in ("reference_total", "candidate_total"):
+                value = evidence.get(key)
+                if type(value) not in (int, float) or not math.isfinite(value) or value < 0:
+                    raise PolicyError(f"{key} должен быть конечным неотрицательным числом")
+            if evidence["candidate_total"] >= evidence["reference_total"]:
+                raise PolicyError("полная стоимость кандидата не ниже эталонной")
+            economy_digest = hashlib.sha256(evidence_bytes).hexdigest()
+        except (PolicyError, OSError, ValueError, OverflowError) as error:
+            errors.append(f"неподтверждённая экономия всей задачи: {error}")
     if errors:
         print("Ошибка пакета передачи: " + "; ".join(errors), file=sys.stderr)
         return 1
     print(
         f"handoff_status=ready\ninput={args.input}\nhandoff_bytes={len(content.encode('utf-8'))}"
         f"\nhandoff_continuation_status={continuation_status}\nhandoff_economy_confirmed={economy_confirmed}"
+        f"\neconomy_scope={economy_scope}\nevidence_check=structure_only"
     )
+    if economy_digest:
+        print(f"economy_evidence_sha256={economy_digest}")
     return 0
 
 

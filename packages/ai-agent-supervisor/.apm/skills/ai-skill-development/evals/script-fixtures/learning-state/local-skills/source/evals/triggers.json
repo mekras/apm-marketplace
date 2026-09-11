@@ -1,0 +1,17 @@
+{
+  "skill_name": "source",
+  "cases": [
+    {
+      "id": "source-positive-version-check",
+      "prompt": "Проверь версию перед выпуском.",
+      "should_trigger": true,
+      "rationale": "Проверка версии относится к навыку выпуска."
+    },
+    {
+      "id": "source-negative-unrelated",
+      "prompt": "Отредактируй текст объявления.",
+      "should_trigger": false,
+      "rationale": "Редактура текста не относится к навыку выпуска."
+    }
+  ]
+}

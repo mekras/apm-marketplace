@@ -1,0 +1,5 @@
+{
+  "action": "complete",
+  "state_path": "private/improvement.json",
+  "checks": ["Ограничения сохранены.", "Ссылки проверены."]
+}

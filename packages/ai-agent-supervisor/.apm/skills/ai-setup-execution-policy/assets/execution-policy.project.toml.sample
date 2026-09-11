@@ -4,6 +4,10 @@ schema_version = 1
 id = "проверяемая-задача"
 reference_route = "эталонный-маршрут"
 candidate_route = "кандидатный-маршрут"
+# Проверяемая последовательность и условия каждого перехода.
+# Для одного этапа условий нет. Непроверенные ветви не наследуют допуск.
+candidate_steps = ["кандидатный-маршрут"]
+candidate_conditions = []
 automatic = false
 root_task = false
 acceptance_criteria = ["критерий-приёмки"]

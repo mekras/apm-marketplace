@@ -1,0 +1,553 @@
+{
+  "version": 2,
+  "operations": [
+    {
+      "id": "learning-gate",
+      "script": "scripts/learning-gate.py",
+      "command_prefix": [],
+      "inputs": []
+    },
+    {
+      "id": "learning-state-initiate",
+      "script": "scripts/learning-state.py",
+      "command_prefix": [],
+      "inputs": []
+    },
+    {
+      "id": "learning-state-complete",
+      "script": "scripts/learning-state.py",
+      "command_prefix": [],
+      "inputs": []
+    }
+  ],
+  "cases": [
+    {
+      "id": "learning-state-initiate",
+      "script": "scripts/learning-state.py",
+      "fixture": "evals/script-fixtures/learning-state",
+      "covers": ["learning-state-initiate"],
+      "command": ["{python}", "{script}", "--input", "{fixture}/initiate.json", "--workspace", "{fixture}"],
+      "expect": {
+        "stdout_contains": ["\"action\": \"initiated\"", "\"write_authorized\": false"],
+        "files": [
+          {"path": "private/improvement.json", "json": true, "contains": "\"status\": \"applying\""},
+          {"path": "private/before/local-skills/source/SKILL.md", "contains": "Проверяй версию"}
+        ]
+      }
+    },
+    {
+      "id": "learning-state-complete",
+      "script": "scripts/learning-state.py",
+      "fixture": "evals/script-fixtures/learning-state",
+      "covers": ["learning-state-complete"],
+      "prepare": [["{python}", "{script}", "--input", "{fixture}/initiate.json", "--workspace", "{fixture}"]],
+      "command": ["{python}", "{script}", "--input", "{fixture}/complete.json", "--workspace", "{fixture}"],
+      "expect": {
+        "stdout_contains": ["\"action\": \"completed\"", "\"write_authorized\": false"],
+        "files": [{"path": "private/improvement.json", "json": true, "contains": "\"status\": \"applied\""}]
+      }
+    },
+    {
+      "id": "learning-gate-new-signal",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/new-signal.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-disabled",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/disabled.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"disabled\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-other-project",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/other-project.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"other_project\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-learning-event",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/learning-event.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"learning_event\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-running",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/running.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"task_running\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-no-signal",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/no-signal.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"no_signal\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-duplicate",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/duplicate.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"already_reviewed\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-rejected",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/rejected.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"skip\"",
+          "\"reason\": \"already_reviewed\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-new-version",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/new-version.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-other-source",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/other-source.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-manual-repeat",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/manual-repeat.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"manual_request\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-stopped",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/stopped.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-repeatable_workflow",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/repeatable_workflow.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-resolved_error",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/resolved_error.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-skill_gap",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "covers": [
+        "learning-gate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/skill_gap.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"action\": \"review\"",
+          "\"reason\": \"new_evidence\"",
+          "\"write_authorized\": false"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-automatic",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-automatic.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "логическими"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-unknown-version",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/unknown-version.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "schema_version"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-signal",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-signal.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "event.signals"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-missing-source",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/missing-source.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "event.source_id"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-reviews",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-reviews.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "review.source_id"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-root",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-root.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "Вход"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-duplicate-field",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/duplicate-field.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "Повторяющееся"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-origin",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-origin.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "event.origin"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-status",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-status.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "event.status"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-reviews-type",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-reviews-type.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "learning.reviews"
+        ]
+      }
+    },
+    {
+      "id": "learning-gate-bad-review-result",
+      "script": "scripts/learning-gate.py",
+      "fixture": "evals/script-fixtures/learning-gate",
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/bad-review-result.json"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "review.result"
+        ]
+      }
+    }
+  ]
+}

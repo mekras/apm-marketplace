@@ -27,7 +27,7 @@ trap 'rm -f "$final"' EXIT
 
 workdir="${APM_EVAL_WORKSPACE:-}"
 if [[ -n "$workdir" ]]; then
-  sandbox="workspace-write"
+  sandbox="${APM_EVAL_SANDBOX:-workspace-write}"
 else
   workdir="$(mktemp -d)"
   trap 'rm -f "$final"; rm -rf "$workdir"' EXIT
@@ -43,10 +43,11 @@ codex exec \
   --ephemeral \
   --skip-git-repo-check \
   --color never \
+  --json \
   --sandbox "$sandbox" \
   --model "$model" \
   --output-last-message "$final" \
-  - >/dev/null <<EOF
+  - >"${APM_EVAL_TRACE:-/dev/null}" <<EOF
 $prompt
 EOF
 )

@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "manual": false,
+  "learning": {
+    "automatic": true,
+    "project": "project-a",
+    "reviews": []
+  },
+  "event": {
+    "project": "project-a",
+    "source_id": "export-a",
+    "task_id": "task-1",
+    "revision": "evidence-1",
+    "source_ref": "session-1:42",
+    "origin": "task",
+    "status": "completed",
+    "signals": [
+      "user_correction"
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "skill_name": "ai-usage-analysis",
+  "cases": [
+    {
+      "id": "ai-usage-analysis-current",
+      "prompt": "Проанализируй реальное применение ИИ в текущем проекте.",
+      "should_trigger": true,
+      "rationale": "Накопленный опыт текущего проекта."
+    },
+    {
+      "id": "ai-usage-analysis-specified",
+      "prompt": "Разбери использование навыков в проекте /work/project-b.",
+      "should_trigger": true,
+      "rationale": "Явно указан другой проект."
+    },
+    {
+      "id": "ai-usage-analysis-global",
+      "prompt": "Проанализируй все локальные сессии по всем проектам.",
+      "should_trigger": true,
+      "rationale": "Явный глобальный охват."
+    },
+    {
+      "id": "ai-usage-analysis-resume",
+      "prompt": "Продолжи накопительный анализ применения ИИ с сохранённой точки.",
+      "should_trigger": true,
+      "rationale": "Повторный запуск механизма."
+    },
+    {
+      "id": "ai-usage-analysis-accept",
+      "prompt": "Проверь этот готовый ответ перед публикацией.",
+      "should_trigger": false,
+      "rationale": "Приёмка одного результата относится к ai-work-result-evaluation."
+    },
+    {
+      "id": "ai-usage-analysis-static",
+      "prompt": "Проверь конфликты в AGENTS.md.",
+      "should_trigger": false,
+      "rationale": "Статический аудит инструкций."
+    },
+    {
+      "id": "ai-usage-analysis-create",
+      "prompt": "Создай навык анализа реального применения ИИ.",
+      "should_trigger": false,
+      "rationale": "Создание механизма не разрешает запускать анализ истории."
+    },
+    {
+      "id": "ai-usage-analysis-neighbor",
+      "prompt": "Запусти ait-session-analysis",
+      "should_trigger": false,
+      "rationale": "Точная команда другого навыка сохраняет свой маршрут."
+    },
+    {
+      "id": "ai-usage-analysis-positive-learning-after-history",
+      "prompt": "Проанализируй накопленную историю и подготовь наблюдения для последующего улучшения навыков.",
+      "should_trigger": true,
+      "rationale": "Нужен сбор наблюдений, право изменения навыков отдельно."
+    },
+    {
+      "id": "ai-usage-analysis-negative-current-task-learning",
+      "prompt": "Сохрани опыт только этой задачи в навыках, анализ всей истории не нужен.",
+      "should_trigger": false,
+      "rationale": "Готовый опыт передаётся ai-skill-development без повторного сбора."
+    }
+  ]
+}

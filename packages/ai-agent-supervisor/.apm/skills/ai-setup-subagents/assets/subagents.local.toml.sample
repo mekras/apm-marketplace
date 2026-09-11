@@ -1,6 +1,36 @@
 # Локальная политика подагентов. Не добавляйте рабочий файл в Git.
 # Идентификатор модели берите только из нативного каталога активной оснастки.
 
+# Единое предложение заполните до технической настройки.
+# Запускатель не проверяет смысл этих полей. Сверьте их с итоговым ответом.
+# [policy_design]
+# task_coverage = "unknown"
+# design_status = "provisional"
+# implementation_status = "unchanged"
+# verification_status = "pending"
+# [[policy_design.tasks]]
+# task = "сравнить варианты решения"
+# acceptance = "альтернативы сравнены по заданным критериям"
+# parent_model = "unknown"
+# parent_effort = "unknown"
+# parent_evidence = "метаданные активной сессии либо явная неизвестность"
+# delegation_reason = "польза относительно прямого выполнения и расходы всего маршрута"
+# proposed_effort = "unknown"
+# effort_reason = "достаточность для задачи пока не установлена"
+# candidate_comparison = "почему кандидат предпочтительнее подходящих альтернатив"
+# proposed_route = "execution_class:analysis"
+# proposed_candidates = ["candidate-a", "candidate-b"]
+# selection_status = "unresolved" # provisional, unresolved или excluded
+# reason = "нужны сопоставимые проверки качества рекомендаций"
+# current_route = "parent"
+# retention_reason = "новый класс ещё не проверен"
+# retention_effect = "новое предложение пока не исполняется"
+# replacement_condition = "подтверждены исполнение и пригодность нового назначения"
+# verification_status = "blocked"
+# next_step = "получить свидетельство исполнения, затем сравнить кандидатов"
+# Для parent и human список кандидатов пуст, причина относится к самой задаче.
+# Если выбран один предварительный кандидат, укажите только его и основание.
+
 [policy_review]
 # Состояния: "configured" или "creation_declined".
 # state = "configured"
@@ -9,10 +39,9 @@
 # last_checked_at = "YYYY-MM-DD"
 
 [adapters]
-# codex = ["tools/adapters/codex-subagents"]
-# claude = ["tools/adapters/claude-subagents"]
+# alpha = ["path/to/model-check-adapter"]
 
-# models = ["codex:название-модели", "claude:название-модели"]
+# models = ["alpha:точный-идентификатор-из-каталога"]
 
 [execution_classes.cheap_readonly_research]
 # Контракт класса не зависит от оснастки и не содержит модель.
@@ -20,18 +49,11 @@
 # result = "status, items, evidence, confidence, risk, open_questions, escalation_needed"
 # stop = "неоднозначность, конфликтующие свидетельства, недостающий контекст или выход за границу"
 
-[targets.codex.execution_classes.cheap_readonly_research]
-# model = "точный-идентификатор-из-каталога-codex"
-# effort = "low"
+[targets.alpha.execution_classes.cheap_readonly_research]
+# model = "точный-идентификатор-из-каталога"
+# effort = "поддерживаемое-усилие"
 # sandbox = "read-only"
-# adapter = ["tools/adapters/codex-role"]
-
-[targets.claude.execution_classes.cheap_readonly_research]
-# model = "точный-идентификатор-или-псевдоним-claude"
-# actual_model_prefix = "идентификатор-фактически-допустимого-семейства-"
-# effort = "low"
-# sandbox = "read-only"
-# adapter = ["tools/adapters/claude-role"]
+# adapter = ["path/to/execution-adapter"]
 
 # Для точного идентификатора `actual_model_prefix` не нужен. Если оснастка
 # принимает псевдоним, укажите префикс фактического идентификатора, который

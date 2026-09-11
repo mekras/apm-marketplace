@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import runpy
 import shlex
 import subprocess
 import sys
@@ -14,6 +15,10 @@ import tomllib
 import uuid
 from pathlib import Path
 from typing import Any
+
+verify_model = runpy.run_path(
+    str(Path(__file__).resolve().parent / "lib/model_evidence.py")
+)["verify_model"]
 
 
 def assignment(
@@ -109,7 +114,8 @@ def main() -> int:
     }
     args.out.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    prefix = f"{int(started)}-{args.target}-{args.execution_class}"
+    run_id = str(uuid.uuid4())
+    prefix = f"{int(started)}-{args.target}-{args.execution_class}-{run_id}"
     final = args.out / f"{prefix}.final.txt"
     record_path = args.out / f"{prefix}.json"
     stderr_path = args.out / f"{prefix}.stderr.txt"
@@ -134,16 +140,18 @@ def main() -> int:
         header = json.loads(completed.stdout.splitlines()[0])
     except (IndexError, json.JSONDecodeError):
         header = {}
-    actual = header.get("model") if isinstance(header, dict) else None
+    evidence = verify_model(header, journal)
+    actual = evidence["actual_model"]
     notice = header.get("model_notice") if isinstance(header, dict) else None
     usage = header.get("usage") if isinstance(header, dict) else None
     record = {
-        "run_id": str(uuid.uuid4()),
+        "run_id": run_id,
         "execution_class": args.execution_class,
         "target": args.target,
         "assigned_model": model,
-        "actual_model": actual,
-        "model_matches": model_matches(configured, actual),
+        **evidence,
+        "reported_model": header.get("model") if isinstance(header, dict) else None,
+        "model_matches": model_matches(configured, actual) if actual else None,
         "model_notice": notice,
         "usage": usage,
         "effort": effort,

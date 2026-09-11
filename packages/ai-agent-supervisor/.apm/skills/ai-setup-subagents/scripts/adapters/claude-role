@@ -15,6 +15,27 @@ from typing import Any
 READ_ONLY_TOOLS = "Read,Glob,Grep"
 
 
+def model_evidence(output: str) -> tuple[str | None, dict | None]:
+    observations = []
+    for line_number, line in enumerate(output.splitlines(), 1):
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(event, dict) or event.get("type") != "assistant":
+            continue
+        message = event.get("message")
+        model = message.get("model") if isinstance(message, dict) else None
+        if not isinstance(model, str) or not model:
+            return None, None
+        observations.append((model, line_number))
+    if not observations or len({model for model, _ in observations}) != 1:
+        return None, None
+    model, line_number = observations[-1]
+    return model, {"source": "journal", "line": line_number,
+                   "field": ["message", "model"]}
+
+
 def response_details(output: str) -> tuple[str | None, object, str, str | None]:
     events: list[dict[str, Any]] = []
     for line in output.splitlines():
@@ -25,25 +46,7 @@ def response_details(output: str) -> tuple[str | None, object, str, str | None]:
         if isinstance(event, dict):
             events.append(event)
 
-    model = next(
-        (
-            event["message"]["model"]
-            for event in reversed(events)
-            if event.get("type") == "assistant"
-            and isinstance(event.get("message"), dict)
-            and isinstance(event["message"].get("model"), str)
-        ),
-        None,
-    )
-    if model is None:
-        model = next(
-            (
-                event["model"]
-                for event in events
-                if event.get("type") == "system" and isinstance(event.get("model"), str)
-            ),
-            None,
-        )
+    model, _ = model_evidence(output)
     notice = next(
         (
             event["content"]
@@ -107,11 +110,13 @@ def main() -> int:
         )
 
     actual, usage, result, notice = response_details(completed.stdout)
+    _, evidence = model_evidence(completed.stdout)
     raw_log = os.environ.get("CLAUDE_ROLE_LOG")
     if raw_log:
         Path(raw_log).write_text(completed.stdout, encoding="utf-8")
     header = {
         "model": actual if completed.returncode == 0 else None,
+        "model_evidence": evidence if completed.returncode == 0 else None,
         "usage": usage,
         "model_notice": notice,
     }

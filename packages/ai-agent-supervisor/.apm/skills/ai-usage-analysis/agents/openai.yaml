@@ -1,0 +1,4 @@
+interface:
+  display_name: "ai-usage-analysis"
+  short_description: "Накопительный анализ реального применения ИИ"
+  default_prompt: "Используй $ai-usage-analysis для анализа реального применения ИИ в текущем проекте и продолжи с сохранённой точки."

@@ -5,12 +5,17 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import runpy
 import subprocess
 import sys
 import time
 import tomllib
 import uuid
 from pathlib import Path
+
+verify_model = runpy.run_path(
+    str(Path(__file__).resolve().parent / "lib/model_evidence.py")
+)["verify_model"]
 
 
 def main() -> int:
@@ -55,7 +60,8 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
     started = time.time()
-    prefix = f"{int(started)}-{args.role}"
+    run_id = str(uuid.uuid4())
+    prefix = f"{int(started)}-{args.role}-{run_id}"
     final = args.out / f"{prefix}.final.txt"
     log = args.out / f"{prefix}.json"
     journal = args.out / f"{prefix}.jsonl"
@@ -64,7 +70,7 @@ def main() -> int:
         input=prompt,
         text=True,
         capture_output=True,
-        env={**os.environ, "CODEX_ROLE_LOG": str(journal)},
+        env={**os.environ, "CODEX_ROLE_LOG": str(journal), "CLAUDE_ROLE_LOG": str(journal)},
         check=False,
     )
     final.write_text(completed.stdout, encoding="utf-8")
@@ -73,13 +79,15 @@ def main() -> int:
         header = json.loads(completed.stdout.splitlines()[0])
     except (IndexError, json.JSONDecodeError):
         header = {}
-    actual_model = header.get("model") if isinstance(header, dict) else None
+    evidence = verify_model(header, journal)
+    actual_model = evidence["actual_model"]
     record = {
-        "run_id": str(uuid.uuid4()),
+        "run_id": run_id,
         "role": args.role,
         "assigned_model": model,
-        "actual_model": actual_model,
-        "model_matches": actual_model == model,
+        **evidence,
+        "reported_model": header.get("model") if isinstance(header, dict) else None,
+        "model_matches": actual_model == model if actual_model else None,
         "usage": header.get("usage") if isinstance(header, dict) else None,
         "effort": effort,
         "sandbox": sandbox,

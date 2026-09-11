@@ -21,6 +21,8 @@ project_root="${1:-$(git rev-parse --show-toplevel)}"
 target_dir="$project_root/tools"
 
 mkdir -p "$target_dir"
+mkdir -p "$target_dir/lib"
+install -m 0644 "$script_dir/lib/model_evidence.py" "$target_dir/lib/model_evidence.py"
 for name in check-subagent-models discover-subagent-models analyze-subagent-sessions run-subagent-role run-execution-class evaluate-model-selection.py; do
   install -m 0755 "$script_dir/$name" "$target_dir/$name"
 done

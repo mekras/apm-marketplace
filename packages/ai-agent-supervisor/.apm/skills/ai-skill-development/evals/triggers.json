@@ -126,6 +126,36 @@
       "prompt": "Запусти тесты проекта и кратко перескажи результат.",
       "should_trigger": false,
       "rationale": "Нужно выполнить проверку проекта без изменения навыка."
+    },
+    {
+      "id": "ai-skill-development-positive-learn-current-task",
+      "prompt": "Сохрани полезный опыт этой законченной задачи в навыках.",
+      "should_trigger": true,
+      "rationale": "Обучение по текущему опыту относится к разработке навыков."
+    },
+    {
+      "id": "ai-skill-development-positive-restructure-group",
+      "prompt": "Раздели большой навык, объедини дубли и перенеси общие правила так, чтобы меньше читать.",
+      "should_trigger": true,
+      "rationale": "Меняется структура группы навыков."
+    },
+    {
+      "id": "ai-skill-development-positive-configure-learning",
+      "prompt": "Включи автоматическое обучение на опыте, но изменения навыков пока только предлагай.",
+      "should_trigger": true,
+      "rationale": "Настройка запуска обучения отделена от права записи."
+    },
+    {
+      "id": "ai-skill-development-negative-usage-only",
+      "prompt": "Проанализируй историю сессий и покажи повторяющиеся проблемы. Навыки не меняй.",
+      "should_trigger": false,
+      "rationale": "Самостоятельный анализ истории относится к ai-usage-analysis."
+    },
+    {
+      "id": "ai-skill-development-negative-ordinary-success",
+      "prompt": "Задача решена, спасибо.",
+      "should_trigger": false,
+      "rationale": "Само завершение обычной задачи не включает обучение."
     }
   ]
 }

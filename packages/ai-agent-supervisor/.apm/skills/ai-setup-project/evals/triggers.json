@@ -26,6 +26,12 @@
       "rationale": "Это упаковка коллекции APM, профильный навык ai-setup-apm."
     },
     {
+      "id": "ai-setup-project-negative-execution-policy",
+      "prompt": "Настрой только общую политику выполнения пользователя и проектное уточнение.",
+      "should_trigger": false,
+      "rationale": "Узкая настройка общей политики принадлежит ai-setup-execution-policy, а не корневому маршруту."
+    },
+    {
       "id": "ai-setup-project-negative-subagents",
       "prompt": "Спроектируй политику подагентов: роли, модели и лимиты.",
       "should_trigger": false,

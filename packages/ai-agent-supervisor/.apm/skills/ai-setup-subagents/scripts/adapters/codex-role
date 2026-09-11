@@ -20,10 +20,11 @@ with tempfile.TemporaryDirectory() as directory:
             event = json.loads(line)
             if event.get("type") == "turn.completed": usage = event.get("usage")
         except json.JSONDecodeError: pass
-    # Явный параметр и журнал фиксируют фактическую конфигурацию отдельного
-    # процесса; встроенный fan-out для этой гарантии не используется.
-    actual = model if run.returncode == 0 else None
-    print(json.dumps({"model": actual, "usage": usage}, ensure_ascii=False))
+    # Параметр --model фиксирует назначение, но не свидетельство исполнения.
+    # Этот адаптер пока не извлекает модель из независимого события оснастки.
+    print(json.dumps({"model": None, "model_evidence": None,
+                      "model_notice": "Фактическая модель не подтверждена",
+                      "usage": usage}, ensure_ascii=False))
     if final.exists(): print(final.read_text(encoding="utf-8"), end="")
     if run.returncode: print(run.stderr, file=sys.stderr, end="")
     raise SystemExit(run.returncode)

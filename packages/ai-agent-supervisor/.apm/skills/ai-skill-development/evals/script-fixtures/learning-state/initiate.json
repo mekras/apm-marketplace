@@ -1,0 +1,14 @@
+{
+  "action": "initiate",
+  "state_path": "private/improvement.json",
+  "backup_dir": "private/before",
+  "record": {
+    "source_id": "task-1",
+    "revision": "evidence-1",
+    "group_before": [{"path": "local-skills/source/SKILL.md"}],
+    "group_after": [{"path": "local-skills/release/SKILL.md"}],
+    "transformation": ["split"],
+    "expected_result": "Выпуск отделён от редактуры.",
+    "rule_map": [{"rule": "Проверяй версию.", "from": "local-skills/source/SKILL.md#выпуск", "to": "local-skills/release/SKILL.md#выпуск"}]
+  }
+}

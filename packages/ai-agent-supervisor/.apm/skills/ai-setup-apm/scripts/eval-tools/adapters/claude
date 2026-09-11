@@ -41,14 +41,32 @@ else
 fi
 trap 'if [[ -n "$temporary_workdir" ]]; then rm -rf "$temporary_workdir"; fi' EXIT
 
-# В headless-режиме --print с текстовым выводом финальный ответ модели идёт
-# прямо в stdout, поэтому отдельный файл для ответа не нужен. --strict-mcp-config
+# --strict-mcp-config
 # без --mcp-config отключает все серверы MCP, чтобы прогон не зависел от
 # окружения пользователя.
-printf '%s' "$prompt" | (
-  cd "$workdir" && claude \
-    --print \
-    --strict-mcp-config \
-    --output-format text \
-    --model "$model"
-)
+if [[ -n "${APM_EVAL_TRACE:-}" ]]; then
+  printf '%s' "$prompt" | (
+    cd "$workdir" && claude \
+      --print \
+      --strict-mcp-config \
+      --no-session-persistence \
+      --verbose \
+      --output-format stream-json \
+      --model "$model"
+  ) >"$APM_EVAL_TRACE"
+  python3 - "$APM_EVAL_TRACE" <<'PY'
+import json
+import sys
+
+with open(sys.argv[1], encoding="utf-8") as stream:
+    results = [event for line in stream if line.strip()
+               if (event := json.loads(line)).get("type") == "result"]
+if not results or results[-1].get("is_error"):
+    raise SystemExit("Адаптер Claude не получил успешного итогового события.")
+print(results[-1].get("result", ""))
+PY
+else
+  printf '%s' "$prompt" | (
+    cd "$workdir" && claude --print --strict-mcp-config --output-format text --model "$model"
+  )
+fi
