@@ -11,6 +11,12 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 
 RUNNER = Path(__file__).with_name("run-skill-evals.py")
 CLAUDE_ADAPTER = Path(__file__).parent / "adapters" / "claude"
@@ -25,6 +31,13 @@ def main() -> int:
     assert runner["russian_count"](5, "сценарий", "сценария", "сценариев") == "5 сценариев"
     assert runner["russian_count"](11, "сценарий", "сценария", "сценариев") == "11 сценариев"
     assert runner["russian_count"](21, "сценарий", "сценария", "сценариев") == "21 сценарий"
+
+    split_command = runner["split_command"]
+    assert split_command("tools/adapter --flag", windows=False) == ["tools/adapter", "--flag"]
+    # В Windows обратная косая черта остаётся разделителем пути.
+    assert split_command(
+        r'"C:\Program Files\Python\python.exe" tools\adapter.py', windows=True
+    ) == ["C:\\Program Files\\Python\\python.exe", "tools\\adapter.py"]
 
     parsed_config = runner["parse_evals_yaml"](
         """# Комментарии не требуют отдельного YAML-пакета.
@@ -263,31 +276,38 @@ pricing:
         assert all(record["judge_execution"] for record in records)
         assert len(errors) == 2
 
-    with tempfile.TemporaryDirectory() as temporary:
-        root = Path(temporary)
-        workspace = root / "рабочая папка"
-        workspace.mkdir()
-        fake_bin = root / "bin"
-        fake_bin.mkdir()
-        fake_claude = fake_bin / "claude"
-        fake_claude.write_text("#!/usr/bin/env sh\npwd\ntouch changed-by-claude\n", encoding="utf-8")
-        fake_claude.chmod(0o755)
-        result = subprocess.run(
-            ["bash", str(CLAUDE_ADAPTER), "fixture-model"],
-            input="проверка",
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            env={
-                **os.environ,
-                "APM_EVAL_WORKSPACE": str(workspace),
-                "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
-            },
-            check=False,
-        )
-        assert result.returncode == 0, result.stderr
-        assert result.stdout.strip() == str(workspace)
-        assert (workspace / "changed-by-claude").is_file()
+    # Поставляемый адаптер claude — маршрут P2: он требует POSIX-среды,
+    # поэтому вне её проверка не выполняется и названа как пропущенная.
+    if os.name == "nt":
+        print("Проверка POSIX-адаптера пропущена: нужна POSIX-среда.")
+    else:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workspace = root / "рабочая папка"
+            workspace.mkdir()
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            fake_claude = fake_bin / "claude"
+            fake_claude.write_text("#!/usr/bin/env sh\npwd\ntouch changed-by-claude\n", encoding="utf-8")
+            fake_claude.chmod(0o755)
+            result = subprocess.run(
+                ["bash", str(CLAUDE_ADAPTER), "fixture-model"],
+                input="проверка",
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env={
+                    **os.environ,
+                    "APM_EVAL_WORKSPACE": str(workspace),
+                    "PATH": f"{fake_bin}{os.pathsep}{os.environ['PATH']}",
+                },
+                check=False,
+            )
+            assert result.returncode == 0, result.stderr
+            assert result.stdout.strip() == str(workspace)
+            assert (workspace / "changed-by-claude").is_file()
 
     test_workspace_evidence()
     test_cost_accounting()
@@ -307,11 +327,11 @@ def sample_skills(root: Path) -> list[Path]:
         (skill / "references").mkdir(parents=True)
         (skill / "assets").mkdir()
         (skill / "scripts").mkdir()
-        (skill / "SKILL.md").write_text(f"---\nname: {name}\ndescription: example\n---\nRead references/rules.md\n")
-        (skill / "references/rules.md").write_text("complete-reference")
+        (skill / "SKILL.md").write_text(f"---\nname: {name}\ndescription: example\n---\nRead references/rules.md\n", encoding="utf-8")
+        (skill / "references/rules.md").write_text("complete-reference", encoding="utf-8")
         (skill / "assets/data.bin").write_bytes(b"\xff\x00")
         script = skill / "scripts/check"
-        script.write_text("#!/bin/sh\nexit 0\n")
+        script.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
         script.chmod(0o755)
         skills.append(skill)
     return skills
@@ -322,13 +342,13 @@ def test_workspace_evidence() -> None:
         root = Path(temporary)
         fixture = root / "fixture"
         fixture.mkdir()
-        (fixture / "README.md").write_text("original\n")
+        (fixture / "README.md").write_text("original\n", encoding="utf-8")
         skills = sample_skills(root)
         case = {"id": "task", "prompt": "Измени README.md", "fixture_dir": fixture,
                 "target_skill": "audit", "catalog_skill": "audit", "oracle": "oracle.json",
                 "oracle_data": {"success_criteria": ["README updated"],
                                 "required_diff": {"paths": ["README.md"], "must_include": ["updated"]}}}
-        (root / "oracle.json").write_text(json.dumps(case["oracle_data"]))
+        (root / "oracle.json").write_text(json.dumps(case["oracle_data"]), encoding="utf-8")
         judge = {"adapter": [sys.executable, "-c", "import json; print(json.dumps({'output':json.dumps({'results':[{'id':'task','passed':True}]}),'usage':{'cost':2,'currency':'USD'}}))"],
                  "model": "judge", "label": "judge"}
         for selected in ([], ["audit", "writing"]):
@@ -339,6 +359,7 @@ def emit(value):
     print(json.dumps({{"output":json.dumps(value), "usage":{{"cost":1,"currency":"USD"}}}}))
 prompt = sys.stdin.read()
 workspace = Path(os.environ["APM_EVAL_WORKSPACE"])
+assert workspace == workspace.resolve()
 assert Path.cwd() == workspace
 assert not (workspace / "oracle.json").exists()
 packages = workspace / ".agents/skills"
@@ -384,9 +405,9 @@ else:
                     phases = [ledger[call_id - 1]["context"]["phase"] for call_id in record["call_ids"]]
                     assert phases == ["selection", "application", "fixture", "fixture", "fixture"]
             assert len(set(paths)) == 6
-            assert (fixture / "README.md").read_text() == "original\n"
+            assert (fixture / "README.md").read_text(encoding="utf-8") == "original\n"
             report = runner["write_fixture_report"](root, Path("report.json"), records, skills, [case], 2, 3, call_records=ledger)
-            report_data = json.loads(report.read_text())
+            report_data = json.loads(report.read_text(encoding="utf-8"))
             assert report_data["schema_version"] == 3
             assert report_data["accounting"]["total_cost"] == 44
             assert len(report_data["calls"]) == 26
@@ -507,10 +528,10 @@ def test_result_workspace() -> None:
             assert read_only is False
             def call(prompt, schema):
                 assert "как будто применение навыка уже выполнено" not in prompt
-                assert (workspace / "input.txt").read_text() == "original"
+                assert (workspace / "input.txt").read_text(encoding="utf-8") == "original"
                 assert not (workspace / "unknown.txt").exists()
                 assert (workspace / ".agents/skills/writing/references/rules.md").is_file()
-                (workspace / "input.txt").write_text("changed")
+                (workspace / "input.txt").write_text("changed", encoding="utf-8")
                 return {"answers": [{"id": "result-case", "answer": "готово"}]}
             return call
         def judge(prompt, schema):
@@ -538,6 +559,10 @@ def test_result_workspace() -> None:
 
 
 def test_adapter_traces() -> None:
+    if os.name == "nt":
+        # Поставляемые адаптеры — маршрут P2: им нужна POSIX-среда.
+        print("Проверка следов POSIX-адаптеров пропущена: нужна POSIX-среда.")
+        return
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
         workspace = root / "workspace"
@@ -557,7 +582,7 @@ else:
     assert "stream-json" in sys.argv
     print(json.dumps({{"type":"assistant","message":{{"content":[{{"type":"tool_use","name":"Read"}}]}}}}))
     print(json.dumps({{"type":"result","result":'{{"answer":"done"}}',"is_error":False}}))
-''')
+''', encoding="utf-8")
             cli.chmod(0o755)
         old_path = os.environ["PATH"]
         os.environ["PATH"] = str(fake_bin) + os.pathsep + old_path
@@ -592,12 +617,12 @@ def test_command_line() -> None:
         (root / "packages").rename(root / ".apm/skills")
         fixture = root / "evals/fixtures/basic"
         fixture.mkdir(parents=True)
-        (fixture / "README.md").write_text("original")
+        (fixture / "README.md").write_text("original", encoding="utf-8")
         (root / "evals/oracle.json").write_text(json.dumps({"success_criteria": ["updated"],
-            "required_diff": {"paths": ["README.md"]}}))
+            "required_diff": {"paths": ["README.md"]}}), encoding="utf-8")
         (root / "evals/fixtures/registry.json").write_text(json.dumps({"cases": [
             {"id": "task", "prompt": "Обнови README", "target_skill": "audit", "fixture": "basic", "oracle": "../oracle.json"},
-            {"id": "other-task", "prompt": "Не выполнять", "target_skill": "writing", "fixture": "basic", "oracle": "../oracle.json"}]}))
+            {"id": "other-task", "prompt": "Не выполнять", "target_skill": "writing", "fixture": "basic", "oracle": "../oracle.json"}]}), encoding="utf-8")
         tools_dir = root / "tools"
         tools_dir.mkdir()
         adapter = tools_dir / "adapter.py"
@@ -611,15 +636,16 @@ elif '"required": ["selected_skills"]' in prompt:
     print(json.dumps({"selected_skills":[]}))
 else:
     root = Path(os.environ["APM_EVAL_WORKSPACE"])
+    assert root == root.resolve()
     assert Path.cwd() == root
     if (root / ".agents").exists():
         assert (root / ".agents/skills/writing/references/rules.md").is_file()
     (root / "README.md").write_text("updated")
     print(json.dumps({"answer":"done"}))
-''')
+''', encoding="utf-8")
         config = root / "evals.local.yml"
         template = f'''adapters:
-  local: "{sys.executable} tools/adapter.py"
+  local: '{sys.executable} tools/adapter.py'
 models:
   - local:candidate
 workspace_models: []
@@ -628,21 +654,23 @@ repetitions: 1
 judge_repetitions: 1
 results_dir: eval-results
 '''
-        config.write_text(template)
+        config.write_text(template, encoding="utf-8")
         env = {key: value for key, value in os.environ.items() if not key.startswith("APM_EVAL_")}
         env["APM_EVAL_PATH"] = ".apm/skills/audit"
         command = [sys.executable, str(RUNNER), "--yes", "--output", "report.json"]
-        stopped = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
-        assert stopped.returncode == 1 and "workspace_models" in stopped.stderr
+        stopped = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
+        assert stopped.returncode == 1 and "workspace_models" in stopped.stderr, (
+            stopped.stdout + stopped.stderr
+        )
         assert not (root / "report.json").exists()
-        config.write_text(template.replace("workspace_models: []", "workspace_models:\n  - local:candidate"))
-        done = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+        config.write_text(template.replace("workspace_models: []", "workspace_models:\n  - local:candidate"), encoding="utf-8")
+        done = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
         assert done.returncode == 0, done.stdout + done.stderr
-        report = json.loads((root / "report.json").read_text())
+        report = json.loads((root / "report.json").read_text(encoding="utf-8"))
         assert len(report["runs"]) == 3
         assert all(item["case_id"] == "task" and item["passed"] for item in report["runs"])
         assert set(report["provenance"]["skills"]) == {".apm/skills/audit", ".apm/skills/writing"}
-        assert (fixture / "README.md").read_text() == "original"
+        assert (fixture / "README.md").read_text(encoding="utf-8") == "original"
         assert report["accounting"]["calls"] == 7
         assert report["accounting"]["unknown_cost_calls"] == 7
         assert report["accounting"]["total_cost"] is None
@@ -651,26 +679,26 @@ results_dir: eval-results
         trigger_dir.mkdir()
         (trigger_dir / "triggers.json").write_text(json.dumps({"skill_name": "audit", "cases": [
             {"id": name, "prompt": "Проверь", "should_trigger": True, "rationale": "пример"}
-            for name in ("trigger-one", "trigger-two")]}))
+            for name in ("trigger-one", "trigger-two")]}), encoding="utf-8")
         adapter.write_text('''import json, sys
 p = sys.stdin.read()
 case = "trigger-one" if '"id": "trigger-one"' in p else "trigger-two"
 print(json.dumps({"output":json.dumps({"results":[{"id":case,"should_trigger":True}]}),"usage":{"cost":1,"currency":"USD"}}))
-''')
+''', encoding="utf-8")
         command.extend(["--case-id", "trigger-one", "--case-id", "trigger-two"])
-        done = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+        done = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
         assert done.returncode == 0, done.stdout + done.stderr
-        report = json.loads((root / "report.json").read_text())
+        report = json.loads((root / "report.json").read_text(encoding="utf-8"))
         assert not report["runs"] and not report["result_runs"]
         assert report["accounting"]["calls"] == 2 and report["accounting"]["total_cost"] == 2
         assert [call["context"]["attempt"] for call in report["calls"]] == [1, 2]
         assert report["calls"][1]["context"]["case_ids"] == ["trigger-two"]
         # Отчёт сохраняется и при ошибке ответа, и при неожиданной ошибке обработки результата.
         for output in ("not-json", '{"results":null}'):
-            adapter.write_text(f"import json; print(json.dumps({{'output':{output!r},'usage':{{'cost':3,'currency':'USD'}}}}))")
-            done = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+            adapter.write_text(f"import json; print(json.dumps({{'output':{output!r},'usage':{{'cost':3,'currency':'USD'}}}}))", encoding="utf-8")
+            done = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
             assert done.returncode != 0
-            report = json.loads((root / "report.json").read_text())
+            report = json.loads((root / "report.json").read_text(encoding="utf-8"))
             assert report["accounting"]["calls"] == 1 and report["accounting"]["total_cost"] == 3
             if output == "not-json":
                 assert report["calls"][0]["status"] == "failed"
@@ -686,14 +714,14 @@ def test_skill_discovery() -> None:
         collection = root / ".apm/skills"
         nested = collection / "audit/evals/script-fixtures/project/.agents/skills/writing"
         nested.mkdir(parents=True)
-        (nested / "SKILL.md").write_text("---\nname: writing\ndescription: Фикстура.\n---\n")
+        (nested / "SKILL.md").write_text("---\nname: writing\ndescription: Фикстура.\n---\n", encoding="utf-8")
         found = runner["find_skill_dirs"]([root])
         assert found == [collection / "audit", collection / "writing"], found
         assert set(runner["ensure_unique_skill_names"](found).values()) == {"audit", "writing"}
 
         duplicate = collection / "audit-copy"
         duplicate.mkdir()
-        (duplicate / "SKILL.md").write_text("---\nname: audit\ndescription: Копия.\n---\n")
+        (duplicate / "SKILL.md").write_text("---\nname: audit\ndescription: Копия.\n---\n", encoding="utf-8")
         try:
             runner["ensure_unique_skill_names"](runner["find_skill_dirs"]([root]))
         except RuntimeError as error:
@@ -710,9 +738,9 @@ def test_skill_discovery() -> None:
             "import pathlib, sys\n"
             "pathlib.Path(__file__).with_name('called').write_text('x')\n"
             "sys.stdin.read()\n"
-        )
+        , encoding="utf-8")
         (root / "evals.local.yml").write_text(f'''adapters:
-  local: "{sys.executable} tools/adapter.py"
+  local: '{sys.executable} tools/adapter.py'
 models:
   - local:candidate
 workspace_models:
@@ -721,11 +749,11 @@ judge: local:judge
 repetitions: 1
 judge_repetitions: 1
 results_dir: eval-results
-''')
+''', encoding="utf-8")
         env = {key: value for key, value in os.environ.items() if not key.startswith("APM_EVAL_")}
         stopped = subprocess.run(
             [sys.executable, str(RUNNER), "--yes"],
-            cwd=root, env=env, text=True, capture_output=True,
+            cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True,
         )
         assert stopped.returncode == 1, stopped.stdout + stopped.stderr
         assert "audit" in stopped.stderr and str(duplicate) in stopped.stderr, stopped.stderr
@@ -742,19 +770,19 @@ def test_comparison() -> None:
         folder.mkdir(parents=True)
         fixture = folder / "fixture"
         fixture.mkdir()
-        (fixture / "README.md").write_text("original")
-        (fixture / "AGENTS.md").write_text("COMMONRULE")
-        (folder / "minimal.md").write_text("MINIMALONLY")
+        (fixture / "README.md").write_text("original", encoding="utf-8")
+        (fixture / "AGENTS.md").write_text("COMMONRULE", encoding="utf-8")
+        (folder / "minimal.md").write_text("MINIMALONLY", encoding="utf-8")
         (folder / "oracle.json").write_text(json.dumps({"success_criteria": ["README updated"],
-            "required_diff": {"paths": ["README.md"]}}))
+            "required_diff": {"paths": ["README.md"]}}), encoding="utf-8")
         registry = {"cases": [{"id": "task", "prompt": "Обнови README", "fixture": "fixture", "oracle": "oracle.json"},
                                {"id": "unused", "prompt": "Не выполнять", "fixture": "fixture", "oracle": "oracle.json"}]}
-        (folder / "registry.json").write_text(json.dumps(registry))
+        (folder / "registry.json").write_text(json.dumps(registry), encoding="utf-8")
         plan = {"schema_version": 1, "id": "example-comparison", "question": "Как меняется результат?",
                 "common_background": "COMMONRULE и одинаковая оснастка", "collection": "../../packages",
                 "fixture_registry": "registry.json", "minimal_instructions": "minimal.md", "case_ids": ["task"], "seed": 37}
         plan_path = folder / "plan.json"
-        plan_path.write_text(json.dumps(plan))
+        plan_path.write_text(json.dumps(plan), encoding="utf-8")
         marker = root / "calls.log"
         adapter = root / "adapter.py"
         adapter.write_text(f'''import json, os, sys
@@ -795,10 +823,10 @@ else:
     Path({str(fixture / 'README.md')!r}).write_text("CHANGED AFTER START")
     price = 1
 print(json.dumps({{"output":json.dumps(result),"usage":{{"cost":price,"currency":"USD"}}}}))
-''')
+''', encoding="utf-8")
         config_path = root / "evals.local.yml"
         config_path.write_text(f'''adapters:
-  local: "{sys.executable} adapter.py"
+  local: '{sys.executable} adapter.py'
 models:
   - local:candidate-a
   - local:candidate-b
@@ -810,12 +838,12 @@ repetitions: 2
 judge_repetitions: 1
 timeout: 10
 results_dir: eval-results
-''')
+''', encoding="utf-8")
         env = {key: value for key, value in os.environ.items() if not key.startswith("APM_EVAL_")}
         command = [sys.executable, str(RUNNER), "--comparison-plan", "evals/comparison/plan.json", "--output", "report.json", "--yes"]
-        done = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+        done = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
         assert done.returncode == 0, done.stdout + done.stderr
-        report = json.loads((root / "report.json").read_text())
+        report = json.loads((root / "report.json").read_text(encoding="utf-8"))
         assert report["schema_version"] == 3 and report["suite"] == "comparison" and not report["summary"]
         assert len(report["runs"]) == 12 and len(report["calls"]) == 24 and not report["result_runs"]
         assert report["accounting"]["total_cost"] == 36
@@ -846,32 +874,32 @@ results_dir: eval-results
 
         # Ошибки подготовки не вызывают модели и не перезаписывают готовый отчёт.
         initial_marker, initial_report = marker.read_bytes(), (root / "report.json").read_bytes()
-        original_config = config_path.read_text()
+        original_config = config_path.read_text(encoding="utf-8")
         for contents in (None, "models: []\n", "models:\n    - unsupported-indent\n"):
             if contents is None:
                 config_path.unlink()
             else:
-                config_path.write_text(contents)
-            failure = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+                config_path.write_text(contents, encoding="utf-8")
+            failure = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
             assert failure.returncode == 1 and marker.read_bytes() == initial_marker
             assert (root / "report.json").read_bytes() == initial_report
-        config_path.write_text(original_config)
+        config_path.write_text(original_config, encoding="utf-8")
         for delta in ({"case_ids": ["unknown"]}, {"case_ids": ["task", "task"]}, {"seed": True},
                       {"common_background": ""}, {"schema_version": True}, {"collection": "../../packages/audit"},
                       {"minimal_instructions": "../../../../outside.md"}):
-            plan_path.write_text(json.dumps({**plan, **delta}))
-            failure = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+            plan_path.write_text(json.dumps({**plan, **delta}), encoding="utf-8")
+            failure = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
             assert failure.returncode == 1, delta
             assert marker.read_bytes() == initial_marker and (root / "report.json").read_bytes() == initial_report
-        plan_path.write_text(json.dumps(plan))
+        plan_path.write_text(json.dumps(plan), encoding="utf-8")
         for extra in (["--case-id", "task"], ["--repetitions", "1"], ["packages"], ["--limit", "1"]):
-            failure = subprocess.run([*command, *extra], cwd=root, env=env, text=True, capture_output=True)
+            failure = subprocess.run([*command, *extra], cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
             assert failure.returncode == 1 and marker.read_bytes() == initial_marker
-        (folder / "minimal.md").write_text("")
-        failure = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+        (folder / "minimal.md").write_text("", encoding="utf-8")
+        failure = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
         assert failure.returncode == 1 and marker.read_bytes() == initial_marker
-        (folder / "minimal.md").write_text("MINIMALONLY")
-        (fixture / "README.md").write_text("original")
+        (folder / "minimal.md").write_text("MINIMALONLY", encoding="utf-8")
+        (fixture / "README.md").write_text("original", encoding="utf-8")
         config = runner["load_config"](root, config_path)
         with tempfile.TemporaryDirectory() as frozen:
             metadata, cases, frozen_skills = runner["freeze_comparison"](root, plan_path, config, Path(frozen))
@@ -900,17 +928,17 @@ results_dir: eval-results
             assert len(preserved) == 1 and len(calls) == 2
             summary = runner["comparison_summary"](preserved, calls, metadata)
             assert all(bucket["pass_rate"] is None for result in summary.values() for bucket in result["conditions"].values())
-            (cases[0]["fixture_dir"] / "README.md").write_text("tampered")
+            (cases[0]["fixture_dir"] / "README.md").write_text("tampered", encoding="utf-8")
             try:
                 runner["check_comparison_snapshot"](metadata, cases, frozen_skills)
             except RuntimeError:
                 pass
             else:
                 raise AssertionError("Изменение зафиксированных входов должно остановить сравнение")
-        adapter.write_text("print('not-json')")
-        failure = subprocess.run(command, cwd=root, env=env, text=True, capture_output=True)
+        adapter.write_text("print('not-json')", encoding="utf-8")
+        failure = subprocess.run(command, cwd=root, env=env, text=True, encoding="utf-8", errors="replace", capture_output=True)
         assert failure.returncode == 1
-        failed_report = json.loads((root / "report.json").read_text())
+        failed_report = json.loads((root / "report.json").read_text(encoding="utf-8"))
         assert failed_report["comparison"]["execution_status"] == "completed_with_errors"
         assert len(failed_report["runs"]) == 12 and len(failed_report["calls"]) == 12
         assert all(call["status"] == "failed" for call in failed_report["calls"])

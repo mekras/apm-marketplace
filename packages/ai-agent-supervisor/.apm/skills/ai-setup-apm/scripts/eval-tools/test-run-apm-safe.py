@@ -3,12 +3,19 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import stat
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 
 SOURCE_TOOLS = Path(__file__).resolve().parent
@@ -41,6 +48,15 @@ def prepare(project: Path, mode: str = "clean") -> Path:
         encoding="utf-8",
     )
     fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+    if os.name == "nt":
+        # Windows не исполняет файл по строке shebang, поэтому подставному
+        # средству нужен вызов интерпретатора через исполняемую обёртку.
+        wrapper = project / "fake-apm.cmd"
+        wrapper.write_text(
+            f'@"{sys.executable}" "{fake}" %*\n',
+            encoding="utf-8",
+        )
+        return wrapper
     return fake
 
 
@@ -56,6 +72,8 @@ def run(project: Path, fake: Path) -> subprocess.CompletedProcess[str]:
         ],
         check=False,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

@@ -5,12 +5,18 @@ from __future__ import annotations
 import json, os, subprocess, sys, tempfile
 from pathlib import Path
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 if len(sys.argv) != 4:
     raise SystemExit("Использование: codex-role <модель> <усилие> <режим>")
 model, effort, sandbox = sys.argv[1:]
 with tempfile.TemporaryDirectory() as directory:
     final = Path(directory) / "final.txt"
-    run = subprocess.run(["codex", "exec", "--json", "--color", "never", "--strict-config", "--skip-git-repo-check", "--sandbox", sandbox, "--model", model, "-c", f'model_reasoning_effort="{effort}"', "--output-last-message", str(final), "-"], input=sys.stdin.read(), text=True, capture_output=True)
+    run = subprocess.run(["codex", "exec", "--json", "--color", "never", "--strict-config", "--skip-git-repo-check", "--sandbox", sandbox, "--model", model, "-c", f'model_reasoning_effort="{effort}"', "--output-last-message", str(final), "-"], input=sys.stdin.read(), text=True, encoding="utf-8", errors="replace", capture_output=True)
     raw_log = os.environ.get("CODEX_ROLE_LOG")
     if raw_log:
         Path(raw_log).write_text(run.stdout, encoding="utf-8")

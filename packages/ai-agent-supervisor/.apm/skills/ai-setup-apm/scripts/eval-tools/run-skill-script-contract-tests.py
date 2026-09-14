@@ -41,8 +41,14 @@ import subprocess
 import sys
 import tempfile
 import types
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
+
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 
 FIXTURE_PREFIX = Path("evals/script-fixtures")
@@ -274,12 +280,22 @@ def public_python_scripts(skill: Path) -> list[Path]:
 
 
 def safe_relative(value: Any) -> Path | None:
+    """Принять путь, который остаётся внутри своего корня в любой системе."""
     if not isinstance(value, str) or not value.strip():
         return None
-    path = Path(value)
-    if path.is_absolute() or ".." in path.parts or path == Path("."):
+    windows = PureWindowsPath(value)
+    posix = PurePosixPath(value)
+    if (
+        windows.is_absolute()
+        or windows.drive
+        or windows.root
+        or posix.is_absolute()
+        or ".." in windows.parts
+        or ".." in posix.parts
+        or value in {".", ".."}
+    ):
         return None
-    return path
+    return Path(value)
 
 
 def string_list(value: Any) -> list[str] | None:
@@ -311,6 +327,28 @@ def command_matches_operation(command: list[str], prefix: list[str]) -> bool:
     return command[script_index + 1 : script_index + 1 + len(prefix)] == prefix
 
 
+def required_commands(
+    case: dict[str, Any],
+    errors: list[str] | None = None,
+    label: str = "",
+) -> list[str]:
+    """Получить объявленные внешние команды случая."""
+    value = case.get("requires", [])
+    names = string_list(value) if isinstance(value, list) else None
+    if names is None:
+        if errors is not None:
+            errors.append(
+                f"{label}.requires: нужен массив непустых имён внешних команд",
+            )
+        return []
+    return names
+
+
+def absent_required_commands(case: dict[str, Any]) -> list[str]:
+    """Назвать объявленные внешние команды, которых нет в этой среде."""
+    return [name for name in required_commands(case) if shutil.which(name) is None]
+
+
 def is_runnable_case(skill: Path, case: dict[str, Any]) -> bool:
     """Проверить, достаточно ли данных случая для безопасного запуска."""
     script = safe_relative(case.get("script"))
@@ -329,6 +367,7 @@ def is_runnable_case(skill: Path, case: dict[str, Any]) -> bool:
         and not any(item in {"--help", "-h"} for item in command)
         and command_list(case.get("prepare", [])) is not None
         and isinstance(case.get("expect"), dict)
+        and string_list(case.get("requires", [])) is not None
     )
 
 
@@ -512,6 +551,12 @@ def load_cases(
             errors.append(
                 f"{label}.prepare: нужен массив непустых массивов команд",
             )
+        for name in required_commands(case, errors, label):
+            if Path(name).name != name or name.startswith("-"):
+                errors.append(
+                    f"{label}.requires: нужно имя внешней команды без пути, "
+                    f"получено {name!r}",
+                )
         expect = case.get("expect")
         if not isinstance(expect, dict):
             errors.append(f"{label}.expect: нужен объект с наблюдаемым результатом")
@@ -797,6 +842,8 @@ def run_case(
                     cwd=fixture,
                     check=False,
                     text=True,
+                    encoding="utf-8",
+                    errors="replace",
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
                     env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
@@ -817,6 +864,8 @@ def run_case(
                 cwd=fixture,
                 check=False,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 env=trace_environment(
@@ -883,14 +932,38 @@ def main() -> int:
     run_errors: list[str] = []
     count = 0
     coverage: dict[tuple[Path, Path], set[int]] = {}
+    # Сценарий с объявленной внешней командой не проверяет поведение скрипта в
+    # среде без неё. Такая среда — не нарушение контракта, поэтому сценарий
+    # пропускается, а неполнота покрытия называется явно.
+    incomplete: set[tuple[Path, Path]] = set()
+    skipped: list[str] = []
     for skill, cases in cases_by_skill.items():
         for case in cases:
+            absent = absent_required_commands(case)
+            if absent:
+                skipped.append(
+                    f"{skill}::{case['id']}: сценарий пропущен, в этой среде нет "
+                    f"внешних команд: {', '.join(absent)}",
+                )
+                script_rel = safe_relative(case.get("script"))
+                if script_rel is not None:
+                    incomplete.add((skill, script_rel))
+                continue
             count += 1
             for error in run_case(skill, case, coverage):
                 run_errors.append(f"{skill}::{case['id']}: {error}")
+    for message in skipped:
+        print(message)
     checked_allowances: set[tuple[Path, Path]] = set()
     for (skill, script_rel), executed in sorted(coverage.items()):
         script = skill / script_rel
+        if (skill, script_rel) in incomplete:
+            print(
+                f"{script}: покрытие неполное — часть сценариев пропущена "
+                "из-за отсутствующих внешних команд, проверка функций "
+                "не выполнена.",
+            )
+            continue
         try:
             expected = executable_lines(script)
             functions = script_functions(script)
@@ -935,6 +1008,7 @@ def main() -> int:
             )
         else:
             print(f"{script}: сценарии выполнили все {len(expected)} исполняемых строк.")
+    checked_allowances |= incomplete
     for skill, allowances in allowances_by_skill.items():
         for script_rel in sorted(set(allowances) - {
             script for owner, script in checked_allowances if owner == skill
@@ -948,6 +1022,11 @@ def main() -> int:
         print("\n".join(all_errors), file=sys.stderr)
         return 1
     print(f"Контрактные сценарии скриптов пройдены: {count}.")
+    if skipped:
+        print(
+            "Пропущено сценариев из-за отсутствующих внешних команд: "
+            f"{len(skipped)}.",
+        )
     return 0
 
 

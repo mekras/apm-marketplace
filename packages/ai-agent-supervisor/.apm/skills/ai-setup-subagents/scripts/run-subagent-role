@@ -69,6 +69,8 @@ def main() -> int:
         [adapter, model, effort, sandbox],
         input=prompt,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         env={**os.environ, "CODEX_ROLE_LOG": str(journal), "CLAUDE_ROLE_LOG": str(journal)},
         check=False,

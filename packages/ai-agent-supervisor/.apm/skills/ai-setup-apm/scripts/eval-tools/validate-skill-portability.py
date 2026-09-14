@@ -10,6 +10,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 
 SCRIPT_SUFFIXES = {".py", ".sh", ".bash"}
 CONTRACT_RUNNER = Path(__file__).with_name("run-skill-script-contract-tests.py")
@@ -90,8 +96,97 @@ def script_files(skill: Path) -> list[Path]:
     return sorted(result)
 
 
-def python_imports(path: Path) -> set[str]:
-    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+def called_name(func: ast.AST) -> str:
+    """Получить имя вызываемого без разбора выражения."""
+    if isinstance(func, ast.Attribute):
+        return func.attr
+    if isinstance(func, ast.Name):
+        return func.id
+    return ""
+
+
+def prints_non_ascii(tree: ast.AST) -> bool:
+    """Найти печать текста за пределами ASCII."""
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and called_name(node.func) == "print"):
+            continue
+        for value in ast.walk(node):
+            if (
+                isinstance(value, ast.Constant)
+                and isinstance(value.value, str)
+                and not value.value.isascii()
+            ):
+                return True
+    return False
+
+
+def switches_output_to_utf8(tree: ast.AST) -> bool:
+    """Найти переключение стандартных потоков в UTF-8."""
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if called_name(node.func).lstrip("_") != "reconfigure":
+            continue
+        for keyword in node.keywords:
+            if (
+                keyword.arg == "encoding"
+                and isinstance(keyword.value, ast.Constant)
+                and keyword.value.value == "utf-8"
+            ):
+                return True
+    return False
+
+
+def text_child_without_encoding(tree: ast.AST) -> int | None:
+    """Найти чтение вывода дочернего процесса без заданной кодировки."""
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        if called_name(node.func) not in {"run", "Popen", "check_output"}:
+            continue
+        keywords = {keyword.arg for keyword in node.keywords}
+        if not keywords & {"text", "universal_newlines"}:
+            continue
+        if "encoding" not in keywords:
+            return node.lineno
+    return None
+
+
+def text_file_without_encoding(tree: ast.AST) -> int | None:
+    """Найти работу с текстовым файлом без заданной кодировки."""
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        name = called_name(node.func)
+        if name not in {"read_text", "write_text", "open"}:
+            continue
+        if (
+            isinstance(node.func, ast.Attribute)
+            and isinstance(node.func.value, ast.Name)
+            and node.func.value.id == "tokenize"
+        ):
+            # tokenize.open сам определяет кодировку по объявлению файла.
+            continue
+        if any(keyword.arg == "encoding" for keyword in node.keywords):
+            continue
+        if name == "open":
+            mode = None
+            if node.args and isinstance(node.args[-1], ast.Constant):
+                mode = node.args[-1].value
+            for keyword in node.keywords:
+                if keyword.arg == "mode" and isinstance(keyword.value, ast.Constant):
+                    mode = keyword.value.value
+            if isinstance(mode, str) and "b" in mode:
+                continue
+        return node.lineno
+    return None
+
+
+def python_tree(path: Path) -> ast.AST:
+    return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+
+
+def python_imports(tree: ast.AST) -> set[str]:
     imports: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
@@ -131,10 +226,31 @@ def validate_skill(skill: Path) -> list[str]:
                 errors.append(f"{script}: скрытая установка или загрузка зависимости")
         if is_python:
             try:
-                imports = python_imports(script)
+                tree = python_tree(script)
             except SyntaxError as error:
                 errors.append(f"{script}:{error.lineno}: не удалось разобрать Python")
                 continue
+            line = text_file_without_encoding(tree)
+            if line is not None:
+                errors.append(
+                    f"{script}:{line}: текстовый файл читается или пишется без "
+                    "encoding; кодовая страница системы исказит содержимое "
+                    "вне ASCII",
+                )
+            line = text_child_without_encoding(tree)
+            if line is not None:
+                errors.append(
+                    f"{script}:{line}: вывод дочернего процесса читается в "
+                    "текстовом режиме без encoding; кодовая страница системы "
+                    "не разберёт сообщения вне ASCII",
+                )
+            if prints_non_ascii(tree) and not switches_output_to_utf8(tree):
+                errors.append(
+                    f"{script}: печатает текст вне ASCII, но не переключает "
+                    "стандартные потоки в UTF-8; на консоли с однобайтовой "
+                    "кодировкой команда завершится ошибкой кодирования",
+                )
+            imports = python_imports(tree)
             external = sorted(imports - set(sys.stdlib_module_names) - {"__future__"})
             if external:
                 errors.append(

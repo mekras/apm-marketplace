@@ -9,6 +9,12 @@ import sys
 import tempfile
 from pathlib import Path
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 
 ROOT = Path(__file__).resolve().parent
 VALIDATOR = ROOT / "validate-python-artifacts.py"
@@ -20,6 +26,8 @@ def run(project: Path, *paths: Path) -> subprocess.CompletedProcess[str]:
         cwd=project,
         check=False,
         text=True,
+        encoding="utf-8",
+        errors="replace",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

@@ -9,6 +9,12 @@ import sys
 import tokenize
 from pathlib import Path
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 
 DEFAULT_PATHS = (Path(".apm"), Path("tools"))
 
@@ -49,7 +55,7 @@ def main() -> int:
     files = sorted({item.resolve() for path in paths for item in python_files(path)})
     for path in files:
         try:
-            with tokenize.open(path) as source:
+            with tokenize.open(path) as source:  # Кодировка берётся из объявления файла.
                 compile(source.read(), str(path), "exec", dont_inherit=True)
         except (OSError, SyntaxError, UnicodeError) as error:
             failures.append(f"{path}: {error}")

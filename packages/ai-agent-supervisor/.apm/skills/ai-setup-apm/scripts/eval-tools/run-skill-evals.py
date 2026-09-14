@@ -36,8 +36,14 @@ import subprocess
 import sys
 import tempfile
 import time
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any, Callable, Iterator
+
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 CONFIG_NAME = "evals.local.yml"
 SAMPLE_NAME = "evals.sample.yml"
@@ -263,7 +269,7 @@ def load_config(repo_root: Path, config_path: Path) -> dict[str, Any] | None:
             file=sys.stderr,
         )
         return None
-    adapters = {name: shlex.split(str(command)) for name, command in raw_adapters.items()}
+    adapters = {name: split_command(str(command)) for name, command in raw_adapters.items()}
     adapters = {name: resolve_adapter_paths(command, repo_root) for name, command in adapters.items()}
 
     env_model = os.environ.get("APM_EVAL_MODEL")
@@ -715,6 +721,9 @@ def make_model_call(adapter: list[str], model: str, timeout: int, workspace: Pat
                        if key not in {"APM_EVAL_WORKSPACE", "APM_EVAL_TRACE"}}
         environment["APM_EVAL_TRACE"] = str(trace_path)
         environment["PYTHONDONTWRITEBYTECODE"] = "1"
+        # Запрос и ответ адаптера передаются в UTF-8 независимо от кодовой
+        # страницы системы.
+        environment["PYTHONIOENCODING"] = "utf-8"
         if workspace:
             environment["APM_EVAL_WORKSPACE"] = str(workspace)
         if read_only:
@@ -723,6 +732,8 @@ def make_model_call(adapter: list[str], model: str, timeout: int, workspace: Pat
             process = subprocess.Popen(
                 [*adapter, model],
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -842,6 +853,19 @@ def collect_skill_dirs(root: Path) -> Iterator[Path]:
             yield entry
         elif not entry.is_symlink():
             yield from collect_skill_dirs(entry)
+
+
+def split_command(value: str, windows: bool | None = None) -> list[str]:
+    """Разобрать команду адаптера с учётом разделителя пути системы."""
+    if windows is None:
+        windows = os.name == "nt"
+    if not windows:
+        return shlex.split(value)
+    # В Windows обратная косая черта — разделитель пути, а не экранирование.
+    return [
+        item[1:-1] if len(item) > 1 and item[0] == item[-1] == '"' else item
+        for item in shlex.split(value, posix=False)
+    ]
 
 
 def find_skill_dirs(paths: list[Path]) -> list[Path]:
@@ -1155,7 +1179,10 @@ def run_result_evals(
             candidate_error = ""
             judge_error = ""
             with tempfile.TemporaryDirectory(prefix="apm-result-") as temp:
-                workspace, before = Path(temp) / "workspace", Path(temp) / "before"
+                # Путь без ссылок: адаптер сравнивает APM_EVAL_WORKSPACE
+                # со своим текущим каталогом, а он всегда разыменован.
+                root = Path(temp).resolve()
+                workspace, before = root / "workspace", root / "before"
                 packages = prepare_trial(workspace, skill_dirs, input_files=case.get("input_files", []))
                 shutil.copytree(workspace, before)
                 call = call_factory(workspace, read_only=case.get("read_only", False))
@@ -1273,11 +1300,26 @@ def evidence_judging_rules() -> str:
     )
 
 
+def unsafe_relative_value(value: str) -> bool:
+    """Отклонить путь, который в любой системе выходит за свой корень."""
+    windows = PureWindowsPath(value)
+    posix = PurePosixPath(value)
+    return (
+        not value
+        or windows.is_absolute()
+        or bool(windows.drive)
+        or bool(windows.root)
+        or posix.is_absolute()
+        or ".." in windows.parts
+        or ".." in posix.parts
+        or value in {".", ".."}
+    )
+
+
 def checked_relative_path(value: str) -> Path:
-    path = Path(value)
-    if not value or path.is_absolute() or ".." in path.parts or path == Path("."):
+    if unsafe_relative_value(value):
         raise RuntimeError(f"Недопустимый относительный путь: {value!r}.")
-    return path
+    return Path(value)
 
 
 def check_input_tree(root: Path) -> None:
@@ -1343,7 +1385,7 @@ def prepare_trial(workspace: Path, skill_dirs: list[Path], fixture: Path | None 
                 target.write_text(item["content"], encoding="utf-8")
     # Отдельный корень Git не даёт командам git обнаружить родительский проект.
     initialized = subprocess.run(["git", "init", "--quiet", str(workspace)],
-                                 text=True, capture_output=True, check=False)
+                                 text=True, encoding="utf-8", errors="replace", capture_output=True, check=False)
     if initialized.returncode:
         raise RuntimeError(f"Не удалось создать корень тестового проекта: {initialized.stderr}")
     return install_trial_skills(workspace, skill_dirs)
@@ -1730,8 +1772,9 @@ def run_fixture_evals(
                 context = {"case_id": case["id"], "mode": mode, "repetition": repetition,
                            "candidate_model": run["label"], "suite": "comparison" if comparison else "regression"}
                 with tempfile.TemporaryDirectory(prefix="apm-eval-") as temp:
-                    workspace = Path(temp) / "workspace"
-                    before = Path(temp) / "before"
+                    root = Path(temp).resolve()
+                    workspace = root / "workspace"
+                    before = root / "before"
                     has_collection = mode == "collection" if comparison else mode != "baseline"
                     packages = prepare_trial(workspace, skill_dirs if has_collection else [], case["fixture_dir"])
                     shutil.copytree(workspace, before)
@@ -1841,7 +1884,7 @@ def sha256_file(path: Path) -> str:
 
 
 def git_revision(repo_root: Path) -> str | None:
-    completed = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_root, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    completed = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_root, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
@@ -1868,9 +1911,9 @@ def write_fixture_report(repo_root: Path, output: Path, records: list[dict[str, 
         bucket["delta_to_baseline"] = round(bucket["pass_rate"] - baseline_rate, 4)
     provenance = comparison["provenance"] if comparison else {
         "git_revision": git_revision(repo_root),
-        "skills": {str(item.relative_to(repo_root)): {file.relative_to(item).as_posix(): sha256_file(file)
+        "skills": {item.relative_to(repo_root).as_posix(): {file.relative_to(item).as_posix(): sha256_file(file)
                    for file in sorted(item.rglob("*")) if file.is_file()} for item in skill_dirs},
-        "fixtures": {case["id"]: {"fixture": {str(file.relative_to(case["fixture_dir"])): sha256_file(file) for file in case["fixture_dir"].rglob("*") if file.is_file()}, "oracle_sha256": sha256_file(case.get("oracle_path", Path(case["fixture_dir"]).parent / case["oracle"]))} for case in cases},
+        "fixtures": {case["id"]: {"fixture": {file.relative_to(case["fixture_dir"]).as_posix(): sha256_file(file) for file in case["fixture_dir"].rglob("*") if file.is_file()}, "oracle_sha256": sha256_file(case.get("oracle_path", Path(case["fixture_dir"]).parent / case["oracle"]))} for case in cases},
         "modes": ["baseline", "skill", "catalog"], "repetitions": repetitions, "judge_repetitions": judge_repetitions,
     }
     calls = call_records if call_records is not None else []
@@ -1957,6 +2000,9 @@ def check_comparison_snapshot(comparison: dict[str, Any], cases: list[dict[str, 
 
 def freeze_comparison(repo_root: Path, plan_path: Path, config: dict[str, Any], frozen: Path) -> tuple[dict[str, Any], list[dict[str, Any]], list[Path]]:
     """Проверить план и сохранить фактические входы до первого вызова модели."""
+    # Корень и план сравниваются без символических ссылок: иначе проверка
+    # принадлежности проекту зависит от устройства файловой системы.
+    repo_root = repo_root.resolve()
     plan_path = plan_path.resolve()
     json.dumps(config, allow_nan=False)
     if len({run["label"] for run in config["runs"]}) != len(config["runs"]):
@@ -2028,7 +2074,7 @@ def freeze_comparison(repo_root: Path, plan_path: Path, config: dict[str, Any], 
             "prompt": case["prompt"], "oracle": case["oracle_data"],
             "oracle_sha256": hashlib.sha256(oracle_text.encode()).hexdigest()}
         frozen_cases.append({**case, "fixture_dir": target})
-    metadata = {"plan": plan, "plan_path": str(plan_path.relative_to(repo_root)),
+    metadata = {"plan": plan, "plan_path": plan_path.relative_to(repo_root).as_posix(),
         "plan_sha256": hashlib.sha256(raw_plan).hexdigest(), "frozen_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "minimal_instructions": {"text": instructions, "sha256": hashlib.sha256(instructions.encode()).hexdigest(), "delivery": "candidate_prompt"},
         "configuration": config, "provenance": provenance,
@@ -2046,7 +2092,7 @@ def run_comparison(repo_root: Path, args: argparse.Namespace, config: dict[str, 
         raise RuntimeError("Все модели сравнения должны быть перечислены в workspace_models.")
     calls, records, errors = [], [], []
     with tempfile.TemporaryDirectory(prefix="apm-comparison-") as temp:
-        comparison, cases, skills = freeze_comparison(repo_root, args.comparison_plan, config, Path(temp))
+        comparison, cases, skills = freeze_comparison(repo_root, args.comparison_plan, config, Path(temp).resolve())
         if not confirm_model_run(runs=config["runs"], fixture_cases=cases, trigger_cases=[], result_groups=[],
                 repetitions=config["repetitions"], judge_repetitions=config["judge_repetitions"], yes=args.yes, comparison=True):
             print("Сравнение отменено до вызова моделей.", flush=True)

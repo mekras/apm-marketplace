@@ -24,7 +24,7 @@ def main() -> int:
         parser.error("--timeout должен быть положительным")
     command = shlex.split(args.adapter)
     try:
-        result = subprocess.run([*command, "list"], text=True, capture_output=True,
+        result = subprocess.run([*command, "list"], text=True, encoding="utf-8", errors="replace", capture_output=True,
                                 timeout=args.timeout, check=False)
         if result.returncode:
             raise RuntimeError(result.stderr.strip() or f"код выхода {result.returncode}")

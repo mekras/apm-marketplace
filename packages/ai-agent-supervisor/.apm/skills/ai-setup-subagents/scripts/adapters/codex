@@ -7,7 +7,7 @@ if [[ "${1:-}" == "list" ]]; then
 import json, subprocess, sys
 
 server = subprocess.Popen(["codex", "app-server"], stdin=subprocess.PIPE,
-                          stdout=subprocess.PIPE, text=True)
+                          stdout=subprocess.PIPE, text=True, encoding="utf-8", errors="replace")
 def send(message):
     server.stdin.write(json.dumps(message) + "\n"); server.stdin.flush()
 def receive(request_id):

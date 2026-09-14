@@ -16,6 +16,12 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 
 SCHEMA_VERSION = 1
 PRIVATE_PROJECT_FIELDS = {"model", "price", "cost", "limit", "account", "api_key", "token"}
@@ -428,6 +434,8 @@ def git_root(path: Path) -> Path | None:
     completed = subprocess.run(
         ["git", "-C", str(directory), "rev-parse", "--show-toplevel"],
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         check=False,
     )
@@ -441,6 +449,8 @@ def ignored_by_git(root: Path, path: Path) -> bool:
     completed = subprocess.run(
         ["git", "-C", str(root), "check-ignore", "-q", "--no-index", relative],
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         check=False,
     )

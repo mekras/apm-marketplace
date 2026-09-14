@@ -56,6 +56,7 @@
       "script": "scripts/validate-apm-git-boundary.py",
       "fixture": "evals/script-fixtures/empty-project",
       "covers": ["validate-git-boundary"],
+      "requires": ["apm"],
       "prepare": [
         ["git", "init", "--quiet", "{fixture}"],
         ["git", "-C", "{fixture}", "add", ".agents/skills/dependency/README.md"]

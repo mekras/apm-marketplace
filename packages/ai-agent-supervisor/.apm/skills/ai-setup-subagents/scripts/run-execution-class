@@ -129,6 +129,8 @@ def main() -> int:
         [*adapter, model, effort, sandbox],
         input=json.dumps(request, ensure_ascii=False),
         text=True,
+        encoding="utf-8",
+        errors="replace",
         capture_output=True,
         env=environment,
         check=False,
