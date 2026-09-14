@@ -37,7 +37,7 @@ import sys
 import tempfile
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterator
 
 CONFIG_NAME = "evals.local.yml"
 SAMPLE_NAME = "evals.sample.yml"
@@ -829,6 +829,21 @@ def extract_answer_text(text: str, prompt: str) -> dict[str, Any]:
     return {"answers": [{"id": case.group(1), "answer": answer}]}
 
 
+def collect_skill_dirs(root: Path) -> Iterator[Path]:
+    """Обойти дерево до границы пакета навыка, не спускаясь внутрь него."""
+    if not root.is_dir():
+        return
+    for entry in sorted(root.iterdir()):
+        if entry.name == ".git" or not entry.is_dir():
+            continue
+        if (entry / "SKILL.md").is_file():
+            # Материалы пакета, включая фикстуры со своими SKILL.md, навыками
+            # коллекции не являются и в обход не попадают.
+            yield entry
+        elif not entry.is_symlink():
+            yield from collect_skill_dirs(entry)
+
+
 def find_skill_dirs(paths: list[Path]) -> list[Path]:
     skill_dirs: set[Path] = set()
     for path in paths:
@@ -838,11 +853,23 @@ def find_skill_dirs(paths: list[Path]) -> list[Path]:
         if (path / "SKILL.md").is_file():
             skill_dirs.add(path)
             continue
-        for skill_file in path.rglob("SKILL.md"):
-            if ".git" in skill_file.parts:
-                continue
-            skill_dirs.add(skill_file.parent)
+        skill_dirs.update(collect_skill_dirs(path))
     return sorted(skill_dirs)
+
+
+def ensure_unique_skill_names(skill_dirs: list[Path]) -> dict[Path, str]:
+    """Проверить уникальность имён навыков и вернуть имя каждого каталога."""
+    seen: dict[str, Path] = {}
+    names: dict[Path, str] = {}
+    for skill_dir in skill_dirs:
+        name = read_frontmatter(skill_dir / "SKILL.md").get("name", skill_dir.name)
+        if name in seen:
+            raise RuntimeError(
+                f"Имя навыка {name!r} повторяется: {seen[name]} и {skill_dir}."
+            )
+        seen[name] = skill_dir
+        names[skill_dir] = name
+    return names
 
 
 def load_json(path: Path) -> Any:
@@ -1959,9 +1986,9 @@ def freeze_comparison(repo_root: Path, plan_path: Path, config: dict[str, Any], 
         raise RuntimeError("collection должен задавать корень полной коллекции, а не отдельный навык.")
     check_input_tree(collection)
     skills = find_skill_dirs([collection])
-    names = [read_frontmatter(path / "SKILL.md").get("name", path.name) for path in skills]
-    if not skills or len(set(names)) != len(names) or any(checked_relative_path(name).name != name for name in names):
-        raise RuntimeError("Коллекция пуста или содержит повторяющиеся либо недопустимые имена навыков.")
+    names = list(ensure_unique_skill_names(skills).values())
+    if not skills or any(checked_relative_path(name).name != name for name in names):
+        raise RuntimeError("Коллекция пуста или содержит недопустимые имена навыков.")
     all_cases = load_fixture_cases(repo_root, registry)
     case_map = {case.get("id"): case for case in all_cases}
     if len(case_map) != len(all_cases) or any(case_id not in case_map for case_id in ids):
@@ -2078,6 +2105,13 @@ def main() -> int:
     # Выбор сценариев не урезает доступный при выполнении комплект коллекции.
     catalog_dirs = find_skill_dirs([repo_root / ".apm/skills"]) if (repo_root / ".apm/skills").is_dir() else skill_dirs
     catalog_dirs = sorted(set(catalog_dirs) | set(skill_dirs))
+    # Повтор имени навыка останавливает прогон до вызова моделей: иначе расход
+    # лимитов уходит впустую, а установка пакетов падает уже в рабочей копии.
+    try:
+        ensure_unique_skill_names(catalog_dirs)
+    except RuntimeError as error:
+        print(str(error), file=sys.stderr)
+        return 1
 
     all_trigger_cases = collect_trigger_cases(skill_dirs)
     all_result_groups = collect_result_groups(skill_dirs, 0)

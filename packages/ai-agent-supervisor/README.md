@@ -29,12 +29,15 @@
 
 ## Ограничения
 
-Коллекция проверялась только с `Codex` и `Claude Code`.
+Коллекция проверялась только с `Codex` и `Claude Code`. Манифест также
+указывает целью `Hermes`, но это подтверждено только на уровне инструментария
+APM (блокировка зависимостей, установка, аудит, сборка выпуска) — поведение
+самих навыков внутри среды Hermes ещё не проверено.
 
 
 ## Установка
 
-Установите [APM](https://microsoft.github.io/apm/), если ещё не установлен.
+Для установки потребуется [APM](https://microsoft.github.io/apm/) не ниже 0.29.1.
 
 Подключите реестр коллекции:
 
@@ -45,17 +48,18 @@ apm marketplace add mekras/apm-marketplace --ref master
 
 Выполните **в корне проекта** команду для используемого агента.
 
-Для Codex:
+```bash
+apm install ai-agent-supervisor@mekras --target <цель>
+```
+
+`<цель>` — это  `claude`, `codex` или `hermes`.
+
+Пример для Codex:
 
 ```bash
 apm install ai-agent-supervisor@mekras --target codex
 ```
 
-Для Claude Code:
-
-```bash
-apm install ai-agent-supervisor@mekras --target claude
-```
 
 После установки навыки коллекции станут доступны агенту в этом проекте.
 

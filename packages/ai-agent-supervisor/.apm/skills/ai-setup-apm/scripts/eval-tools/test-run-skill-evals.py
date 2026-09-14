@@ -294,6 +294,7 @@ pricing:
     test_result_workspace()
     test_adapter_traces()
     test_command_line()
+    test_skill_discovery()
     test_comparison()
     print("Проверки ответов, рабочих копий и доказательств модельного прогона пройдены.")
     return 0
@@ -673,6 +674,64 @@ print(json.dumps({"output":json.dumps({"results":[{"id":case,"should_trigger":Tr
             assert report["accounting"]["calls"] == 1 and report["accounting"]["total_cost"] == 3
             if output == "not-json":
                 assert report["calls"][0]["status"] == "failed"
+
+
+def test_skill_discovery() -> None:
+    """Фикстуры внутри пакета не навыки, а повтор имени останавливает прогон."""
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary).resolve()
+        sample_skills(root)
+        (root / ".apm").mkdir()
+        (root / "packages").rename(root / ".apm/skills")
+        collection = root / ".apm/skills"
+        nested = collection / "audit/evals/script-fixtures/project/.agents/skills/writing"
+        nested.mkdir(parents=True)
+        (nested / "SKILL.md").write_text("---\nname: writing\ndescription: Фикстура.\n---\n")
+        found = runner["find_skill_dirs"]([root])
+        assert found == [collection / "audit", collection / "writing"], found
+        assert set(runner["ensure_unique_skill_names"](found).values()) == {"audit", "writing"}
+
+        duplicate = collection / "audit-copy"
+        duplicate.mkdir()
+        (duplicate / "SKILL.md").write_text("---\nname: audit\ndescription: Копия.\n---\n")
+        try:
+            runner["ensure_unique_skill_names"](runner["find_skill_dirs"]([root]))
+        except RuntimeError as error:
+            message = str(error)
+            assert "audit" in message and str(duplicate) in message, message
+            assert str(collection / "audit") in message, message
+        else:
+            raise AssertionError("Повтор имени навыка не обнаружен.")
+
+        tools_dir = root / "tools"
+        tools_dir.mkdir()
+        adapter = tools_dir / "adapter.py"
+        adapter.write_text(
+            "import pathlib, sys\n"
+            "pathlib.Path(__file__).with_name('called').write_text('x')\n"
+            "sys.stdin.read()\n"
+        )
+        (root / "evals.local.yml").write_text(f'''adapters:
+  local: "{sys.executable} tools/adapter.py"
+models:
+  - local:candidate
+workspace_models:
+  - local:candidate
+judge: local:judge
+repetitions: 1
+judge_repetitions: 1
+results_dir: eval-results
+''')
+        env = {key: value for key, value in os.environ.items() if not key.startswith("APM_EVAL_")}
+        stopped = subprocess.run(
+            [sys.executable, str(RUNNER), "--yes"],
+            cwd=root, env=env, text=True, capture_output=True,
+        )
+        assert stopped.returncode == 1, stopped.stdout + stopped.stderr
+        assert "audit" in stopped.stderr and str(duplicate) in stopped.stderr, stopped.stderr
+        # Остановка до вызова моделей: лимиты не расходуются на заведомо
+        # неработающую установку пакетов.
+        assert not (tools_dir / "called").exists()
 
 
 def test_comparison() -> None:
