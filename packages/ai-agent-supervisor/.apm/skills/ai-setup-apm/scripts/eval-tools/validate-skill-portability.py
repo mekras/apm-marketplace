@@ -152,6 +152,53 @@ def text_child_without_encoding(tree: ast.AST) -> int | None:
     return None
 
 
+# Модули, чей open не работает с текстом через параметр encoding.
+OPEN_MODULES_WITHOUT_ENCODING = {
+    # tokenize.open сам определяет кодировку по объявлению файла.
+    "tokenize",
+    # os.open возвращает файловый дескриптор, кодировки у него нет.
+    "os",
+}
+
+# Символы, из которых состоит режим открытия файла.
+OPEN_MODE_CHARACTERS = set("rwxabt+U")
+
+
+def open_mode(node: ast.Call) -> ast.expr | None:
+    """Вернуть выражение режима открытия файла, если оно задано."""
+    for keyword in node.keywords:
+        if keyword.arg == "mode":
+            return keyword.value
+    if isinstance(node.func, ast.Attribute):
+        # У Path.open режим стоит первым, у io.open — вторым.
+        candidates = node.args[:2]
+    else:
+        candidates = node.args[1:2]
+    for argument in candidates:
+        if (
+            isinstance(argument, ast.Constant)
+            and isinstance(argument.value, str)
+            and argument.value
+            and set(argument.value) <= OPEN_MODE_CHARACTERS
+        ):
+            return argument
+    for argument in candidates:
+        if not isinstance(argument, ast.Constant):
+            return argument
+    return None
+
+
+def opens_text_file(node: ast.Call) -> bool:
+    """Проверить, что вызов open заведомо открывает текстовый файл."""
+    mode = open_mode(node)
+    if mode is None:
+        return True
+    if isinstance(mode, ast.Constant) and isinstance(mode.value, str):
+        return "b" not in mode.value
+    # Режим задан выражением, поэтому текстовый режим не подтверждён.
+    return False
+
+
 def text_file_without_encoding(tree: ast.AST) -> int | None:
     """Найти работу с текстовым файлом без заданной кодировки."""
     for node in ast.walk(tree):
@@ -163,21 +210,13 @@ def text_file_without_encoding(tree: ast.AST) -> int | None:
         if (
             isinstance(node.func, ast.Attribute)
             and isinstance(node.func.value, ast.Name)
-            and node.func.value.id == "tokenize"
+            and node.func.value.id in OPEN_MODULES_WITHOUT_ENCODING
         ):
-            # tokenize.open сам определяет кодировку по объявлению файла.
             continue
         if any(keyword.arg == "encoding" for keyword in node.keywords):
             continue
-        if name == "open":
-            mode = None
-            if node.args and isinstance(node.args[-1], ast.Constant):
-                mode = node.args[-1].value
-            for keyword in node.keywords:
-                if keyword.arg == "mode" and isinstance(keyword.value, ast.Constant):
-                    mode = keyword.value.value
-            if isinstance(mode, str) and "b" in mode:
-                continue
+        if name == "open" and not opens_text_file(node):
+            continue
         return node.lineno
     return None
 
