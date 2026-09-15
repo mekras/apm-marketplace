@@ -119,7 +119,8 @@
         "не добавлять заголовки без доказанной пользы",
         "не заменять короткий список таблицей",
         "не придумывать проблему потребителя"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-req-refactoring-result-safe-catalog-consolidation",
@@ -156,7 +157,11 @@
         "findings": [
           {
             "severity": "medium",
-            "corpus_claims": ["SREQ-056", "SREQ-068", "SREQ-069"],
+            "corpus_claims": [
+              "SREQ-056",
+              "SREQ-068",
+              "SREQ-069"
+            ],
             "observed_problem": "одна операция и одинаковые свойства повторены для трёх значений управляемого перечня.",
             "expected_conclusion": "обязательство можно записать один раз, а форматы хранить в нормативном каталоге",
             "acceptable_fix_direction": "связать обобщённое требование с каталогом и сохранить сопоставление прежних идентификаторов"
@@ -200,7 +205,8 @@
         "не заменять точный перечень неопределённой категорией",
         "не делать обязательный каталог справочным",
         "не удалять идентификаторы без сопоставления"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-req-refactoring-result-independent-obligations-stop",
@@ -211,7 +217,11 @@
           "purpose": "задаёт условия объединения и остановки"
         }
       ],
-      "required_corpus_claims": ["SREQ-036", "SREQ-068", "SREQ-070"],
+      "required_corpus_claims": [
+        "SREQ-036",
+        "SREQ-068",
+        "SREQ-070"
+      ],
       "expected_output": {
         "report_structure": [
           "выделены разные сроки, источники и владельцы принятия",
@@ -223,7 +233,11 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SREQ-036", "SREQ-068", "SREQ-070"],
+            "corpus_claims": [
+              "SREQ-036",
+              "SREQ-068",
+              "SREQ-070"
+            ],
             "observed_problem": "требования имеют разные источники, сроки и владельцев принятия.",
             "expected_conclusion": "одно общее требование скроет независимо управляемые обязательства",
             "acceptable_fix_direction": "сохранить два идентификатора и вынести только действительно общую часть"
@@ -260,7 +274,8 @@
         "не скрывать разные сроки общей фразой",
         "не менять нормативное основание",
         "не принимать решение за владельцев"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-req-refactoring-result-guiding-statement-not-replacement",
@@ -275,7 +290,10 @@
           "purpose": "задаёт границу направляющего положения и требования"
         }
       ],
-      "required_corpus_claims": ["SREQ-001", "SREQ-034"],
+      "required_corpus_claims": [
+        "SREQ-001",
+        "SREQ-034"
+      ],
       "expected_output": {
         "report_structure": [
           "общая фраза определена как непроверяемое направление, а не замена требований",
@@ -287,7 +305,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SREQ-001", "SREQ-034"],
+            "corpus_claims": [
+              "SREQ-001",
+              "SREQ-034"
+            ],
             "observed_problem": "общая фраза не задаёт проверяемое поведение и не позволяет восстановить три обязательства.",
             "expected_conclusion": "она может направлять требования, но не заменяет их",
             "acceptable_fix_direction": "сохранить требования и отдельно предложить направляющее положение через анализ"
@@ -323,7 +344,8 @@
       "must_not": [
         "не удалять конкретные обязательства",
         "не создавать слой направляющих положений без решения владельца"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-req-refactoring-result-missing-baseline-ambiguous-stop",
@@ -334,7 +356,10 @@
           "purpose": "требует базовую версию и останавливает неоднозначную правку"
         }
       ],
-      "required_corpus_claims": ["SREQ-036", "SREQ-068"],
+      "required_corpus_claims": [
+        "SREQ-036",
+        "SREQ-068"
+      ],
       "expected_output": {
         "report_structure": [
           "отсутствующая базовая версия названа блокером записи",
@@ -346,7 +371,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SREQ-036", "SREQ-068"],
+            "corpus_claims": [
+              "SREQ-036",
+              "SREQ-068"
+            ],
             "observed_problem": "нет единого исходного набора, а обязательный срок допускает разные толкования.",
             "expected_conclusion": "эквивалентность нельзя доказать до выбора базы и уточнения требования",
             "acceptable_fix_direction": "выбрать базовую версию и отдельно проверить неоднозначное требование"
@@ -382,7 +410,8 @@
       "must_not": [
         "не выбирать ветку молча",
         "не устранять неоднозначность без содержательного решения"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-req-refactoring-result-unstable-reference-and-new-duty-stop",
@@ -393,7 +422,12 @@
           "purpose": "задаёт нормативную ссылку, базовую версию и отделение изменения смысла"
         }
       ],
-      "required_corpus_claims": ["SREQ-032", "SREQ-056", "SREQ-068", "SREQ-070"],
+      "required_corpus_claims": [
+        "SREQ-032",
+        "SREQ-056",
+        "SREQ-068",
+        "SREQ-070"
+      ],
       "expected_output": {
         "report_structure": [
           "wiki без редакции, владельца и порядка изменения отклонена как нормативный материал",
@@ -405,7 +439,11 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SREQ-056", "SREQ-068", "SREQ-070"],
+            "corpus_claims": [
+              "SREQ-056",
+              "SREQ-068",
+              "SREQ-070"
+            ],
             "observed_problem": "изменяемая ссылка может менять обязательный перечень вне базовой версии, а новая страна расширяет область.",
             "expected_conclusion": "такой перенос не сохраняет смысл и не защищён от дрейфа",
             "acceptable_fix_direction": "версионировать нормативный материал и провести добавление страны как отдельное изменение"
@@ -444,7 +482,8 @@
         "не ссылаться на изменяемую последнюю версию",
         "не расширять область без отдельного изменения",
         "не игнорировать расхождение концептуальных тестов"
-      ]
+      ],
+      "artifact_change": false
     }
   ]
 }

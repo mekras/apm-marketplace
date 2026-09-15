@@ -20,6 +20,12 @@
       "rationale": "Проверка изоляции границ входит в обзор кода."
     },
     {
+      "id": "ait-code-review-review-positive-local-knowledge-boundary",
+      "prompt": "Проверь, не описывает ли комментарий метода устройство внутреннего компонента, от которого этот метод не зависит.",
+      "should_trigger": true,
+      "rationale": "Проверка локальной границы знания в коде и комментариях входит в обзор кода."
+    },
+    {
       "id": "ait-code-review-review-negative-construction",
       "prompt": "Напиши новый класс и спроектируй его методы и структуры данных.",
       "should_trigger": false,

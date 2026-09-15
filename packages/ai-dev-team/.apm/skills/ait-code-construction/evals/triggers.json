@@ -20,6 +20,12 @@
       "rationale": "Пошаговый рефакторинг и чистота кода входят в навык."
     },
     {
+      "id": "ait-code-construction-construction-positive-local-knowledge-boundary",
+      "prompt": "Убери из комментария метода сведения о внутреннем инструменте другого компонента, от которого метод не зависит.",
+      "should_trigger": true,
+      "rationale": "Читаемость и локальная граница знания в коде и комментариях относятся к конструированию."
+    },
+    {
       "id": "ait-code-construction-construction-negative-review",
       "prompt": "Проверь готовый код коллеги на запахи и соответствие критериям готовности.",
       "should_trigger": false,

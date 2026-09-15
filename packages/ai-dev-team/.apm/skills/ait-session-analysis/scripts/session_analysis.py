@@ -1681,7 +1681,16 @@ def parser() -> argparse.ArgumentParser:
     return result
 
 
+def use_utf8_streams() -> None:
+    """Печатать русские сообщения на консоли с любой кодовой страницей."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
+
+
 def main() -> int:
+    use_utf8_streams()
     args = parser().parse_args()
     numeric_limits = (
         getattr(args, "limit", 1),

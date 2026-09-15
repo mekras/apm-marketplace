@@ -76,7 +76,11 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SPKT-001", "SPKT-002", "SREQ-114"],
+            "corpus_claims": [
+              "SPKT-001",
+              "SPKT-002",
+              "SREQ-114"
+            ],
             "observed_problem": "запрос меняет обязательное поведение, но не содержит принятой дельты спецификации.",
             "expected_conclusion": "реализацию нельзя начинать до записи и подтверждения изменения поведения",
             "acceptable_fix_direction": "создать дельту требования, проверить её и получить подтверждение владельца"
@@ -119,7 +123,8 @@
         "не утверждать требование за владельца",
         "не подменять спецификацию документацией после кода",
         "не завершать задачу без анализа влияния"
-      ]
+      ],
+      "artifact_change": true
     },
     {
       "id": "ait-sdd-result-bug-keeps-correct-spec",
@@ -140,7 +145,11 @@
           "purpose": "задаёт границу исправления реализации"
         }
       ],
-      "required_corpus_claims": ["SPKT-001", "SREQ-116", "SREQ-117"],
+      "required_corpus_claims": [
+        "SPKT-001",
+        "SREQ-116",
+        "SREQ-117"
+      ],
       "expected_output": {
         "report_structure": [
           "задача классифицирована как implementation_correction",
@@ -152,7 +161,11 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SPKT-001", "SREQ-116", "SREQ-117"],
+            "corpus_claims": [
+              "SPKT-001",
+              "SREQ-116",
+              "SREQ-117"
+            ],
             "observed_problem": "реализация нарушает уже однозначное требование.",
             "expected_conclusion": "нужно исправить реализацию без изменения правильной спецификации",
             "acceptable_fix_direction": "связать исправление с AUTH-7 и добавить регрессионную проверку"
@@ -192,7 +205,8 @@
         "не подгонять спецификацию под дефект",
         "не пропускать регрессионную проверку",
         "не терять связь с требованием"
-      ]
+      ],
+      "artifact_change": true
     },
     {
       "id": "ait-sdd-result-emergency-exception",
@@ -213,7 +227,10 @@
           "purpose": "задаёт управляемое исключение и барьер завершения"
         }
       ],
-      "required_corpus_claims": ["SDDP-003", "SREQ-114"],
+      "required_corpus_claims": [
+        "SDDP-003",
+        "SREQ-114"
+      ],
       "expected_output": {
         "report_structure": [
           "аварийность не отменяет принятый режим",
@@ -225,7 +242,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SDDP-003", "SREQ-114"],
+            "corpus_claims": [
+              "SDDP-003",
+              "SREQ-114"
+            ],
             "observed_problem": "запрос предлагает обойти спецификацию и сразу объявить результат готовым.",
             "expected_conclusion": "нужно управляемое исключение и отдельный барьер завершения",
             "acceptable_fix_direction": "получить решение владельца и записать срок согласования спецификации"
@@ -265,7 +285,8 @@
         "не обходить режим молча",
         "не создавать бессрочное исключение",
         "не объявлять скрытый долг завершённым"
-      ]
+      ],
+      "artifact_change": true
     }
   ]
 }

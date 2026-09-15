@@ -1,5 +1,5 @@
 name: ai-dev-team
-version: 0.27.17
+version: 0.28.0
 description: Команда агентной разработки ПО
 author: mekras
 license: MIT
@@ -12,7 +12,7 @@ includes: auto
 dependencies:
   apm:
     - mekras/apm-marketplace/packages/ai-russian-language#ai-russian-language--v2.1.5
-    - mekras/apm-marketplace/packages/ai-agent-supervisor#ai-agent-supervisor--v2.3.23
+    - mekras/apm-marketplace/packages/ai-agent-supervisor#ai-agent-supervisor--v2.6.1
     - mekras/apm-marketplace/packages/project-knowledge-corpus#project-knowledge-corpus--v0.20.4
 scripts:
   tests: >-
@@ -22,6 +22,8 @@ scripts:
     python3 tools/validate-apm-package-structure.py;
     python3 tools/validate-project-review-capabilities.py;
     python3 tools/validate-requirements-structure.py;
+    python3 tools/validate-skill-eval-scenario-executability.py "$target";
+    python3 tools/report-skill-eval-freshness.py "$target" --threshold-days 30;
     python3 -m unittest
     tools/test_knowledge_tools.py
     tools/test_impact_graph.py
@@ -31,7 +33,10 @@ scripts:
     tools/test_validate_requirements_structure.py
     tools/test_validate_apm_package_structure.py
     tools/test_skill_deployment_portability.py
-    tools/test_validate_project_review_capabilities.py;
+    tools/test_validate_project_review_capabilities.py
+    tools/test_validate_skill_eval_scenario_executability.py
+    tools/test_report_skill_eval_freshness.py
+    tools/test_record_skill_eval_run.py;
     python3 .apm/skills/ait-impact-analysis/scripts/impact_graph.py
     validate --graph .ai-dev-team/project-impact.json;
     python3 .apm/skills/ait-impact-analysis/scripts/impact_graph.py
@@ -55,12 +60,17 @@ scripts:
     python3 "$validators/validate-skill-result-evals.py" "$target";
     python3 "$validators/validate-skill-portability.py" "$target";
     python3 "$validators/run-skill-script-contract-tests.py" "$target";
+    python3 "$validators/test-run-apm-safe.py";
+    python3 "$validators/test-validate-python-artifacts.py";
+    python3 "$validators/test-validate-python-syntax.py";
     python3 tools/validate-portable-corpus-references.py;
     apm compile --validate --local-only --target codex;
     apm compile --validate --local-only --target claude;
     apm pack --dry-run'
   evals: >-
+    sh -c 'set -e; target="${APM_EVAL_PATH:-.apm/skills}";
     python3 .agents/skills/ai-setup-apm/scripts/eval-tools/run-skill-evals.py
-    "${APM_EVAL_PATH:-.apm/skills}"
+    "$target";
+    python3 tools/record-skill-eval-run.py "$target"'
   product-evals: >-
     python3 tools/run-product-evals.py

@@ -92,7 +92,13 @@
           "purpose": "карта маршрутов по соседним навыкам и порядок вопросов"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "явно назван стартовый аудит проекта и его роль в маршруте",
@@ -103,14 +109,21 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "настройка проекта выполняется напрямую без стартового аудита текущих правил и файлов.",
             "expected_conclusion": "ait-setup должен начинать работу с ai-audit-project",
             "acceptable_fix_direction": "сначала собрать карту текущего состояния через ai-audit-project и только затем переходить к изменениям"
           },
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "ait-setup дублирует процедуры соседних навыков вместо маршрутизации в них.",
             "expected_conclusion": "README.md и AGENTS.md должны сопровождаться профильными навыками, а ait-setup должен оставаться оркестратором",
             "acceptable_fix_direction": "направить README.md в project-readme, AGENTS.md в ai-agents-md-maintenance, APM-коллекцию в ai-setup-apm по условиям"
@@ -153,7 +166,8 @@
         "не дублировать внутри ait-setup процедуру project-readme или ai-agents-md-maintenance",
         "не начинать с массовой анкеты из нескольких обязательных вопросов",
         "не выбирать маршрут ai-setup-apm без признаков публикуемой APM-поверхности или явного запроса человека"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-corpus-declined",
@@ -172,7 +186,13 @@
           "purpose": "порядок вопросов и действия при отказе от корпуса"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "показано, что агент проверил наличие корпуса знаний или явного отказа от него",
@@ -183,14 +203,21 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "отказ от корпуса знаний не фиксируется в правилах проекта, поэтому вопрос повторяется при следующей настройке.",
             "expected_conclusion": "после явного отказа человека статус работы без корпуса знаний нужно закрепить в .ai-dev-team/state.yml",
             "acceptable_fix_direction": "обновить .ai-dev-team/state.yml и явно записать, что корпус знаний не используется и повторно предлагать его создание не нужно"
           },
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "при явном отказе пользователя агент всё равно маршрутизирует задачу в kc-setup.",
             "expected_conclusion": "kc-setup нужен только при существующем корпусе или согласии на его создание",
             "acceptable_fix_direction": "после отказа не вызывать kc-setup и ограничиться фиксацией решения в .ai-dev-team/state.yml"
@@ -232,7 +259,8 @@
         "не вызывать kc-setup после явного отказа человека",
         "не оставлять отказ от корпуса незакреплённым в .ai-dev-team/state.yml",
         "не запрашивать отдельное повторное подтверждение перед записью уже принятого решения в .ai-dev-team/state.yml"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-apm-installed-client-instructions",
@@ -255,7 +283,13 @@
           "purpose": "правила безопасного обновления клиентских инструкций"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "показано, что APM-установка уже выполнена и навыки доступны",
@@ -268,21 +302,32 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "после apm install агент советует пользователю напрямую запустить apm compile, что может перезаписать рукописный AGENTS.md.",
             "expected_conclusion": "после установки настройку должен выполнять ait-setup, сохраняя локальные правила перед обновлением клиентских инструкций",
             "acceptable_fix_direction": "проверить AGENTS.md, перенести рукописные правила в локальный APM-слой и остановиться до отдельного подтверждения миграции рукописного файла под управление APM"
           },
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-002"
+            ],
             "observed_problem": "агент выносит apm compile --dry-run в итоговый отчёт и снова предлагает решать миграцию корневого AGENTS.md, хотя пользователь просил обычную настройку проекта.",
             "expected_conclusion": "dry-run compile допустим только как явно названная диагностика генерации или риска перезаписи, а не как штатный шаг настройки с рукописным AGENTS.md.",
             "acceptable_fix_direction": "оставить следующий шаг на конкретном подтверждённом изменении проекта или одном блокирующем вопросе, не поднимая compile и миграцию AGENTS.md без явного запроса человека"
           },
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "ait-setup сам перезаписывает клиентские инструкции без маршрута через профильное сопровождение AGENTS.md.",
             "expected_conclusion": "сохранение и изменение AGENTS.md должны идти через ai-agents-md-maintenance",
             "acceptable_fix_direction": "направить рукописные правила в ai-agents-md-maintenance и явно назвать итоговый локальный слой"
@@ -338,7 +383,8 @@
         "не предлагать AGENTS.override.md как замену сгенерированному AGENTS.md",
         "не оставлять местонахождение локальных правил неясным",
         "не настраивать несколько клиентских целей без явного выбора человека"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-apm-consumer-not-collection",
@@ -361,7 +407,13 @@
           "purpose": "диалоговый порядок подтверждений и карта маршрутов"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "показано, что apm.yml проверен как часть общего аудита маршрута",
@@ -372,14 +424,20 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "один признак APM-подключения ошибочно трактуется как достаточное основание для маршрута в настройку коллекции.",
             "expected_conclusion": "маршрут в ai-setup-apm выбирается по публикуемой APM-поверхности проекта и назначению текущей настройки, а не по одному найденному файлу",
             "acceptable_fix_direction": "оставить проект в ait-setup, пока аудит не показал публикуемую APM-поверхность или человек прямо не попросил настроить пакет APM"
           },
           {
             "severity": "high",
-            "corpus_claims": ["PPRX-001", "PPRX-002"],
+            "corpus_claims": [
+              "PPRX-001",
+              "PPRX-002"
+            ],
             "observed_problem": "агент принимает решения и готовится менять клиентские инструкции без интерактивного подтверждения.",
             "expected_conclusion": "setup-dialogue требует подтверждения каждого проектного решения и каждой записи в файл",
             "acceptable_fix_direction": "после аудита предложить одно решение или одно изменение файла и дождаться подтверждения человека"
@@ -421,7 +479,8 @@
         "не создавать .apm/instructions без подтверждения человека",
         "не запускать apm compile до сохранения локальных правил и подтверждения человека",
         "не принимать общий аудит за разрешение на запись файлов"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-version-update-review",
@@ -448,7 +507,13 @@
           "purpose": "задаёт правила определения версий и запрет на повторное обновление зависимостей"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "названы применённая версия из .ai-dev-team/state.yml и целевая версия установленного продукта",
@@ -460,21 +525,31 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "запрос на обновление проекта под новую версию трактуется как команда обновить зависимости APM через apm update, apm install или apm outdated.",
             "expected_conclusion": "после установки новой версии ветка ait-setup должна читать .ai-dev-team/state.yml, apm.lock.yaml и CHANGELOG.md продукта, а не повторно обновлять зависимости",
             "acceptable_fix_direction": "оставить задачу в ait-setup, определить диапазон версий, собрать «Действия при обновлении» и не запускать APM-команды обновления зависимостей"
           },
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент определяет применённую версию по прошлой ревизии apm.lock.yaml, хотя установленная зависимость не доказывает, что проект был пересмотрен под эту версию.",
             "expected_conclusion": ".ai-dev-team/state.yml является источником применённой версии проекта, а apm.lock.yaml — только источником целевой установленной версии",
             "acceptable_fix_direction": "читать применённую версию из .ai-dev-team/state.yml и обновлять этот файл только после завершённого пересмотра проекта"
           },
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "агент не показывает человеку список действий по версиям и сразу переключается на техническую диагностику APM.",
             "expected_conclusion": "ветка обновления версии должна проводить человека по журналу изменений продукта, а не подменять пересмотр проекта проверкой состояния зависимостей",
             "acceptable_fix_direction": "сначала показать действия по версиям как чек-лист, затем выполнять только подтверждённые правки проекта"
@@ -520,7 +595,8 @@
         "не определять применённую версию по истории apm.lock.yaml",
         "не пропускать определение применённой и целевой версии продукта",
         "не выполнять изменения проекта без привязки к конкретному пункту CHANGELOG.md и подтверждения человека"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-version-update-missing-state-file",
@@ -539,7 +615,12 @@
           "purpose": "задаёт правило отсутствующего .ai-dev-team/state.yml"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "явно сказано, что .ai-dev-team/state.yml отсутствует или неполон",
@@ -551,7 +632,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "при отсутствии .ai-dev-team/state.yml агент пытается восстановить применённую версию по истории apm.lock.yaml.",
             "expected_conclusion": "отсутствие файла состояния является открытым вопросом о применённой версии, а не поводом использовать историю установленной зависимости",
             "acceptable_fix_direction": "спросить человека о последнем пересмотре проекта или предложить полный пересмотр действий до целевой версии"
@@ -593,7 +677,8 @@
         "не создавать .ai-dev-team/state.yml до завершения пересмотра",
         "не запускать apm outdated, apm update, apm deps update или повторный apm install",
         "не пропускать вопрос о применённой версии, если файл состояния отсутствует"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-propose-changelog-file",
@@ -612,7 +697,13 @@
           "purpose": "показывает допустимую заготовку CHANGELOG.md"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "явно сказано, что журнала изменений в проекте нет",
@@ -626,14 +717,21 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент молча создаёт CHANGELOG.md во время настройки проекта.",
             "expected_conclusion": "журнал изменений предлагается в диалоговом режиме и создаётся только после подтверждения человека",
             "acceptable_fix_direction": "сначала назвать файл, смысл и причину, затем дождаться подтверждения"
           },
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "ait-setup сам описывает правила ведения журнала вместо маршрута через отдельный навык.",
             "expected_conclusion": "сопровождение журнала должно идти через ait-changelog, а ait-setup остаётся оркестратором",
             "acceptable_fix_direction": "назвать ait-changelog как профильный маршрут и закрепить решение о журнале в .ai-dev-team/state.yml"
@@ -678,7 +776,8 @@
         "не создавать CHANGELOG.md без подтверждения человека",
         "не дублировать внутри ait-setup процедуру ait-changelog",
         "не считать журнал изменений обязательным без решения проекта"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-changelog-declined",
@@ -697,7 +796,13 @@
           "purpose": "содержит правило отказа от журнала изменений"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "явно назван отказ человека от журнала изменений",
@@ -707,7 +812,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент принимает отказ, но никак не закрепляет его в правилах проекта.",
             "expected_conclusion": "отказ от журнала изменений нужно фиксировать в .ai-dev-team/state.yml, чтобы не повторять тот же вопрос",
             "acceptable_fix_direction": "обновить .ai-dev-team/state.yml и записать правило по смыслу"
@@ -743,7 +851,8 @@
       "must_not": [
         "не оставлять отказ от журнала незакреплённым в .ai-dev-team/state.yml",
         "не создавать CHANGELOG.md вопреки решению человека"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-decision-records-declined",
@@ -762,7 +871,13 @@
           "purpose": "определяет поле setup.decision_records и значение declined"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "явно назван отказ человека от журналов решений",
@@ -773,7 +888,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент принимает отказ от журналов решений только в ответе и не сохраняет его для повторной настройки.",
             "expected_conclusion": "отказ нужно записать в отдельное поле состояния проекта, чтобы не повторять предложение",
             "acceptable_fix_direction": "записать setup.decision_records.status: declined в .ai-dev-team/state.yml и не добавлять список journals"
@@ -815,7 +933,8 @@
         "не записывать отказ в setup.changelog",
         "не добавлять journals при status: declined",
         "не повторять предложение без нового запроса человека"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-apm-transitive-orphans-stop",
@@ -838,7 +957,13 @@
           "purpose": "правило остановки при диагностическом риске APM в проекте-потребителе"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "показано, что проект остаётся потребителем ai-dev-team через одну прямую зависимость APM",
@@ -849,14 +974,21 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент предлагает добавить транзитивные пакеты ai-dev-team как прямые зависимости проекта, чтобы обойти ошибку no-orphaned-packages.",
             "expected_conclusion": "намерение зависимости проекта не должно меняться ради зелёного аудита, если проблема похожа на ошибочную классификацию транзитивных пакетов",
             "acceptable_fix_direction": "остановиться, зафиксировать диагностический риск APM и предложить отдельное исправление APM-аудита"
           },
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "агент рассматривает apm prune как исправление, хотя команда удалит навыки, нужные установленному продукту или правилам проекта.",
             "expected_conclusion": "apm prune нельзя применять как настройку проекта, если он удаляет транзитивные навыки продукта",
             "acceptable_fix_direction": "не запускать prune без отдельного решения человека и проверки последствий"
@@ -898,7 +1030,8 @@
         "не запускать apm prune как исправление без проверки, какие навыки будут удалены",
         "не принимать сбой no-orphaned-packages за доказательство ошибки apm.yml",
         "не продолжать настройку проекта через изменение зависимости без отдельного решения человека"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-autonomous-agreed-series",
@@ -913,7 +1046,11 @@
           "purpose": "границы автономной серии и правило завершения хода"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "PPRX-001"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "PPRX-001"
+      ],
       "expected_output": {
         "report_structure": [
           "зафиксированы границы автономной серии, включая действия и критерий завершения",
@@ -924,7 +1061,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-001"
+            ],
             "observed_problem": "агент после сообщения «продолжаю» завершает ход, хотя в согласованной области остаётся безопасное действие.",
             "expected_conclusion": "автономная серия продолжается без нового подтверждения до завершения или конкретного блокера.",
             "acceptable_fix_direction": "сохранить границы серии, выполнить ближайшее безопасное действие и не отправлять финальный ответ до терминального состояния."
@@ -962,7 +1102,8 @@
         "не завершать ход с невыполненным безопасным действием в согласованной области",
         "не требовать подтверждение перед уже согласованной однотипной правкой",
         "не объявлять исправимую ошибку средства окончательной остановкой"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-not-complete-after-partial-actions",
@@ -985,7 +1126,13 @@
           "purpose": "критерий завершения настройки"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "не сказано, что настройка закончена, если не проверены обязательные направления",
@@ -996,14 +1143,21 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент объявляет базовую настройку законченной после локальной правки Makefile и создания AGENTS.md, хотя остальные направления ait-setup не проверены и не закрыты.",
             "expected_conclusion": "частичные стартовые правки не доказывают завершение настройки проекта",
             "acceptable_fix_direction": "перед ответом о завершении пройти критерий завершения и показать статусы обязательных направлений"
           },
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "следующий шаг формулируется как готовность к коммиту вместо ближайшего блокирующего вопроса по незакрытому направлению.",
             "expected_conclusion": "если есть незакрытый обязательный пункт, результат должен назвать его и задать один вопрос",
             "acceptable_fix_direction": "не переходить к коммиту и не завершать настройку, пока обязательные направления не имеют явного статуса"
@@ -1045,7 +1199,8 @@
         "не считать AGENTS.md и Makefile достаточным результатом ait-setup сами по себе",
         "не заменять README, журнал изменений, корпус знаний, лицензию и подагентов общим словом «базовая настройка»",
         "не переходить к коммиту, если есть незакрытый обязательный вопрос настройки"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-git-index-policy-choice",
@@ -1064,7 +1219,9 @@
           "purpose": "показывает, задана ли действующая политика индекса"
         }
       ],
-      "required_corpus_claims": ["ASKL-006"],
+      "required_corpus_claims": [
+        "ASKL-006"
+      ],
       "expected_output": {
         "report_structure": [
           "установлено отсутствие политики добавления изменений в индекс Git",
@@ -1077,7 +1234,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006"],
+            "corpus_claims": [
+              "ASKL-006"
+            ],
             "observed_problem": "настройка проекта с Git завершается без явной политики добавления изменений в индекс.",
             "expected_conclusion": "политику должен отдельно выбрать человек, после чего рабочее правило записывается через сопровождение AGENTS.md",
             "acceptable_fix_direction": "показать два варианта политики и остановиться на одном вопросе о выборе"
@@ -1121,7 +1280,8 @@
         "не записывать правило до отдельного подтверждения",
         "не скрывать влияние на существующие изменения",
         "не требовать длинный текстовый ответ вместо номера"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-vague-project-profile",
@@ -1140,7 +1300,9 @@
           "purpose": "показывает, был ли профиль уже подтверждён"
         }
       ],
-      "required_corpus_claims": ["SREQ-138"],
+      "required_corpus_claims": [
+        "SREQ-138"
+      ],
       "expected_output": {
         "report_structure": [
           "общий ответ признан недостаточным для маршрутизации",
@@ -1152,7 +1314,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SREQ-138"],
+            "corpus_claims": [
+              "SREQ-138"
+            ],
             "observed_problem": "общее назначение проекта принимается как достаточное основание для одинаковой настройки проектов разных форм.",
             "expected_conclusion": "профиль проекта нужно уточнить до зависимых вопросов и маршрутов",
             "acceptable_fix_direction": "задать один пояснённый вопрос о результате, пользователях, взаимодействии и поставке"
@@ -1192,7 +1356,8 @@
         "не переходить к зависимым вопросам до профиля",
         "не выводить профиль из одного технического признака",
         "не навязывать одну форму смешанному проекту"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-operating-context-first-question",
@@ -1207,7 +1372,10 @@
           "purpose": "объясняет варианты рабочего контекста и порядок диалога"
         }
       ],
-      "required_corpus_claims": ["PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "объяснено влияние рабочего контекста на дальнейшие рекомендации",
@@ -1219,7 +1387,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["PPRX-001", "PPRX-002"],
+            "corpus_claims": [
+              "PPRX-001",
+              "PPRX-002"
+            ],
             "observed_problem": "настройка начинает профиль и последующие рекомендации без выяснения рабочего контекста проекта.",
             "expected_conclusion": "первым проектным вопросом после успешного аудита должен быть рабочий контекст",
             "acceptable_fix_direction": "объяснить развилку, разрешить смешанный или иной контекст и задать один вопрос"
@@ -1261,7 +1432,8 @@
         "не создавать ложную дихотомию",
         "не выводить контекст из косвенных признаков",
         "не назначать приоритеты факторов по одному ответу"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-noncommercial-decision-priorities",
@@ -1276,7 +1448,10 @@
           "purpose": "задаёт влияние некоммерческого контекста на рекомендацию"
         }
       ],
-      "required_corpus_claims": ["PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "некоммерческий контекст учтён как основание рекомендации",
@@ -1288,7 +1463,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["PPRX-001", "PPRX-002"],
+            "corpus_claims": [
+              "PPRX-001",
+              "PPRX-002"
+            ],
             "observed_problem": "агент предлагает стоимость, срок и сопровождение как универсально важные факторы некоммерческого проекта без бюджета и внешнего срока.",
             "expected_conclusion": "для некоммерческого контекста нужно сначала установить применимость этих факторов",
             "acceptable_fix_direction": "не включать их в исходную рекомендацию и оставить владельцу возможность назвать дополнительные факторы"
@@ -1329,7 +1507,8 @@
         "не исключать возможность добавить фактор по условиям проекта",
         "не подменять решение владельца готовым порядком",
         "не спрашивать рабочий контекст повторно"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-noncommercial-applicable-budget-and-deadline",
@@ -1344,7 +1523,10 @@
           "purpose": "задаёт проверку применимости стоимости и срока"
         }
       ],
-      "required_corpus_claims": ["PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "ограниченный бюджет и назначенная дата названы подтверждёнными условиями",
@@ -1356,7 +1538,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["PPRX-001", "PPRX-002"],
+            "corpus_claims": [
+              "PPRX-001",
+              "PPRX-002"
+            ],
             "observed_problem": "агент исключает стоимость и срок только из-за некоммерческого контекста, хотя проект ограничен грантом и датой мероприятия.",
             "expected_conclusion": "подтверждённые бюджет и срок делают соответствующие факторы применимыми",
             "acceptable_fix_direction": "включить стоимость и срок в кандидаты и оставить их порядок владельцу"
@@ -1396,7 +1581,8 @@
         "не исключать фактор только из-за некоммерческого контекста",
         "не игнорировать подтверждённые ограничения",
         "не принимать порядок факторов за владельца"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-readme-reader-derived-from-profile",
@@ -1415,7 +1601,11 @@
           "purpose": "отделяет внутренний анализ аудитории от вопроса человеку"
         }
       ],
-      "required_corpus_claims": ["HWD-018", "HWD-020", "SREQ-138"],
+      "required_corpus_claims": [
+        "HWD-018",
+        "HWD-020",
+        "SREQ-138"
+      ],
       "expected_output": {
         "report_structure": [
           "основной читатель README определён как разработчик приложения",
@@ -1426,7 +1616,11 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["HWD-018", "HWD-020", "SREQ-138"],
+            "corpus_claims": [
+              "HWD-018",
+              "HWD-020",
+              "SREQ-138"
+            ],
             "observed_problem": "агент спрашивает, кто основной читатель будущего README, хотя конкретная роль, задача и первое действие уже установлены профилем.",
             "expected_conclusion": "аудитория README является выводом из профиля, а не отдельным обязательным решением человека",
             "acceptable_fix_direction": "зафиксировать разработчика приложения как читателя и перейти к следующему незакрытому решению"
@@ -1467,7 +1661,8 @@
         "не предлагать общий вариант «Пользователь»",
         "не считать анализ аудитории отдельным обязательным решением человека",
         "не возвращаться к уже установленному профилю без противоречия"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-interface-checks-explained-choice",
@@ -1486,7 +1681,9 @@
           "purpose": "задаёт предметный смысл трёх уровней"
         }
       ],
-      "required_corpus_claims": ["SREQ-138"],
+      "required_corpus_claims": [
+        "SREQ-138"
+      ],
       "expected_output": {
         "report_structure": [
           "объяснено, что выбор задаёт критерий готовности интерфейсной задачи",
@@ -1498,7 +1695,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SREQ-138"],
+            "corpus_claims": [
+              "SREQ-138"
+            ],
             "observed_problem": "проекту предлагают одинаково названный уровень проверок без объяснения разных условий готовности и приёмки.",
             "expected_conclusion": "уровни нужно различить по действиям агента, блокирующему условию и участию человека",
             "acceptable_fix_direction": "объяснить последствия required, recommended и manual перед одним вопросом о выборе"
@@ -1538,7 +1737,8 @@
         "не использовать необъяснённый внутренний термин",
         "не смешивать обязательную, рекомендованную и ручную проверку",
         "не требовать длинный ответ вместо номера"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-subagent-policy-review-lifecycle",
@@ -1557,7 +1757,9 @@
           "purpose": "показывает формат состояния, срока и даты проверки"
         }
       ],
-      "required_corpus_claims": ["ASKL-006"],
+      "required_corpus_claims": [
+        "ASKL-006"
+      ],
       "expected_output": {
         "report_structure": [
           "отсутствующая дата определена как основание для повторной проверки",
@@ -1569,7 +1771,9 @@
         "findings": [
           {
             "severity": "medium",
-            "corpus_claims": ["ASKL-006"],
+            "corpus_claims": [
+              "ASKL-006"
+            ],
             "observed_problem": "существующая политика подагентов не имеет проверяемой даты последней успешной проверки.",
             "expected_conclusion": "политику нужно проверить без записи и отдельно согласовать срок и фиксацию результата",
             "acceptable_fix_direction": "делегировать проверку ai-setup-subagents и не менять состояние до подтверждения"
@@ -1609,7 +1813,8 @@
         "не считать политику бессрочно проверенной",
         "не записывать дату или изменения без подтверждения",
         "не дублировать процедуру ai-setup-subagents"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-typed-decision-journal-contract",
@@ -1628,7 +1833,11 @@
           "purpose": "задаёт предметное соответствие записи виду журнала"
         }
       ],
-      "required_corpus_claims": ["ADRG-001", "ADRG-014", "ASKL-006"],
+      "required_corpus_claims": [
+        "ADRG-001",
+        "ADRG-014",
+        "ASKL-006"
+      ],
       "expected_output": {
         "report_structure": [
           "подтверждённый путь docs/ADR сохранён как путь журнала ADR",
@@ -1641,7 +1850,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ADRG-001", "ADRG-014"],
+            "corpus_claims": [
+              "ADRG-001",
+              "ADRG-014"
+            ],
             "observed_problem": "агент предлагает нейтральное имя первой записи и объединяет договор журнала, организационные приоритеты и правило для агентов в одном ADR.",
             "expected_conclusion": "настройка должна сначала закрепить типизированный договор журнала, а первая запись должна ждать отдельного архитектурного решения",
             "acceptable_fix_direction": "предложить ADR-NNNN.md, создать договор в README.md и вынести приоритеты в отдельный поток решения"
@@ -1687,7 +1899,8 @@
         "не помещать организационную политику в ADR ради инициализации журнала",
         "не объединять несколько решений владельца одним подтверждением",
         "не переименовывать существующие журналы без отдельного решения"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-deployed-version-drift-stop",
@@ -1714,7 +1927,13 @@
           "purpose": "задаёт проверку развёрнутой копии до проектных вопросов"
         }
       ],
-      "required_corpus_claims": ["ASKL-006", "ASKL-009", "ASKL-010", "PPRX-001", "PPRX-002"],
+      "required_corpus_claims": [
+        "ASKL-006",
+        "ASKL-009",
+        "ASKL-010",
+        "PPRX-001",
+        "PPRX-002"
+      ],
       "expected_output": {
         "report_structure": [
           "до выводов о версии и профиле запущен apm audit --ci",
@@ -1725,14 +1944,21 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006", "PPRX-002"],
+            "corpus_claims": [
+              "ASKL-006",
+              "PPRX-002"
+            ],
             "observed_problem": "агент объявляет версию 0.20.4 активной по lock-файлу и продолжает настройку, хотя развёрнутый ait-setup отличается от разрешённого пакета.",
             "expected_conclusion": "lock-файл подтверждает разрешённый источник, но активную копию нужно проверить через apm audit --ci до любых решений настройки",
             "acceptable_fix_direction": "остановиться на дрейфе активного навыка, не менять проектные файлы и потребовать исправления установки с повторным аудитом"
           },
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-009", "ASKL-010", "PPRX-001"],
+            "corpus_claims": [
+              "ASKL-009",
+              "ASKL-010",
+              "PPRX-001"
+            ],
             "observed_problem": "после неверного вывода о версии агент задаёт вопросы о журнале изменений, корпусе знаний и схеме сообщений коммитов.",
             "expected_conclusion": "правила настройки нельзя применять после провала проверки активной копии",
             "acceptable_fix_direction": "не переходить к профилю и остальным направлениям до успешного повторного аудита"
@@ -1773,7 +1999,8 @@
         "не продолжать настройку после дрейфа активного ait-setup",
         "не менять проектные файлы до успешного повторного аудита",
         "не задавать вопросы о профиле, Git, журналах или корпусе знаний"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-commit-message-scheme-choice",
@@ -1792,7 +2019,13 @@
           "purpose": "задаёт дальнейшее соблюдение выбранной схемы"
         }
       ],
-      "required_corpus_claims": ["CCMT-001", "GTMJ-001", "GTMJ-002", "PGIT-001", "PGIT-002"],
+      "required_corpus_claims": [
+        "CCMT-001",
+        "GTMJ-001",
+        "GTMJ-002",
+        "PGIT-001",
+        "PGIT-002"
+      ],
       "expected_output": {
         "report_structure": [
           "предложены conventional-commits, gitmoji, pro-git и custom",
@@ -1805,7 +2038,13 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["CCMT-001", "GTMJ-001", "GTMJ-002", "PGIT-001", "PGIT-002"],
+            "corpus_claims": [
+              "CCMT-001",
+              "GTMJ-001",
+              "GTMJ-002",
+              "PGIT-001",
+              "PGIT-002"
+            ],
             "observed_problem": "настройка предлагает одну схему как безусловное значение по умолчанию.",
             "expected_conclusion": "четыре схемы имеют разные последствия и требуют выбора владельца проекта",
             "acceptable_fix_direction": "предложить четыре варианта с кратким сравнением и одним вопросом"
@@ -1849,7 +2088,8 @@
         "не смешивать схемы",
         "не хранить выбор только в .ai-dev-team/state.yml",
         "не задавать больше одного обязательного вопроса"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-commit-message-scheme-sequential-question",
@@ -1864,7 +2104,13 @@
           "purpose": "задаёт открытый вопрос для среды без разрешённого механизма выбора"
         }
       ],
-      "required_corpus_claims": ["CCMT-001", "GTMJ-001", "GTMJ-002", "PGIT-001", "PGIT-002"],
+      "required_corpus_claims": [
+        "CCMT-001",
+        "GTMJ-001",
+        "GTMJ-002",
+        "PGIT-001",
+        "PGIT-002"
+      ],
       "expected_output": {
         "report_structure": [
           "кратко объяснено, зачем нужно определить оформление сообщений коммитов",
@@ -1875,7 +2121,13 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["CCMT-001", "GTMJ-001", "GTMJ-002", "PGIT-001", "PGIT-002"],
+            "corpus_claims": [
+              "CCMT-001",
+              "GTMJ-001",
+              "GTMJ-002",
+              "PGIT-001",
+              "PGIT-002"
+            ],
             "observed_problem": "агент спрашивает, какую из трёх названных схем выбрать, хотя режим запрещает текстовый вопрос с несколькими вариантами и не предоставляет селектор.",
             "expected_conclusion": "без разрешённого механизма выбора нужен последовательный короткий вопрос без списка схем и без рекомендации, имитирующей вариант меню",
             "acceptable_fix_direction": "сначала спросить, нужны ли автоматическое определение версии и журнал изменений, а сопоставлять ответы с поддерживаемой схемой после ответа человека"
@@ -1917,7 +2169,8 @@
         "не рекомендовать одну схему как замену недоступного селектора",
         "не выбирать схему молча",
         "не задавать больше одного обязательного вопроса"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-blocks-without-concept",
@@ -1982,7 +2235,8 @@
         "не считать концепцию необязательной",
         "не выбирать расположение концепции молча",
         "не продолжать содержательную настройку как будто замысел известен"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-creates-impact-graph",
@@ -2058,7 +2312,8 @@
         "не копировать шаблон как модель проекта",
         "не завершать настройку с несопоставленным путём",
         "не хранить указатель только в служебном состоянии"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-subagent-policy-legacy-schema",
@@ -2077,7 +2332,9 @@
           "purpose": "задаёт актуальную схему классов исполнения"
         }
       ],
-      "required_corpus_claims": ["ASKL-006"],
+      "required_corpus_claims": [
+        "ASKL-006"
+      ],
       "expected_output": {
         "report_structure": [
           "существующая политика определена как старая схема ролей",
@@ -2088,7 +2345,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-006"],
+            "corpus_claims": [
+              "ASKL-006"
+            ],
             "observed_problem": "свежая дата проверки скрывает старую политику, которая не задаёт классы исполнения и назначения оснастки.",
             "expected_conclusion": "срок проверки не отменяет переход на актуальную схему подагентов.",
             "acceptable_fix_direction": "предложить переход и передать диагностику в ai-setup-subagents без записи"
@@ -2126,7 +2385,8 @@
         "не завершать настройку с незамеченной старой схемой ролей",
         "не изменять политику без подтверждения",
         "не выполнять процедуру ai-setup-subagents внутри ait-setup"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-setup-result-record-adopted-sdd",
@@ -2155,7 +2415,10 @@
           "purpose": "задаёт рабочий протокол последующих задач"
         }
       ],
-      "required_corpus_claims": ["SDDP-001", "SPKT-001"],
+      "required_corpus_claims": [
+        "SDDP-001",
+        "SPKT-001"
+      ],
       "expected_output": {
         "report_structure": [
           "решение владельца отделено от оценки применимости",
@@ -2168,7 +2431,10 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["SDDP-001", "SPKT-001"],
+            "corpus_claims": [
+              "SDDP-001",
+              "SPKT-001"
+            ],
             "observed_problem": "принятый подход пока не сохранён между сессиями и не влияет на маршрутизацию.",
             "expected_conclusion": "нужно согласованно обновить состояние и рабочее правило",
             "acceptable_fix_direction": "записать setup.sdd и условное правило применения ait-sdd"
@@ -2209,7 +2475,8 @@
         "не включать подход в профиль проекта",
         "не хранить решение только в одном слое",
         "не навязывать формат артефактов"
-      ]
+      ],
+      "artifact_change": true
     }
   ]
 }

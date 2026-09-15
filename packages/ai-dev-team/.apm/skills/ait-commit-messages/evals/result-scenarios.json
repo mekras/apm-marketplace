@@ -40,7 +40,10 @@
           "purpose": "задаёт синтаксис Conventional Commits"
         }
       ],
-      "required_corpus_claims": ["CCMT-001", "ASKL-010"],
+      "required_corpus_claims": [
+        "CCMT-001",
+        "ASKL-010"
+      ],
       "expected_output": {
         "report_structure": [
           "названа схема conventional-commits",
@@ -51,7 +54,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["CCMT-001"],
+            "corpus_claims": [
+              "CCMT-001"
+            ],
             "observed_problem": "обобщающий заголовок не содержит обязательного типа Conventional Commits.",
             "expected_conclusion": "сообщение должно начинаться с типа и описывать добавленную возможность настройки",
             "acceptable_fix_direction": "использовать заголовок вида feat(setup): offer commit message schemes"
@@ -89,7 +94,8 @@
         "не опускать тип",
         "не смешивать схему с Gitmoji",
         "не добавлять BREAKING CHANGE без основания"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-commit-messages-result-gitmoji-shortcode",
@@ -100,7 +106,11 @@
           "purpose": "задаёт форму Gitmoji и представление эмодзи"
         }
       ],
-      "required_corpus_claims": ["GTMJ-001", "GTMJ-002", "ASKL-010"],
+      "required_corpus_claims": [
+        "GTMJ-001",
+        "GTMJ-002",
+        "ASKL-010"
+      ],
       "expected_output": {
         "report_structure": [
           "названа схема gitmoji",
@@ -110,7 +120,10 @@
         "findings": [
           {
             "severity": "medium",
-            "corpus_claims": ["GTMJ-001", "GTMJ-002"],
+            "corpus_claims": [
+              "GTMJ-001",
+              "GTMJ-002"
+            ],
             "observed_problem": "Unicode-эмодзи нарушает выбранный проектом формат shortcode.",
             "expected_conclusion": "форма Gitmoji должна учитывать отдельный выбор представления эмодзи",
             "acceptable_fix_direction": "использовать :bug: перед кратким описанием"
@@ -138,11 +151,15 @@
         "результат соблюдает assertions и не нарушает must_not"
       ],
       "evaluation_surface": "применение Gitmoji с выбранным представлением эмодзи",
-      "assertions": ["Результат применяет Gitmoji.", "Результат соблюдает формат shortcode."],
+      "assertions": [
+        "Результат применяет Gitmoji.",
+        "Результат соблюдает формат shortcode."
+      ],
       "must_not": [
         "не заменять короткий код Unicode-эмодзи",
         "не смешивать Gitmoji с Conventional Commits"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-commit-messages-result-pro-git-russian",
@@ -153,7 +170,11 @@
           "purpose": "задаёт рекомендации Pro Git и форму русского заголовка"
         }
       ],
-      "required_corpus_claims": ["PGIT-001", "PGIT-002", "ASKL-010"],
+      "required_corpus_claims": [
+        "PGIT-001",
+        "PGIT-002",
+        "ASKL-010"
+      ],
       "expected_output": {
         "report_structure": [
           "названа схема pro-git",
@@ -163,7 +184,10 @@
         "findings": [
           {
             "severity": "medium",
-            "corpus_claims": ["PGIT-001", "PGIT-002"],
+            "corpus_claims": [
+              "PGIT-001",
+              "PGIT-002"
+            ],
             "observed_problem": "русский заголовок в инфинитиве или повелительном наклонении расходится с языковой адаптацией схемы.",
             "expected_conclusion": "заголовок должен кратко описывать завершённый результат",
             "acceptable_fix_direction": "использовать Добавлена проверка пустого адреса электронной почты"
@@ -198,7 +222,8 @@
       "must_not": [
         "не использовать инфинитив или повелительное наклонение в русском заголовке",
         "не выдавать ориентир длины за синтаксис Git"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-commit-messages-result-custom",
@@ -213,7 +238,9 @@
           "purpose": "задаёт требования к собственной схеме"
         }
       ],
-      "required_corpus_claims": ["ASKL-010"],
+      "required_corpus_claims": [
+        "ASKL-010"
+      ],
       "expected_output": {
         "report_structure": [
           "названа схема custom",
@@ -224,7 +251,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-010"],
+            "corpus_claims": [
+              "ASKL-010"
+            ],
             "observed_problem": "агент игнорирует закреплённый формат собственной схемы и подставляет тип Conventional Commits.",
             "expected_conclusion": "сообщение должно соблюдать формат и примеры, подтверждённые проектом",
             "acceptable_fix_direction": "использовать заголовок вида «Тесты — добавлена проверка пустого адреса электронной почты»"
@@ -262,7 +291,8 @@
         "не выдумывать правила внешней схемы",
         "не менять подтверждённый формат",
         "не добавлять неподтверждённые последствия"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-commit-messages-result-conflicting-settings-stop",
@@ -273,7 +303,9 @@
           "purpose": "задаёт остановку при расхождении источников правила"
         }
       ],
-      "required_corpus_claims": ["ASKL-010"],
+      "required_corpus_claims": [
+        "ASKL-010"
+      ],
       "expected_output": {
         "report_structure": [
           "названо расхождение двух источников настройки",
@@ -283,7 +315,9 @@
         "findings": [
           {
             "severity": "high",
-            "corpus_claims": ["ASKL-010"],
+            "corpus_claims": [
+              "ASKL-010"
+            ],
             "observed_problem": "рабочая инструкция и файл состояния задают разные схемы.",
             "expected_conclusion": "автоматический выбор одной схемы создаст непроверяемое расхождение истории",
             "acceptable_fix_direction": "остановиться и запросить одно решение владельца"
@@ -315,7 +349,11 @@
         "Результат останавливается до решения владельца.",
         "Результат не выбирает схему по скрытому приоритету."
       ],
-      "must_not": ["не выбирать схему молча", "не готовить сообщение до разрешения конфликта"]
+      "must_not": [
+        "не выбирать схему молча",
+        "не готовить сообщение до разрешения конфликта"
+      ],
+      "artifact_change": false
     }
   ]
 }

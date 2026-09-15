@@ -81,7 +81,8 @@
         "не пропускать неизвестный внешний компонент",
         "не объявлять полный охват до классификации",
         "не использовать закрытый перечень проверок"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-impact-priority",
@@ -164,7 +165,8 @@
         "не начинать с формального дефекта",
         "не считать ориентирование проверкой концепции",
         "не открывать динамический выбор сразу после концепции"
-      ]
+      ],
+      "artifact_change": true
     },
     {
       "id": "ait-project-revalidation-result-knowledge-second",
@@ -241,7 +243,8 @@
         "не превращать допуск в полную формальную проверку",
         "не делать общий вывод при неизвестном составе или происхождении",
         "не пропускать смысловую проверку источников и утверждений"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-blocker-group",
@@ -311,7 +314,8 @@
         "не дробить согласованную группу на повторные подтверждения",
         "не менять файлы вне границы",
         "не выдавать промежуточную сводку за итог"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-resume-change",
@@ -376,7 +380,8 @@
         "не терять сохранённые проблемы и решения",
         "не продолжать по устаревшему снимку",
         "не считать новый навык неприменимым без анализа"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-accept-verified-snapshot",
@@ -443,7 +448,8 @@
         "не считать старое решение достаточным без успешной проверки",
         "не принимать пути вне выбранных проблем",
         "не продолжать при изменении области после прерывания"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-manual-controller",
@@ -515,7 +521,8 @@
         "не приравнивать отсутствие автоматического нового хода к отсутствию поддержки целей",
         "не завершать текущий ход только из-за отсутствия автоматического продолжения",
         "не терять сохранённое состояние"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-human-readable-requirement-names",
@@ -579,7 +586,8 @@
         "не выводить голые идентификаторы требований",
         "не требовать от человека знания структуры требований",
         "не заменять название служебным кодом проблемы"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-self-contained-decision-handoff",
@@ -649,7 +657,8 @@
         "не прятать вопрос среди отчёта этапа",
         "не повторять критерии приёмки или остаточные риски",
         "не заменять последствия перечнем технических изменений"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-read-only-full-review",
@@ -714,7 +723,8 @@
         "не считать полную проверку разрешением исправлять",
         "не отказываться от полного охвата из-за режима без записи",
         "не менять файлы до явного согласия"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-reject-incomplete-final-report",
@@ -776,7 +786,8 @@
         "не объявлять полную проверку завершённой при running",
         "не заменять assert-terminal успешными тестами",
         "не скрывать next_action"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-terminal-status",
@@ -849,7 +860,8 @@
         "не завершать при блокере",
         "не завершать при непроверенной области",
         "не завершать цель раньше предметного состояния"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-reject-bulk-self-attestation",
@@ -924,7 +936,8 @@
         "не принимать успешный вывод без попытки опровержения",
         "не считать файл контракта проверяемой поверхностью",
         "не завершать процесс по структурному валидатору"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-consolidate-readme-before-decision",
@@ -999,7 +1012,8 @@
         "не считать UX-проверку заменой ait-readme",
         "не считать профильный навык заменой роли читателя",
         "не выполнять несвязанные проверки ради готовности README"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-accept-confirmed-external-input",
@@ -1068,7 +1082,8 @@
         "не требовать проверки исправления для входного файла",
         "не обходить контроллер правкой служебного состояния",
         "не считать подтверждённый вход проверенным"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-keeps-concept-and-requirements-separate",
@@ -1141,7 +1156,8 @@
         "не добавлять функциональный контур в концепцию",
         "не смешивать две профильные проверки",
         "не пропускать возможный пробел требований"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-consumes-project-impact-graph",
@@ -1212,7 +1228,8 @@
         "не открывать только первый уровень влияния",
         "не завершать проход с незакрытой вершиной",
         "не подменять граф обоснованием ручного приоритета"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-waiting-decision-does-not-repeat",
@@ -1272,7 +1289,8 @@
         "не сообщать, что ответа по-прежнему нет",
         "не повторять сохранённый вопрос",
         "не менять waiting_decision на blocked"
-      ]
+      ],
+      "artifact_change": false
     },
     {
       "id": "ait-project-revalidation-result-blocking-finding-stops-unrelated-work",
@@ -1330,7 +1348,8 @@
       "must_not": [
         "не переходить к коду до закрытия блокера",
         "не считать независимость области основанием обхода контроля"
-      ]
+      ],
+      "artifact_change": false
     }
   ]
 }
