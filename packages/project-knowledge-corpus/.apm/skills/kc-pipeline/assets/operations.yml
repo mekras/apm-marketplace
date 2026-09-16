@@ -44,12 +44,17 @@ stages:
         required: true
   # Для --run-pipeline добавьте исполнители по именам очередей:
   # content_selection, fetch, transcribe, normalize, statements,
-  # traceability, semantic_review, strong_review, corroboration, source_check,
+  # traceability, semantic_review, strong_review, corroboration, source_check, verification,
   # concepts, impact_audit, apply_changes и corpus_validation.
   # Исполнитель первичного контура должен изменить машиночитаемую очередь.
   # Успешный исполнитель глобальной стадии закрывает её в состоянии прохода.
   # Отсутствие команды не останавливает агентный kc-pipeline: агент обрабатывает
-  # ограниченный содержательный пакет профильным навыком и снова строит очередь.
+  # ограниченный содержательный пакет профильным навыком и снова строит очередь,
+  # а затем закрывает стадию только через --complete-global-stage --evidence
+  # (см. references/operations-contract.md); прямая правка файла состояния
+  # запрещена. Стадию с зарегистрированной, но падающей командой чините саму
+  # команду или снимайте её через kc-setup — ручное закрытие такую стадию не
+  # обходит.
   # paused_resources оставляйте для недоступности команды и агента по ресурсу.
   # Для тяжёлой стадии можно объявить минимальный резерв и пиковый расход диска:
   # resources:

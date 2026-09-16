@@ -43,6 +43,7 @@ QUEUE_ORDER = (
     "strong_review",
     "corroboration",
     "source_check",
+    "verification",
     "concepts",
     "impact_audit",
     "apply_changes",
@@ -719,7 +720,11 @@ def queue_name(
         raise OperationsError(
             f"Единица {item.item_id} договора версии 2 должна использовать verification_assessed."
         )
-    if stage in {"source_checked", "rejected", ""}:
+    if stage == "source_checked":
+        if item.item_dir is None or not (item.item_dir / "verification.yml").is_file():
+            return "verification", "внешняя сверка и актуальность снимка не записаны", None
+        return None
+    if stage in {"rejected", ""}:
         return None
     raise OperationsError(
         f"Единица {item.item_id} содержит неизвестную или неподдерживаемую стадию: {stage}"
@@ -1372,6 +1377,39 @@ def run_operational_check(
     return OperationalCheckResult(process.returncode, tuple(errors), blockers, findings("quality_warnings"), findings("suppressed"))
 
 
+EXECUTOR_NOT_CONFIGURED_HINT = (
+    "закрыть вручную после содержательной работы можно через --complete-global-stage"
+)
+
+
+def format_completed_global_stages(run_state: dict[str, Any]) -> str:
+    completed = run_state.get("completed_global_stages", [])
+    if not completed:
+        return "нет"
+    completions = run_state.get("global_stage_completions", {})
+    if not isinstance(completions, dict):
+        completions = {}
+    parts = []
+    for stage in completed:
+        manual = completions.get(stage)
+        if isinstance(manual, dict) and manual.get("evidence"):
+            evidence = ", ".join(manual["evidence"])
+            parts.append(f"{stage} (вручную: {evidence})")
+        else:
+            parts.append(stage)
+    return ", ".join(parts)
+
+
+def format_resource_waiting_lines(run_state: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    for entry in run_state.get("resource_waiting", []):
+        if not isinstance(entry, dict):
+            continue
+        hint = f"; {EXECUTOR_NOT_CONFIGURED_HINT}" if entry.get("reason") == "executor_not_configured" else ""
+        lines.append(f"  - {entry.get('queue')}: {entry.get('reason')}{hint}")
+    return lines
+
+
 def render_report(
     corpus_root: Path,
     queues: dict[str, list[dict[str, str]]],
@@ -1413,10 +1451,8 @@ def render_report(
                 "- очередей в ожидании ресурсов: "
                 f"{len(run_state.get('resource_waiting', []))}"
             ),
-            (
-                "- завершённые глобальные стадии: "
-                f"{', '.join(run_state.get('completed_global_stages', [])) or 'нет'}"
-            ),
+            *format_resource_waiting_lines(run_state),
+            f"- завершённые глобальные стадии: {format_completed_global_stages(run_state)}",
             (
                 "- активный исполнитель: "
                 + (
@@ -1520,7 +1556,7 @@ def read_run_state(path: Path) -> dict[str, Any] | None:
         raise OperationsError(f"Состояние прохода {path} содержит неверные счётчики.")
     queues = data.get("queues")
     if isinstance(queues, dict):
-        for stage in GLOBAL_STAGES:
+        for stage in QUEUE_ORDER:
             queues.setdefault(stage, [])
     if not isinstance(queues, dict) or any(
         not isinstance(queues.get(name), list)
@@ -1537,6 +1573,41 @@ def read_run_state(path: Path) -> dict[str, Any] | None:
         raise OperationsError(
             f"Состояние прохода {path} содержит неверные глобальные стадии."
         )
+    global_stage_completions = data.get("global_stage_completions")
+    if global_stage_completions is not None:
+        if not isinstance(global_stage_completions, dict):
+            raise OperationsError(
+                f"Состояние прохода {path} содержит неверный global_stage_completions."
+            )
+        for stage, completion in global_stage_completions.items():
+            if stage not in GLOBAL_STAGES or stage not in completed_global_stages:
+                raise OperationsError(
+                    f"Состояние прохода {path} содержит запись global_stage_completions "
+                    f"для стадии вне completed_global_stages: {stage}."
+                )
+            if not isinstance(completion, dict):
+                raise OperationsError(
+                    f"Состояние прохода {path} содержит неверную запись global_stage_completions "
+                    f"для стадии {stage}."
+                )
+            completed_by = completion.get("completed_by")
+            completed_at = completion.get("completed_at")
+            evidence = completion.get("evidence")
+            note = completion.get("note")
+            if (
+                not isinstance(completed_by, str)
+                or not completed_by
+                or not isinstance(completed_at, str)
+                or not completed_at
+                or not isinstance(evidence, list)
+                or not evidence
+                or not all(isinstance(item, str) and item for item in evidence)
+                or (note is not None and not isinstance(note, str))
+            ):
+                raise OperationsError(
+                    f"Состояние прохода {path} содержит неполную запись global_stage_completions "
+                    f"для стадии {stage}."
+                )
     return data
 
 
@@ -1702,6 +1773,9 @@ def start_run_state(
     completed_global_stages = (
         list(previous.get("completed_global_stages", [])) if resumable else []
     )
+    global_stage_completions = (
+        dict(previous.get("global_stage_completions", {})) if resumable else {}
+    )
     active_groups, group_count, overflow = decision_groups(queues, operations)
     return {
         "contract_version": 1,
@@ -1720,6 +1794,7 @@ def start_run_state(
         "human_decision_group_count": group_count,
         "human_decision_group_overflow": overflow,
         "completed_global_stages": completed_global_stages,
+        "global_stage_completions": global_stage_completions,
         "resource_waiting": [],
         "active_executor": None,
         "queues": queues,
@@ -1753,6 +1828,118 @@ def finish_run_state(
         "queues": result.queues,
         "message": result.message,
     }
+
+
+def complete_global_stage(
+    root: Path,
+    corpus_root: Path,
+    operations: dict[str, Any],
+    destination_state: Path,
+    stage: str,
+    evidence_args: list[str],
+    note: str | None,
+) -> int:
+    """Manually mark a global stage as done when no project command is configured for it.
+
+    This is the only sanctioned way to close ``concepts``, ``impact_audit``,
+    ``apply_changes`` or ``corpus_validation`` when the stage has no registered
+    executor: see ADR-0008. It never runs a command and never touches the
+    corpus; it only records who closed the stage and which artefact proves it.
+    """
+    if configured_commands(operations, stage):
+        raise OperationsError(
+            f"Для стадии {stage} зарегистрирован исполнитель; ручное закрытие запрещено. "
+            "Исправьте команду или явно снимите её из настроек операций через kc-setup."
+        )
+    with run_state_lock(destination_state):
+        previous_state = read_run_state(destination_state)
+        if previous_state is None:
+            raise OperationsError(
+                f"Состояние прохода {destination_state} не найдено; закрывать глобальную стадию нечем."
+            )
+        previous_state = reconcile_interrupted_run_state(destination_state, previous_state)
+        if previous_state.get("reason_code") == "executor_identity_unknown":
+            raise OperationsError(
+                "Нельзя закрыть глобальную стадию без надёжной идентичности предыдущего "
+                "исполнителя. Сначала подтвердите отсутствие его последствий."
+            )
+        if previous_state.get("status") == "completed":
+            raise OperationsError(
+                "Проход уже в статусе completed; закрывать отдельную глобальную стадию не требуется."
+            )
+        completed_global_stages = list(previous_state.get("completed_global_stages", []))
+        if stage in completed_global_stages:
+            print(f"Глобальная стадия {stage} уже закрыта; изменений не потребовалось.")
+            return 0
+        if not evidence_args:
+            raise OperationsError(
+                "--complete-global-stage требует минимум один --evidence с существующим артефактом."
+            )
+        evidence_paths: list[str] = []
+        for raw_path in evidence_args:
+            resolved = resolve_inside(root, raw_path, "Путь --evidence")
+            if not resolved.exists():
+                raise OperationsError(f"Путь --evidence не существует: {raw_path}")
+            evidence_paths.append(raw_path)
+        normalized_names = normalized_artifacts(operations)
+        queues_before = build_run_queues(
+            corpus_root, normalized_names, root, set(completed_global_stages)
+        )
+        pending_primary = [name for name in PRIMARY_QUEUES if queues_before[name]]
+        if pending_primary:
+            raise OperationsError(
+                "Первичный контур очередей не пуст: "
+                f"{', '.join(pending_primary)}. Ручное закрытие глобальной стадии допустимо "
+                "только когда первичный контур пуст."
+            )
+        pending_global = [name for name in GLOBAL_STAGES if queues_before[name]]
+        if not pending_global or pending_global[0] != stage:
+            expected = pending_global[0] if pending_global else "ни одной (все стадии уже закрыты)"
+            raise OperationsError(
+                f"Нарушен порядок глобальных стадий: следующая незакрытая стадия — {expected}, "
+                f"а не {stage}."
+            )
+        completed_at = datetime.now(UTC).isoformat()
+        completed_global_stages.append(stage)
+        completions = dict(previous_state.get("global_stage_completions", {}))
+        completions[stage] = {
+            "completed_by": "manual",
+            "completed_at": completed_at,
+            "evidence": evidence_paths,
+            "note": note,
+        }
+        new_queues = build_run_queues(
+            corpus_root, normalized_names, root, set(completed_global_stages)
+        )
+        active_groups, group_count, overflow = decision_groups(new_queues, operations)
+        resource_waiting = [
+            entry
+            for entry in previous_state.get("resource_waiting", [])
+            if isinstance(entry, dict) and new_queues.get(entry.get("queue"))
+        ]
+        updated_state = {
+            **previous_state,
+            "completed_global_stages": completed_global_stages,
+            "global_stage_completions": completions,
+            "queues": new_queues,
+            "available_task_count": available_task_count(new_queues),
+            "blocked_task_count": len(new_queues["human_decision"]),
+            "blocker_codes": blocker_codes(new_queues),
+            "human_decision_groups": active_groups,
+            "human_decision_group_count": group_count,
+            "human_decision_group_overflow": overflow,
+            "resource_waiting": resource_waiting,
+            "updated_at": completed_at,
+            "message": (
+                f"Глобальная стадия {stage} закрыта вручную (evidence: "
+                f"{', '.join(evidence_paths)})."
+            ),
+        }
+        write_run_state(destination_state, updated_state)
+    print(f"Глобальная стадия {stage} закрыта вручную.")
+    print(render_report(corpus_root, updated_state["queues"], [], None, [], None, updated_state))
+    print(f"Состояние прохода записано: {repo_relative(root, destination_state)}")
+    return 0
 
 
 def run_pipeline(
@@ -1946,6 +2133,28 @@ def parse_args() -> argparse.Namespace:
         help="Сверить сохранённое running-состояние с живым исполнителем без запуска очереди.",
     )
     parser.add_argument(
+        "--complete-global-stage",
+        choices=GLOBAL_STAGES,
+        help=(
+            "Пометить глобальную стадию без зарегистрированного исполнителя закрытой вручную, "
+            "не выполняя команд и не меняя корпус. Требует --evidence."
+        ),
+    )
+    parser.add_argument(
+        "--evidence",
+        action="append",
+        default=[],
+        dest="evidence",
+        help=(
+            "Репо-относительный путь к оставленному артефакту ручной работы для "
+            "--complete-global-stage; можно повторять."
+        ),
+    )
+    parser.add_argument(
+        "--note",
+        help="Необязательный поясняющий текст к ручному закрытию стадии для --complete-global-stage.",
+    )
+    parser.add_argument(
         "--max-steps",
         type=int,
         help="Ограничить число стадий в одной попытке, сохранив проход незавершённым.",
@@ -1992,6 +2201,30 @@ def main() -> int:
         raise OperationsError("--reconcile-state нельзя совмещать с запуском операций.")
     if args.operational_policy and not (args.operational_check or args.run_pipeline):
         raise OperationsError("--operational-policy требует --operational-check или --run-pipeline.")
+    if args.complete_global_stage and (
+        args.run_pipeline
+        or args.run_commands
+        or args.run_adapters
+        or args.reconcile_state
+        or args.rebuild_indexes
+    ):
+        raise OperationsError(
+            "--complete-global-stage нельзя совмещать с --run-pipeline, --run-commands, "
+            "--run-adapters, --reconcile-state или --rebuild-indexes."
+        )
+    if args.complete_global_stage and not operations_path:
+        raise OperationsError("Для --complete-global-stage нужен параметр --operations.")
+    if args.complete_global_stage:
+        destination_state = state_path(root, operations, args.state)
+        return complete_global_stage(
+            root,
+            corpus_root,
+            operations,
+            destination_state,
+            args.complete_global_stage,
+            args.evidence,
+            args.note,
+        )
     if not args.run_pipeline:
         items = load_items(corpus_root)
         queues = build_run_queues(
