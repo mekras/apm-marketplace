@@ -88,8 +88,8 @@ description: >
    файла, и не пиши «контур уже настроен» по факту его существования.
 11. Пройди по всем переносимым очередям и назови исполнителя каждой:
    `content_selection`, `fetch`, `transcribe`, `normalize`, `statements`,
-   `traceability`, `semantic_review`, `strong_review`, `corroboration`,
-   `source_check`, `concepts`, `impact_audit`, `apply_changes`,
+   `coverage_gap`, `traceability`, `semantic_review`, `strong_review`,
+   `corroboration`, `source_check`, `concepts`, `impact_audit`, `apply_changes`,
    `corpus_validation`. Раздели их так:
    - механические — `fetch`, `transcribe`, `traceability`, `source_check`,
      `corpus_validation`, а также пересборка указателей. Их результат выводится
@@ -97,11 +97,12 @@ description: >
      получить проектную команду или адаптер. Назови очередь, входы, результат,
      границу записи, безопасный повтор и способ проверки.
    - смысловые — `content_selection`, `normalize`, `statements`,
-     `semantic_review`, `strong_review`, `corroboration`, `concepts`,
-     `impact_audit`, `apply_changes`. Для них предложи исполнителя-агента, если
-     оснастка проекта позволяет вызывать агента командой. Если не позволяет,
-     прямо скажи, что очередь останется агентной, и не создавай для неё
-     команду.
+     `coverage_gap`, `semantic_review`, `strong_review`, `corroboration`,
+     `concepts`, `impact_audit`, `apply_changes`. Для них предложи
+     исполнителя-агента, если оснастка проекта позволяет вызывать агента
+     командой. Если не позволяет, прямо скажи, что очередь останется агентной,
+     и не создавай для неё команду. `coverage_gap` появляется только у
+     источников с `long_source: true` и строится из их `source-map.yml`.
    Механическую очередь без исполнителя не оставляй молча. Если работающего
    скрипта нет, предложи его написать конкретно: назначение, входы, результат,
    пути записи и проверку. Оцени объём ручной работы, которую он снимет: число

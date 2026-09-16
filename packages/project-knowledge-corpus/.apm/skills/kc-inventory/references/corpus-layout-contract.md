@@ -337,10 +337,21 @@ python3 .apm/skills/kc-inventory/scripts/record-snapshot-verification.py \
 - `coverage.units` либо `coverage_absence_reason`.
 
 Карта охвата связывает структуру с обработкой. Для каждой структурной единицы в
-`coverage.units` нужен `unit_id` и статус. Рекомендуемые статусы:
-`extracted`, `no_significant_content`, `postponed`. Для `postponed` обязательна
-причина. На ранней стадии нормализации, когда карта охвата ещё не заведена,
-вместо неё допустим `coverage_absence_reason`.
+`coverage.units` нужен `unit_id` и статус. Допустимые статусы закрытым
+перечнем: `extracted`, `no_significant_content`, `postponed` (также принимается
+написание `отложено`). Другое значение — ошибка договора. Для `postponed`
+обязательны причина (`reason`) и код блокера (`blocker_code`) из закрытого
+перечня `kc-pipeline`; для кодов `access_unavailable` и `source_unavailable`
+дополнительно нужны не менее двух сохранённых `automatic_attempts` — так же,
+как для заблокированной единицы `item.yml`. На ранней стадии нормализации,
+когда карта охвата ещё не заведена, вместо неё допустим
+`coverage_absence_reason`.
+
+Планировщик `kc-pipeline` строит из этой карты очередь `coverage_gap`:
+структурная единица без записи в `coverage.units`, с недопустимым статусом или
+`postponed` без валидного `blocker_code` держит стадию извлечения утверждений
+открытой. `postponed` с валидным `blocker_code` уходит в `human_decision`. См.
+ADR-0009.
 
 `source-map.yml` может хранить:
 

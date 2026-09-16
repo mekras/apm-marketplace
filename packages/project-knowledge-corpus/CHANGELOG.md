@@ -2,6 +2,19 @@
 
 Все заметные изменения проекта документируются в этом файле.
 
+## [0.20.6]
+
+- `run-corpus-operations.py` строит новую очередь `coverage_gap` из
+  `source-map.yml` каждого длинного источника (`long_source: true`):
+  незакрытая структурная единица или `postponed` без валидного `blocker_code`
+  держит проход незавершённым наравне с прочими очередями, а `postponed` с
+  валидным `blocker_code` уходит в `human_decision`. Критерий `completed`
+  учитывает эту очередь автоматически. См. ADR-0009.
+- `validate-corpus-layout.py` сузил допустимые статусы `coverage.units` до
+  `extracted`, `no_significant_content` и `postponed` (с учётом синонима
+  `отложено`) и требует для `postponed` код блокера из закрытого перечня
+  `kc-pipeline`, а не только произвольный текст `reason`.
+
 ## [0.20.5]
 
 - `kc-pipeline` теперь направляет legacy-единицы на стадии `source_checked` без

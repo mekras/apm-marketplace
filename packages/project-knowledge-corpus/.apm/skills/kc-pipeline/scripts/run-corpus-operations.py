@@ -38,6 +38,7 @@ QUEUE_ORDER = (
     "transcribe",
     "normalize",
     "statements",
+    "coverage_gap",
     "traceability",
     "semantic_review",
     "strong_review",
@@ -769,6 +770,120 @@ def build_queues(items: list[CorpusItem], normalized_names: tuple[str, ...], roo
     return queues
 
 
+def coverage_gap_tasks(
+    corpus_root: Path, root: Path
+) -> list[tuple[str, dict[str, str]]]:
+    """Build coverage_gap/human_decision tasks from long-source coverage maps.
+
+    Only sources with long_source: true and an existing source-map.yml are
+    inspected. Structure units without a matching coverage.units entry, with
+    a status outside the closed set, or postponed without a valid blocker
+    code become coverage_gap tasks. Postponed units with a valid blocker code
+    escalate to human_decision, mirroring the item.yml/statements.yml
+    escalation path.
+    """
+    tasks: list[tuple[str, dict[str, str]]] = []
+    for source in load_sources(corpus_root):
+        if source.card.get("long_source") is not True:
+            continue
+        source_map_path = source.source_dir / "source-map.yml"
+        if not source_map_path.is_file():
+            continue
+        data = load_yaml(source_map_path)
+        if not isinstance(data, dict):
+            raise OperationsError(f"source-map.yml должен быть словарём YAML: {source_map_path}")
+        structure = data.get("structure")
+        structure_units = structure.get("units") if isinstance(structure, dict) else None
+        if not isinstance(structure_units, list):
+            continue
+        expected_ids = [
+            unit["id"]
+            for unit in structure_units
+            if isinstance(unit, dict) and isinstance(unit.get("id"), str)
+        ]
+        coverage = data.get("coverage")
+        coverage_units = coverage.get("units") if isinstance(coverage, dict) else None
+        coverage_by_id: dict[str, dict[str, Any]] = {}
+        if isinstance(coverage_units, list):
+            for unit in coverage_units:
+                if isinstance(unit, dict) and isinstance(unit.get("unit_id"), str):
+                    coverage_by_id[unit["unit_id"]] = unit
+        relative_map_path = repo_relative(root, source_map_path)
+        for unit_id in expected_ids:
+            task_id = f"{source.source_id}:{unit_id}"
+            title = f"{source.source_id}: {unit_id}"
+            record = coverage_by_id.get(unit_id)
+            if record is None:
+                tasks.append(
+                    (
+                        "coverage_gap",
+                        {
+                            "id": task_id,
+                            "source_id": source.source_id,
+                            "path": relative_map_path,
+                            "title": title,
+                            "reason": "структурная единица отсутствует в coverage.units",
+                        },
+                    )
+                )
+                continue
+            status = record.get("status")
+            if status not in {"extracted", "no_significant_content", "postponed"}:
+                tasks.append(
+                    (
+                        "coverage_gap",
+                        {
+                            "id": task_id,
+                            "source_id": source.source_id,
+                            "path": relative_map_path,
+                            "title": title,
+                            "reason": f"недопустимый статус охвата: {status!r}",
+                        },
+                    )
+                )
+                continue
+            if status != "postponed":
+                continue
+            blocker_code = record.get("blocker_code")
+            if blocker_code not in BLOCKER_CODES:
+                tasks.append(
+                    (
+                        "coverage_gap",
+                        {
+                            "id": task_id,
+                            "source_id": source.source_id,
+                            "path": relative_map_path,
+                            "title": title,
+                            "reason": "статус postponed без кода блокера из закрытого перечня",
+                        },
+                    )
+                )
+                continue
+            validate_access_escalation(
+                blocker_code,
+                record.get("automatic_attempts"),
+                f"Отложенная структурная единица {task_id}",
+            )
+            escalated = {
+                "id": task_id,
+                "source_id": source.source_id,
+                "path": relative_map_path,
+                "title": title,
+                "reason": "структурная единица отложена с кодом блокера, требуется решение владельца",
+                "blocker_code": blocker_code,
+            }
+            action_required = record.get("action_required")
+            automatic_attempts = record.get("automatic_attempts")
+            if isinstance(action_required, str) and action_required:
+                escalated["action_required"] = action_required
+            if isinstance(automatic_attempts, list) and all(
+                isinstance(attempt, str) and attempt for attempt in automatic_attempts
+            ):
+                escalated["automatic_attempts"] = automatic_attempts
+            tasks.append(("human_decision", escalated))
+    return tasks
+
+
 def build_run_queues(
     corpus_root: Path,
     normalized_names: tuple[str, ...],
@@ -776,6 +891,8 @@ def build_run_queues(
     completed_global_stages: set[str],
 ) -> dict[str, list[dict[str, str]]]:
     queues = build_queues(load_items(corpus_root), normalized_names, root)
+    for name, task in coverage_gap_tasks(corpus_root, root):
+        queues[name].append(task)
     for stage in GLOBAL_STAGES:
         if stage in completed_global_stages:
             continue

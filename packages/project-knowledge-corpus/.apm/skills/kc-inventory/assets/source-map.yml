@@ -34,6 +34,15 @@ coverage:
     - unit_id: chapter-01
       status: postponed # extracted | no_significant_content | postponed
       reason: "Фрагмент ещё не проверен человеком."
+      # Для postponed укажите код блокера из закрытого перечня kc-pipeline.
+      # Для access_unavailable и source_unavailable нужны не менее двух
+      # сохранённых automatic_attempts, иначе задача уйдёт не в human_decision,
+      # а останется ошибкой договора.
+      blocker_code: owner_decision_required
+      action_required: "Выбрать один из двух несовместимых вариантов извлечения."
+      automatic_attempts:
+        - "Проверено безопасное проектное умолчание."
+        - "Случай передан в класс усиленной проверки."
       artifacts:
         - book/chapter-01/normalized.md
       statements:

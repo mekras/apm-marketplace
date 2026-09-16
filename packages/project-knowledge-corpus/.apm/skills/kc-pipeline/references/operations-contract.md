@@ -148,7 +148,7 @@ python3 .apm/skills/kc-pipeline/scripts/run-corpus-operations.py \
 
 Имена групп в `stages` для полного прохода совпадают с очередями:
 `content_selection`, `fetch`, `transcribe`, `normalize`, `statements`,
-`traceability`, `semantic_review`, `strong_review`, `corroboration`,
+`coverage_gap`, `traceability`, `semantic_review`, `strong_review`, `corroboration`,
 `source_check`, `verification`, `concepts`, `impact_audit`, `apply_changes` и
 `corpus_validation`.
 Исполнитель может использовать модель, локальный скрипт или внешний сервис,
@@ -365,9 +365,15 @@ python3 .apm/skills/kc-pipeline/scripts/run-corpus-operations.py \
 ## Очереди
 
 Средство использует переносимые очереди `content_selection`, `fetch`,
-`transcribe`, `normalize`, `statements`, `traceability`, `semantic_review`,
+`transcribe`, `normalize`, `statements`, `coverage_gap`, `traceability`, `semantic_review`,
 `strong_review`, `corroboration`, `source_check`, `verification`, `concepts`, `impact_audit`,
 `apply_changes`, `corpus_validation` и `human_decision`.
+
+Очередь `coverage_gap` планировщик строит из `source-map.yml` каждого источника
+с `long_source: true`: незакрытая структурная единица или `postponed` без
+валидного кода блокера попадает сюда, а `postponed` с кодом блокера — в
+`human_decision`. Подробности критерия — в `workflow-contract.md`, раздел
+«Полнота внутри источника», и в ADR-0009.
 Штатная стадия `indexed` не считается неподдерживаемой:
 
 - единица обычного источника без выбранного объёма обработки попадает в

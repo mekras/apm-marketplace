@@ -279,6 +279,12 @@ SOURCE_MAP_REQUIRED_PASSPORT_FIELDS = {
 
 SOURCE_MAP_POSTPONED_STATUSES = {"postponed", "отложено"}
 
+SOURCE_MAP_COVERAGE_STATUSES = {
+    "extracted",
+    "no_significant_content",
+    *SOURCE_MAP_POSTPONED_STATUSES,
+}
+
 RESTRICTED_SOURCE_MAP_COPY_POLICIES = {
     "local_only",
     "metadata_only",
@@ -1779,10 +1785,13 @@ class Validator:
             if structure_ids and unit_id not in structure_ids:
                 self.errors.append(f"{prefix}: unit_id is not declared in structure.units: {unit_id}")
             status = unit.get("status")
-            if not nonempty_string(status):
-                self.errors.append(f"{prefix}: status must be non-empty text")
-            elif status in SOURCE_MAP_POSTPONED_STATUSES and not nonempty_string(unit.get("reason")):
-                self.errors.append(f"{prefix}: postponed status requires reason")
+            if status not in SOURCE_MAP_COVERAGE_STATUSES:
+                allowed = ", ".join(sorted(SOURCE_MAP_COVERAGE_STATUSES))
+                self.errors.append(f"{prefix}: status must be one of: {allowed}")
+            elif status in SOURCE_MAP_POSTPONED_STATUSES:
+                if not nonempty_string(unit.get("reason")):
+                    self.errors.append(f"{prefix}: postponed status requires reason")
+                self.validate_blocker_code(unit, prefix, required=True)
 
             self.validate_source_map_artifact_links(prefix, source_dir, unit.get("artifacts"))
             self.validate_source_map_statement_links(prefix, source_dir, unit.get("statements"))
