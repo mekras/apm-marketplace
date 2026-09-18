@@ -6,9 +6,45 @@
       "script": "scripts/evaluate-model-selection.py",
       "command_prefix": [],
       "inputs": []
+    },
+    {
+      "id": "check-subagent-tools-drift-portable",
+      "script": "scripts/check-subagent-tools-drift.py",
+      "command_prefix": ["--profile", "portable"],
+      "inputs": []
     }
   ],
   "cases": [
+    {
+      "id": "check-installed-portable-tools",
+      "script": "scripts/check-subagent-tools-drift.py",
+      "fixture": "evals/script-fixtures/tools-drift",
+      "covers": ["check-subagent-tools-drift-portable"],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import subprocess,sys; installer=str(__import__('pathlib').Path(sys.argv[1]).with_name('install-subagent-tools')); raise SystemExit(subprocess.run([installer,sys.argv[2]],check=False).returncode)",
+          "{script}",
+          "{fixture}/project"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--profile",
+        "portable",
+        "--project-root",
+        "{fixture}/project"
+      ],
+      "expect": {
+        "files": [
+          {
+            "path": "project/tools/check-subagent-models"
+          }
+        ]
+      }
+    },
     {
       "id": "evaluate-complete-model-matrix",
       "script": "scripts/evaluate-model-selection.py",

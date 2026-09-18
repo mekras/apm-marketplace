@@ -60,7 +60,13 @@ def prepare(project: Path, mode: str = "clean") -> Path:
     return fake
 
 
-def run(project: Path, fake: Path) -> subprocess.CompletedProcess[str]:
+def run(
+    project: Path,
+    fake: Path,
+    *,
+    audit_runner: Path | None = None,
+    allow_unpublished_version: bool = False,
+) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         [
             sys.executable,
@@ -69,6 +75,12 @@ def run(project: Path, fake: Path) -> subprocess.CompletedProcess[str]:
             str(project),
             "--apm",
             str(fake),
+            *(["--audit-runner", str(audit_runner)] if audit_runner else []),
+            *(
+                ["--allow-unpublished-local-version"]
+                if allow_unpublished_version
+                else []
+            ),
         ],
         check=False,
         text=True,
@@ -88,6 +100,26 @@ def main() -> int:
             "install --frozen",
             "audit --ci",
         ]
+
+    with tempfile.TemporaryDirectory() as temporary:
+        project = Path(temporary)
+        audit_runner = project / "audit-runner.py"
+        audit_runner.write_text(
+            "#!/usr/bin/env python3\n"
+            "import pathlib, sys\n"
+            "pathlib.Path('audit-args.log').write_text(' '.join(sys.argv[1:]), encoding='utf-8')\n",
+            encoding="utf-8",
+        )
+        passed = run(
+            project,
+            prepare(project),
+            audit_runner=audit_runner,
+            allow_unpublished_version=True,
+        )
+        assert passed.returncode == 0, passed.stdout + passed.stderr
+        assert (project / "audit-args.log").read_text(encoding="utf-8") == (
+            "--allow-unpublished-local-version"
+        )
 
     with tempfile.TemporaryDirectory() as temporary:
         project = Path(temporary)

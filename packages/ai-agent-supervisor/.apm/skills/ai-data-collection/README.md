@@ -30,7 +30,6 @@
 - [Рабочая процедура](SKILL.md)
 - [Порядок сбора данных](references/data-collection-procedure.md)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Концепция коллекции](../../../README.md) и [публичный договор](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

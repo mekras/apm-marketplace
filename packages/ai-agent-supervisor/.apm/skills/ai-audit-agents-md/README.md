@@ -29,7 +29,6 @@
 - [Рабочая процедура](SKILL.md)
 - [Список проверок аудита](references/review-checklist.md)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Концепция коллекции](../../../README.md) и [публичный договор](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

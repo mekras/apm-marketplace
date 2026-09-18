@@ -48,7 +48,6 @@
 - [Рабочая процедура](SKILL.md)
 - [Список проверок ревью](references/review-checklist.md), [решение о скрипте](references/script-decision.md), [переносимость](references/portability.md) и [валидация](references/validation.md)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Публичный договор коллекции](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

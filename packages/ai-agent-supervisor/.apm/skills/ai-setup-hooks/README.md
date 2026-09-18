@@ -29,7 +29,6 @@
 - [Рабочая процедура](SKILL.md)
 - [Интерфейс навыка](agents/openai.yaml)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Концепция коллекции](../../../README.md) и [публичный договор](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

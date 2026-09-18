@@ -6,8 +6,8 @@ usage() {
 Usage:
   install-claude-tools [project-root]
 
-Copies Claude-specific subagent tools and the portable execution-class runner
-into <project-root>/tools.
+Copies Claude-specific subagent tools, the portable execution-class runner and
+the checked model-catalog capability record into <project-root>/tools.
 EOF
 }
 
@@ -22,6 +22,13 @@ project_root="${1:-$(git rev-parse --show-toplevel)}"
 target_dir="$project_root/tools"
 
 mkdir -p "$target_dir/adapters"
-install -m 0755 "$script_dir/adapters/claude-role" "$target_dir/adapters/claude-role"
+while IFS='|' read -r source destination mode profiles; do
+  case "$source" in ''|\#*) continue ;; esac
+  [[ ",$profiles," == *",claude,"* ]] || continue
+  source="$script_dir/$source"
+  destination="$project_root/$destination"
+  mkdir -p "$(dirname -- "$destination")"
+  install -m "0$mode" "$source" "$destination"
+done < "$script_dir/subagent-tools.manifest"
 
 printf 'installed=%s\n' "$target_dir"

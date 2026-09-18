@@ -27,6 +27,14 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Необязательный Python-запускатель аудита. Выполняется из корня проекта.",
     )
+    parser.add_argument(
+        "--allow-unpublished-local-version",
+        action="store_true",
+        help=(
+            "Передать запускателю аудита явное разрешение на проверяемую "
+            "локальную версию, ещё не опубликованную в реестре."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -67,7 +75,15 @@ def main() -> int:
         return 1
 
     audit = (
-        [sys.executable, str(audit_runner)]
+        [
+            sys.executable,
+            str(audit_runner),
+            *(
+                ["--allow-unpublished-local-version"]
+                if args.allow_unpublished_local_version
+                else []
+            ),
+        ]
         if audit_runner is not None
         else [args.apm, "audit", "--ci"]
     )

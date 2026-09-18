@@ -2,8 +2,15 @@
 """Получить нативный каталог моделей активной оснастки.
 
 Контракт: ``discover-subagent-models --adapter COMMAND`` печатает JSON с
-``harness``, ``status`` и ``models``. Адаптер получает ``list`` первым
+``harness``, ``status`` и ``models``. Адаптер каталога получает ``list`` первым
 аргументом и возвращает тот же JSON. Так другие оснастки не зависят от Codex.
+
+При неудаче ``status`` равен ``not_received``, а ``reason_kind`` называет
+разбираемый источник неудачи: ``adapter_missing`` — команду не удалось
+запустить, ``adapter_contract`` — команда запустилась, но каталог по контракту
+не вернула, ``timeout`` — превышен срок ожидания, ``environment`` — в выводе
+найден признак сбоя среды или сети. Ошибка настройки адаптера не должна
+выглядеть как недоступность оснастки.
 """
 
 from __future__ import annotations
@@ -14,6 +21,70 @@ import shlex
 import subprocess
 import sys
 
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
+
+# Тот же перечень признаков среды используется в check-subagent-models.
+INFRASTRUCTURE_MARKERS = (
+    "failed to refresh available models",
+    "timeout waiting for child process",
+    "reconnecting",
+    "connection reset",
+    "connection refused",
+    "network is unreachable",
+)
+
+
+class CatalogError(Exception):
+    """Неудача получения каталога с разобранным источником."""
+
+    def __init__(self, kind: str, reason: str) -> None:
+        super().__init__(reason)
+        self.kind = kind
+        self.reason = reason
+
+
+def environment_marker(*streams: str) -> bool:
+    output = "\n".join(streams).casefold()
+    return any(marker in output for marker in INFRASTRUCTURE_MARKERS)
+
+
+def request_catalog(command: list[str], timeout: int) -> dict:
+    try:
+        result = subprocess.run(
+            [*command, "list"],
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            timeout=timeout,
+            check=False,
+        )
+    except OSError as error:
+        raise CatalogError("adapter_missing", f"команда адаптера не запущена: {error}") from error
+    except subprocess.TimeoutExpired as error:
+        raise CatalogError("timeout", f"тайм-аут {timeout} с") from error
+    if result.returncode:
+        detail = result.stderr.strip() or result.stdout.strip() or f"код выхода {result.returncode}"
+        if environment_marker(result.stderr, result.stdout):
+            raise CatalogError("environment", f"признак сбоя среды или сети: {detail}")
+        raise CatalogError(
+            "adapter_contract",
+            f"адаптер не ответил на запрос каталога: {detail}",
+        )
+    try:
+        payload = json.loads(result.stdout)
+    except json.JSONDecodeError as error:
+        raise CatalogError("adapter_contract", f"ответ адаптера не разобран как JSON: {error}") from error
+    if not isinstance(payload, dict) or not isinstance(payload.get("models"), list):
+        raise CatalogError("adapter_contract", "в ответе нет массива models")
+    payload.setdefault("status", "available")
+    return payload
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Получить каталог моделей подагентов")
@@ -23,17 +94,17 @@ def main() -> int:
     if args.timeout <= 0:
         parser.error("--timeout должен быть положительным")
     command = shlex.split(args.adapter)
+    if not command:
+        parser.error("--adapter ожидает непустую команду")
     try:
-        result = subprocess.run([*command, "list"], text=True, encoding="utf-8", errors="replace", capture_output=True,
-                                timeout=args.timeout, check=False)
-        if result.returncode:
-            raise RuntimeError(result.stderr.strip() or f"код выхода {result.returncode}")
-        payload = json.loads(result.stdout)
-        if not isinstance(payload.get("models"), list):
-            raise ValueError("в ответе нет массива models")
-        payload.setdefault("status", "available")
-    except (OSError, subprocess.TimeoutExpired, RuntimeError, ValueError, json.JSONDecodeError) as error:
-        payload = {"status": "not_received", "models": [], "reason": str(error)}
+        payload = request_catalog(command, args.timeout)
+    except CatalogError as error:
+        payload = {
+            "status": "not_received",
+            "models": [],
+            "reason": error.reason,
+            "reason_kind": error.kind,
+        }
     print(json.dumps(payload, ensure_ascii=False))
     return 0 if payload["status"] == "available" else 1
 

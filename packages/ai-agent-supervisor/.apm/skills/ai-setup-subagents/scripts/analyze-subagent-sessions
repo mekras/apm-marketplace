@@ -6,6 +6,13 @@ import argparse, json
 from collections import Counter
 from datetime import datetime
 from pathlib import Path
+import sys
+
+# Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 def records(path: Path):
     try:

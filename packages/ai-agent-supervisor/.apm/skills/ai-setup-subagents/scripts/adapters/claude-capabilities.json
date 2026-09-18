@@ -1,0 +1,13 @@
+{
+  "harness": "claude",
+  "catalog_adapter": {
+    "status": "unavailable",
+    "reason_kind": "native_catalog_unsupported",
+    "reason": "Claude Code CLI не предоставляет документированного нативного контракта каталога моделей для адаптера."
+  },
+  "execution_class_adapter": {
+    "status": "available",
+    "path": "tools/adapters/claude-role"
+  },
+  "review": "При появлении документированного контракта каталога добавьте отдельный адаптер каталога и замените эту запись проверкой его контракта."
+}

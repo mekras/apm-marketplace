@@ -36,7 +36,6 @@
 - [Рабочая процедура](SKILL.md)
 - [Полный регламент](references/work-control.md) и [шаблон контрольной записи](assets/work-control-template.md)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Концепция коллекции](../../../README.md) и [публичный договор](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

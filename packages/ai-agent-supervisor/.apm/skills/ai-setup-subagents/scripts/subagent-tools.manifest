@@ -1,0 +1,18 @@
+# Оснастка подагентов: источник в навыке | место в проекте | режим | профили.
+# Профиль portable ставится всегда; codex и claude добавляют средства оснастки.
+# Этот манифест читают установщики и check-subagent-tools-drift.py.
+lib/model_evidence.py|tools/lib/model_evidence.py|644|portable
+check-subagent-models|tools/check-subagent-models|755|portable
+discover-subagent-models|tools/discover-subagent-models|755|portable
+analyze-subagent-sessions|tools/analyze-subagent-sessions|755|portable
+run-subagent-role|tools/run-subagent-role|755|portable
+run-execution-class|tools/run-execution-class|755|portable
+evaluate-model-selection.py|tools/evaluate-model-selection.py|755|portable
+../assets/subagents.local.toml.sample|tools/subagents.local.toml.sample|644|portable
+../assets/model-selection-input.sample.json|tools/model-selection-input.sample.json|644|portable
+codex-model-subagent|tools/codex-model-subagent|755|codex
+codex-usage-report|tools/codex-usage-report|755|codex
+adapters/codex|tools/adapters/codex-subagents|755|codex
+adapters/codex-role|tools/adapters/codex-role|755|codex
+adapters/claude-role|tools/adapters/claude-role|755|claude
+adapters/claude-capabilities.json|tools/adapters/claude-capabilities.json|644|claude

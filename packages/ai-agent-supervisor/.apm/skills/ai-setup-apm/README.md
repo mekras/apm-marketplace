@@ -29,9 +29,9 @@
 
 - [Рабочая процедура](SKILL.md)
 - [Настройки коллекции](references/apm-collection-settings.md) и [установщики средств](references/tooling-installers.md)
+- [Область инструкций и доставка правил](references/instruction-scope.md) и [известные ограничения версий](references/known-version-issues.md)
 - [Установщик оценок](scripts/install-eval-tools) и [проверка границы APM и Git](scripts/validate-apm-git-boundary.py)
 - [Сценарии](evals/triggers.json), [проверки результата](evals/result-scenarios.json) и [контракты скриптов](evals/script-contract-tests.json)
-- [Публичный договор коллекции](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

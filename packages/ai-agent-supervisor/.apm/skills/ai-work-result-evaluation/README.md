@@ -29,7 +29,6 @@
 - [Рабочая процедура](SKILL.md)
 - [Регламент оценки](references/work-result-evaluation.md) и [шаблон проверочного случая](assets/work-result-evaluation-case-template.md)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Концепция коллекции](../../../README.md) и [публичный договор](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

@@ -62,7 +62,6 @@ tools/execution-policy check --user-core <приватное-ядро> \
 - [Порядок настройки](references/policy-procedure.md) и [варианты переносимости](references/portability.md)
 - [Образцы пользовательской политики](assets/execution-policy.user.toml.sample), [проектного слоя](assets/execution-policy.project.toml.sample) и [пакета передачи](assets/handoff.md.template)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Публичный договор коллекции](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

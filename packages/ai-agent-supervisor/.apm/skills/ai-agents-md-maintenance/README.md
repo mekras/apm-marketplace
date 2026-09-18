@@ -33,7 +33,6 @@ README для людей.
 - [Список проверок сопровождения](references/maintenance-checklist.md)
 - [Правила содержания](references/content-guidelines.md)
 - [Сценарии срабатывания](evals/triggers.json) и [проверки результата](evals/result-scenarios.json)
-- [Концепция коллекции](../../../README.md) и [публичный договор](../../../docs/product-contract.md)
 
 ## Примеры запросов
 

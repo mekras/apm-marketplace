@@ -370,7 +370,6 @@ apm update
 
 ### Проектная документация
 
-- [Публичный договор коллекции](https://github.com/mekras/ai-agent-supervisor/blob/master/docs/product-contract.md)
 - [Требования](https://github.com/mekras/ai-agent-supervisor/tree/master/docs/requirements)
 - [Гипотезы](https://github.com/mekras/ai-agent-supervisor/tree/master/docs/hypotheses)
 - [Журнал решений](https://github.com/mekras/ai-agent-supervisor/tree/master/docs/decisions)
