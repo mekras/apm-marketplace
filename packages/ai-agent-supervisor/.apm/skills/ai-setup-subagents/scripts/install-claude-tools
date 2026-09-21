@@ -24,6 +24,7 @@ target_dir="$project_root/tools"
 mkdir -p "$target_dir/adapters"
 while IFS='|' read -r source destination mode profiles; do
   case "$source" in ''|\#*) continue ;; esac
+  profiles="${profiles%$'\r'}"
   [[ ",$profiles," == *",claude,"* ]] || continue
   source="$script_dir/$source"
   destination="$project_root/$destination"

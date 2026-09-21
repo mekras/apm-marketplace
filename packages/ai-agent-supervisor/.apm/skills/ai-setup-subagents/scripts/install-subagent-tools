@@ -23,8 +23,9 @@ manifest="$script_dir/subagent-tools.manifest"
 install_profile() {
   local profile="$1"
   while IFS='|' read -r source destination mode profiles; do
-    case "$source" in ''|\#*) continue ;; esac
-    [[ ",$profiles," == *",$profile,"* ]] || continue
+  case "$source" in ''|\#*) continue ;; esac
+  profiles="${profiles%$'\r'}"
+  [[ ",$profiles," == *",$profile,"* ]] || continue
     source="$script_dir/$source"
     destination="$project_root/$destination"
     [[ -f "$source" ]] || { echo "Источник не найден: $source" >&2; exit 1; }

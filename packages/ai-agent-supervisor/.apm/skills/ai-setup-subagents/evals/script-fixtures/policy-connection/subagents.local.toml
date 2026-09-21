@@ -1,0 +1,13 @@
+[policy_runtime]
+schema_version = 1
+launcher = "tools/run-execution-class"
+target = "codex"
+direct_execution = ["microtask"]
+unavailable_route = "parent"
+execution_failure = "parent without result"
+unconfirmed_model = "parent decides whether the result is usable"
+result_acceptance = "parent accepts"
+
+[[policy_runtime.routes]]
+when = "bounded research"
+execution_class = "cheap_readonly_research"

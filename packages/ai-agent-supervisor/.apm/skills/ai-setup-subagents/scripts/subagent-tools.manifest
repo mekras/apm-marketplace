@@ -7,6 +7,7 @@ discover-subagent-models|tools/discover-subagent-models|755|portable
 analyze-subagent-sessions|tools/analyze-subagent-sessions|755|portable
 run-subagent-role|tools/run-subagent-role|755|portable
 run-execution-class|tools/run-execution-class|755|portable
+assess-subagent-policy-connection.py|tools/assess-subagent-policy-connection.py|755|portable
 evaluate-model-selection.py|tools/evaluate-model-selection.py|755|portable
 ../assets/subagents.local.toml.sample|tools/subagents.local.toml.sample|644|portable
 ../assets/model-selection-input.sample.json|tools/model-selection-input.sample.json|644|portable

@@ -179,9 +179,12 @@ def main() -> int:
     record_path.write_text(
         json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    if completed.returncode or not record["model_matches"]:
+    if completed.returncode:
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
-        return 1
+        return 2
+    if not record["model_matches"]:
+        print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
+        return 3
     print(json.dumps(record, ensure_ascii=False))
     return 0
 

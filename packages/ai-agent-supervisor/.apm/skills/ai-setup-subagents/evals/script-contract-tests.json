@@ -2,6 +2,12 @@
   "version": 2,
   "operations": [
     {
+      "id": "assess-policy-connection",
+      "script": "scripts/assess-subagent-policy-connection.py",
+      "command_prefix": [],
+      "inputs": ["subagents.local.toml", "worker-instructions.md"]
+    },
+    {
       "id": "evaluate-model-selection",
       "script": "scripts/evaluate-model-selection.py",
       "command_prefix": [],
@@ -16,6 +22,20 @@
   ],
   "cases": [
     {
+      "id": "assess-connected-policy",
+      "script": "scripts/assess-subagent-policy-connection.py",
+      "fixture": "evals/script-fixtures/policy-connection",
+      "covers": ["assess-policy-connection"],
+      "command": [
+        "{python}", "{script}", "--config", "{fixture}/subagents.local.toml",
+        "--entrypoint", "codex={fixture}/worker-instructions.md", "--output", "{fixture}/report.json", "--json"
+      ],
+      "expect": {
+        "stdout_contains": ["\"instruction_entrypoints\": \"referenced\"", "\"working_sessions\": \"not_observed\""],
+        "files": [{"path": "report.json", "json": true}]
+      }
+    },
+    {
       "id": "check-installed-portable-tools",
       "script": "scripts/check-subagent-tools-drift.py",
       "fixture": "evals/script-fixtures/tools-drift",
@@ -24,7 +44,7 @@
         [
           "{python}",
           "-c",
-          "import subprocess,sys; installer=str(__import__('pathlib').Path(sys.argv[1]).with_name('install-subagent-tools')); raise SystemExit(subprocess.run([installer,sys.argv[2]],check=False).returncode)",
+          "import os,subprocess,sys; pathlib=__import__('pathlib'); installer=str(pathlib.Path(sys.argv[1]).with_name('install-subagent-tools')); root=pathlib.Path(sys.argv[2]); target='/' + root.drive.rstrip(':').lower() + root.as_posix()[2:] if os.name == 'nt' else str(root); git=__import__('shutil').which('git'); shell=str(pathlib.Path(git).parent.parent/'bin'/'bash.exe') if os.name == 'nt' and git else 'bash'; raise SystemExit(subprocess.run([shell,installer,target],check=False).returncode)",
           "{script}",
           "{fixture}/project"
         ]
