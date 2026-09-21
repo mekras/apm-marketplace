@@ -23,10 +23,26 @@ REQUIRED_RUNTIME_FIELDS = {
     "launcher",
     "target",
     "direct_execution",
+    "direct_execution_scope",
+    "subtask_routing",
+    "parent_comparison",
+    "unknown_parent_parameters",
+    "parent_change",
+    "assignment_basis",
     "unavailable_route",
     "execution_failure",
     "unconfirmed_model",
     "result_acceptance",
+}
+
+RUNTIME_SCHEMA_VERSION = 2
+RUNTIME_ENUMS = {
+    "direct_execution_scope": {"whole_parent_task"},
+    "subtask_routing": {"match_each_bounded_subtask"},
+    "parent_comparison": {"actual_current_session"},
+    "unknown_parent_parameters": {"comparison_unresolved"},
+    "parent_change": {"invalidate_comparison"},
+    "assignment_basis": {"historical_only"},
 }
 
 
@@ -44,13 +60,21 @@ def runtime_policy(data: dict[str, Any]) -> dict[str, Any]:
     runtime = data.get("policy_runtime")
     if not isinstance(runtime, dict):
         raise ValueError("не найдена таблица policy_runtime")
-    if runtime.get("schema_version") != 1:
-        raise ValueError("policy_runtime.schema_version должен быть равен 1")
+    if runtime.get("schema_version") != RUNTIME_SCHEMA_VERSION:
+        raise ValueError(f"policy_runtime.schema_version должен быть равен {RUNTIME_SCHEMA_VERSION}")
     missing = sorted(field for field in REQUIRED_RUNTIME_FIELDS if not runtime.get(field))
     if missing:
         raise ValueError("в policy_runtime не заданы: " + ", ".join(missing))
     if not isinstance(runtime["launcher"], str) or not isinstance(runtime["target"], str):
         raise ValueError("policy_runtime.launcher и policy_runtime.target должны быть непустыми строками")
+    if not isinstance(runtime["direct_execution"], list) or not all(
+        isinstance(item, str) and item.strip() for item in runtime["direct_execution"]
+    ):
+        raise ValueError("policy_runtime.direct_execution должен быть непустым списком строк")
+    for field, allowed in RUNTIME_ENUMS.items():
+        if runtime[field] not in allowed:
+            values = ", ".join(sorted(allowed))
+            raise ValueError(f"policy_runtime.{field} имеет недопустимое значение; ожидается: {values}")
     routes = runtime.get("routes")
     if not isinstance(routes, list) or not routes:
         raise ValueError("в policy_runtime не заданы маршруты routes")

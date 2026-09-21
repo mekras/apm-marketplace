@@ -1,0 +1,34 @@
+# Local policy fixture: values must survive schema migration.
+[policy_runtime]
+schema_version = 1
+launcher = "local-launcher"
+target = "local-target"
+direct_execution = ["one-file microtask"]
+unavailable_route = "keep parent route"
+execution_failure = "discard child result"
+unconfirmed_model = "parent decides after acceptance"
+result_acceptance = "parent checks evidence"
+execution_status = "blocked"
+economy_status = "not_measured"
+
+[[policy_runtime.routes]]
+when = "bounded read-only facts"
+execution_class = "local-readonly"
+
+[policy_design]
+[[policy_design.tasks]]
+task = "preserve local task"
+parent_model = "historical assignment"
+parent_effort = "historical effort"
+parent_evidence = "setup observation"
+proposed_route = "execution_class:local-readonly"
+
+[execution_classes.local_readonly]
+writes = false
+result = "facts only"
+
+[targets.local.execution_classes.local_readonly]
+model = "configured local assignment"
+effort = "configured local effort"
+sandbox = "read-only"
+adapter = ["configured adapter"]

@@ -8,6 +8,12 @@
       "inputs": ["subagents.local.toml", "worker-instructions.md"]
     },
     {
+      "id": "migrate-subagent-policy",
+      "script": "scripts/migrate-subagent-policy.py",
+      "command_prefix": [],
+      "inputs": ["subagents.local.toml", "worker-instructions.md"]
+    },
+    {
       "id": "evaluate-model-selection",
       "script": "scripts/evaluate-model-selection.py",
       "command_prefix": [],
@@ -33,6 +39,25 @@
       "expect": {
         "stdout_contains": ["\"instruction_entrypoints\": \"referenced\"", "\"working_sessions\": \"not_observed\""],
         "files": [{"path": "report.json", "json": true}]
+      }
+    },
+    {
+      "id": "migrate-v1-policy-and-entrypoint",
+      "script": "scripts/migrate-subagent-policy.py",
+      "fixture": "evals/script-fixtures/policy-migration",
+      "covers": ["migrate-subagent-policy"],
+      "command": [
+        "{python}", "{script}",
+        "--config", "{fixture}/subagents.local.toml",
+        "--entrypoint", "codex={fixture}/worker-instructions.md"
+      ],
+      "expect": {
+        "stdout_contains": ["Политика подагентов мигрирована."],
+        "files": [
+          {"path": "subagents.local.toml", "contains": "schema_version = 2"},
+          {"path": "subagents.local.toml", "contains": "parent_basis_model = \"historical assignment\""},
+          {"path": "worker-instructions.md", "contains": "`direct_execution` относятся к родительской задаче целиком"}
+        ]
       }
     },
     {

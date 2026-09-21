@@ -1,8 +1,14 @@
 [policy_runtime]
-schema_version = 1
+schema_version = 2
 launcher = "tools/run-execution-class"
 target = "codex"
 direct_execution = ["microtask"]
+direct_execution_scope = "whole_parent_task"
+subtask_routing = "match_each_bounded_subtask"
+parent_comparison = "actual_current_session"
+unknown_parent_parameters = "comparison_unresolved"
+parent_change = "invalidate_comparison"
+assignment_basis = "historical_only"
 unavailable_route = "parent"
 execution_failure = "parent without result"
 unconfirmed_model = "parent decides whether the result is usable"
