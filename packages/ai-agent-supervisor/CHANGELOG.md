@@ -5,6 +5,15 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект использует [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.8] - 2026-09-21
+
+### Исправлено
+
+- Рабочая политика подагентов больше не трактует прямой маршрут всей
+  родительской задачи как запрет на оправданную ограниченную read-only
+  подзадачу. Обновление также заменяет устаревший входной фрагмент в уже
+  установленной политике схемы 2 и сохраняет её локальные значения.
+
 ## [2.6.7] - 2026-09-21
 
 ### Исправлено
@@ -974,7 +983,8 @@
 
 - Выпущена начальная версия коллекции.
 
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.7...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.8...HEAD
+[2.6.8]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.7...2.6.8
 [2.6.7]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.6...2.6.7
 [2.6.6]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.5...2.6.6
 [2.6.2]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.1...2.6.2

@@ -56,7 +56,12 @@
         "files": [
           {"path": "subagents.local.toml", "contains": "schema_version = 2"},
           {"path": "subagents.local.toml", "contains": "parent_basis_model = \"historical assignment\""},
-          {"path": "worker-instructions.md", "contains": "`direct_execution` относятся к родительской задаче целиком"}
+          {"path": "worker-instructions.md", "contains": "`direct_execution_scope = \"whole_parent_task\"` означает только"},
+          {"path": "worker-instructions.md", "contains": "не отменяет отдельного"},
+          {"path": "worker-instructions.md", "contains": "Это ограничение относится только к этому маршруту"},
+          {"path": "worker-instructions.md", "contains": "Независимо от класса дочерний исполнитель"},
+          {"path": "worker-instructions.md", "contains": "защищённые источники"},
+          {"path": "worker-instructions.md", "contains": "Микрозадачи не"}
         ]
       }
     },
