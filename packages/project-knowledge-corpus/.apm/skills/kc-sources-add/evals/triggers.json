@@ -50,6 +50,12 @@
       "rationale": "Запрос касается добавления источника и выбора стратегии хранения `index_only`."
     },
     {
+      "id": "kc-sources-add-positive-agent-route",
+      "prompt": "Добавь источник, который получает сам агент: зафиксируй agent_route и индексный маршрут, не используя fictitious manual.",
+      "should_trigger": true,
+      "rationale": "Запрос касается воспроизводимого агентного способа получения при техническом intake."
+    },
+    {
       "id": "kc-sources-add-positive-external-reference-source",
       "prompt": "Добавь сайт как источник публичного проекта: лицензия неясна, копировать нельзя, но можно обращаться к первоисточнику по запросу.",
       "should_trigger": true,

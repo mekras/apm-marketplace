@@ -1,0 +1,1 @@
+{"contract_version":1,"areas":[{"id":"claude","required_roles":["discovery","evidence"],"max_successful_check_age_days":14,"minimum_primary_sources":1,"event_identity":["provider","version"]}],"owner_exceptions":[]}

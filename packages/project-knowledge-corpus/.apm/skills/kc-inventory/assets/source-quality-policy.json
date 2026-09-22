@@ -1,0 +1,16 @@
+{
+  "contract_version": 1,
+  "areas": [
+    {
+      "id": "provider-topic",
+      "provider_or_topic": "Provider and topic",
+      "required_roles": ["discovery", "evidence"],
+      "max_successful_check_age_days": 14,
+      "minimum_primary_sources": 1,
+      "preferred_canonical_source": "official-release-feed",
+      "allowed_corroborating_sources": ["official-changelog", "official-docs"],
+      "event_identity": ["provider", "version", "canonical_url"]
+    }
+  ],
+  "owner_exceptions": []
+}

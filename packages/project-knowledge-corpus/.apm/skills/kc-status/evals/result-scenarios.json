@@ -163,6 +163,19 @@
       "assertions": ["Локальная недоступность не меняет переносимый результат.", "Внешнее действие показывается только при необходимости."],
       "must_not": ["не смешивать проверку снимка с актуальностью", "не создавать ручной блокер без требуемого действия"],
       "required_corpus_claims": ["KCSTATUS-1"]
+    },
+    {
+      "id": "kc-status-result-pipeline-summary-delta-and-proposals",
+      "prompt": "Сводка полного прохода содержит run_id, completed, дельту индекса 1 added, 2 changed (1 technical_only), 1 removed, 4 unchanged, 1 rejected, четыре изменения утверждений и режим propose_only с двумя предложениями и одним owner_decision.",
+      "input_files": [{"path": ".apm/skills/kc-status/SKILL.md", "purpose": "различение уникальных единиц, предложений и хвоста"}],
+      "expected_output": {"report_structure": ["run_id и completed", "счётчики дельты", "счётчики утверждений", "propose_only", "предложения и решения", "ограничения"], "findings": [{"severity": "high", "observed_problem": "Предложения посчитаны как применённые или проход назван завершённым при хвосте.", "expected_conclusion": "Сводка показывает отдельные counts, предложения как обработанный результат без применения, а owner_decision и ограничения отдельно.", "acceptable_fix_direction": "Сверить summary с index_delta, statement_delta и impact_report.", "corpus_claims": ["KCSTATUS-1"]}]},
+      "negative_control": {"description": "Ответ складывает записи и уникальные единицы, скрывает technical_only или называет owner_decision предложением.", "expected_failure": "Сводка вводит владельца в заблуждение."},
+      "oracle": {"success_criteria": ["counts совпадают с дельтой", "technical_only не создаёт предложение", "предложения не названы применёнными", "owner_decision отличён", "ограничения перечислены"], "failure_indicators": ["счётчики не сходятся", "completed при хвосте", "нет причины no_change или ограничений"]},
+      "application_evidence": ["сводка ссылается на артефакты прохода", "приблизительность счёта указана при необходимости"],
+      "evaluation_surface": "управленческая сводка",
+      "assertions": ["Число записей не подменяет число уникальных единиц.", "Предложение не равно применению."],
+      "must_not": ["не скрывать блокер", "не смешивать statements v1 и v2 без пояснения"],
+      "required_corpus_claims": ["KCSTATUS-1"]
     }
   ]
 }

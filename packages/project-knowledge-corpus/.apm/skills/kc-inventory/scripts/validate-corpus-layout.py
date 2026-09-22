@@ -408,7 +408,7 @@ class OperationalFinding:
 
 def load_yaml(path: Path) -> Any:
     if yaml is None:
-        raise RuntimeError("PyYAML is required: pip install PyYAML")
+        raise RuntimeError("PyYAML is required for this optional P1 validator")
     with path.open("r", encoding="utf-8") as fh:
         return yaml.safe_load(fh)
 
@@ -1111,12 +1111,86 @@ class Validator:
             self.errors.append(f"{rel}: long_source must be boolean when present")
 
         self.validate_access_requirements(source.get("access_requirements"), rel)
+        self.validate_acquisition_route(source, rel)
+        self.validate_change_policy(source.get("change_policy"), rel)
         self.validate_use_policy(source.get("use_policy"), rel)
         self.validate_external_corpus_source(source, rel)
         self.add_value_errors(rel, source)
         self.validate_items(source_dir, source_id, source)
         self.validate_unit_dirs(source_dir, source_id)
         self.validate_long_source(source_dir, source_id, source)
+
+    def validate_acquisition_route(self, source: dict[str, Any], prefix: str) -> None:
+        adapter = source.get("adapter")
+        if not nonempty_string(adapter):
+            self.errors.append(f"{prefix}: adapter must be non-empty text")
+            return
+        if adapter == "agent":
+            route = source.get("agent_route")
+            if not isinstance(route, dict) or route.get("mode") != "agent":
+                self.errors.append(
+                    f"{prefix}: adapter: agent requires agent_route.mode: agent"
+                )
+                return
+            if not nonempty_string(route.get("instructions")):
+                self.errors.append(
+                    f"{prefix}: agent_route.instructions must be non-empty text"
+                )
+            write_scope = route.get("write_scope")
+            if not isinstance(write_scope, list) or not write_scope:
+                self.errors.append(
+                    f"{prefix}: agent_route.write_scope must be a non-empty narrow relative path list"
+                )
+            else:
+                for path in write_scope:
+                    parts = PurePosixPath(path).parts if isinstance(path, str) else ()
+                    if (
+                        not isinstance(path, str)
+                        or not path
+                        or path in {".", "/"}
+                        or is_bad_absolute_path(path)
+                        or ".." in parts
+                        or "*" in path
+                    ):
+                        self.errors.append(
+                            f"{prefix}: agent_route.write_scope contains an absolute, escaping or excessively broad path"
+                        )
+            operations = route.get("allowed_operations")
+            if not isinstance(operations, list) or not operations or not all(
+                isinstance(operation, str) and operation in {"index", "fetch", "verify"}
+                for operation in operations
+            ) or "index" not in operations:
+                self.errors.append(
+                    f"{prefix}: agent_route.allowed_operations must include index, fetch or verify"
+                )
+        elif adapter == "manual":
+            if isinstance(source.get("agent_route"), dict):
+                self.contract_warnings.append(
+                    f"{prefix}: legacy adapter: manual is read in compatibility mode; migrate to adapter: agent"
+                )
+            else:
+                self.contract_warnings.append(
+                    f"{prefix}: legacy adapter: manual has no reproducible acquisition route and cannot complete synchronization"
+                )
+
+    def validate_change_policy(self, value: Any, prefix: str) -> None:
+        if value is None:
+            return
+        if not isinstance(value, dict):
+            self.errors.append(f"{prefix}: change_policy must be a mapping")
+            return
+        fields = value.get("technical_fields", [])
+        if not isinstance(fields, list) or not all(nonempty_string(field) for field in fields):
+            self.errors.append(f"{prefix}: change_policy.technical_fields must be a list of texts")
+        if "require_primary_confirmation" in value and not isinstance(
+            value["require_primary_confirmation"], bool
+        ):
+            self.errors.append(
+                f"{prefix}: change_policy.require_primary_confirmation must be boolean"
+            )
+        for field in ("project_purpose", "applicability", "stability_policy"):
+            if field in value and not nonempty_string(value[field]):
+                self.errors.append(f"{prefix}: change_policy.{field} must be non-empty text")
 
     def validate_access_requirements(self, value: Any, prefix: str) -> None:
         if value is None:

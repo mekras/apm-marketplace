@@ -506,6 +506,19 @@
       "assertions": ["Смена хэша требует новой проверки.", "Старый корпус остаётся читаемым без verification.yml."],
       "must_not": ["не подтверждать непроверенные метаданные", "не хранить локальный профиль или секрет"],
       "required_corpus_claims": ["KCINVENTORY-1"]
+    },
+    {
+      "id": "kc-inventory-result-agent-route-and-index-policy",
+      "prompt": "Проверь новую карточку изменяемого changelog: агент получает индекс сам, хэш страницы меняется, release notes обещают возможность, но документация подтверждает только более узкую область.",
+      "input_files": [{"path": ".apm/skills/kc-inventory/references/manifest-and-registry.md", "purpose": "маршрут получения и change_policy"}, {"path": ".apm/skills/kc-inventory/references/corpus-layout-contract.md", "purpose": "индекс единиц и карточка источника"}],
+      "expected_output": {"report_structure": ["agent_route", "technical_only", "ограничение области", "первичное подтверждение"], "findings": [{"severity": "high", "observed_problem": "Хэш и release notes объявлены достаточным подтверждением полной возможности.", "expected_conclusion": "Индексная дельта фиксируется, change_policy отделяет хэш от содержания, а утверждение сохраняет более узкую область до проверки документацией или другим первичным материалом.", "acceptable_fix_direction": "Передать релевантную единицу на нормализацию и проверку без расширения области.", "corpus_claims": ["KCINVENTORY-1"]}]},
+      "negative_control": {"description": "Ответ считает agent незарегистрированным manual или объявляет release notes стабильным поведением без подтверждения.", "expected_failure": "Нарушены договор получения и качество источника."},
+      "oracle": {"success_criteria": ["agent_route описывает index", "техническое изменение не выдано за новое знание", "узкая область сохранена", "нужное первичное подтверждение названо"], "failure_indicators": ["массовое получение index_only", "область расширена", "хэш стал рекомендацией"]},
+      "application_evidence": ["карточка сохраняет происхождение и ограничения", "отчёт различает индексную дельту и содержательное утверждение"],
+      "evaluation_surface": "карточка источника и индекс",
+      "assertions": ["Способ получения самим агентом обозначен agent_route.", "Политика стабильности задаётся проектом, а не списком suffixes."],
+      "must_not": ["не считать индекс первичным содержанием", "не копировать закрытый материал без разрешения"],
+      "required_corpus_claims": ["KCINVENTORY-1"]
     }
   ]
 }

@@ -400,6 +400,19 @@
       "assertions": ["Текущая доступность не записывается как свойство источника.", "Условия относятся к конкретному действию."],
       "must_not": ["не создавать специальное значение для отдельного сервиса", "не выдавать неизвестность за разрешение"],
       "required_corpus_claims": ["KCSOURCES-1"]
+    },
+    {
+      "id": "kc-sources-add-result-agent-acquisition-route",
+      "prompt": "Добавь изменяемый documentation site, который агент может получать сам. Зафиксируй воспроизводимый индексный маршрут, ограничения точечного получения и миграцию старой карточки с adapter: manual.",
+      "input_files": [{"path": ".apm/skills/kc-sources-add/assets/source.yml", "purpose": "шаблон карточки источника"}, {"path": ".apm/skills/kc-sources-add/references/source-contract.md", "purpose": "происхождение и способ получения"}],
+      "expected_output": {"report_structure": ["adapter agent", "agent_route", "index и ограничение объёма", "legacy manual warning"], "findings": [{"severity": "high", "observed_problem": "Способ получения самим агентом не отличён от вымышленного адаптера.", "expected_conclusion": "Новая карточка использует adapter: agent только с route mode, инструкциями и index; old manual получает диагностируемый путь миграции и не выдаётся за успешный способ.", "acceptable_fix_direction": "Сохранить локатор, политику использования и точечную область получения без секретов.", "corpus_claims": ["KCSOURCES-1"]}]},
+      "negative_control": {"description": "Ответ добавляет adapter: manual без регистрации или записывает сессию в source.yml.", "expected_failure": "Нарушены воспроизводимость и безопасность корпуса."},
+      "oracle": {"success_criteria": ["agent_route проверяем", "manual диагностируется", "index_only не превращён в массовую копию", "секреты остаются локальными"], "failure_indicators": ["manual назван адаптером", "нет инструкций маршрута", "неизвестные условия названы разрешением"]},
+      "application_evidence": ["карточка проходит валидатор маршрута", "ограничения и происхождение записаны до содержательной обработки"],
+      "evaluation_surface": "технический intake источника",
+      "assertions": ["Новый источник нельзя считать настроенным без воспроизводимого маршрута.", "Миграция legacy значения заметна владельцу."],
+      "must_not": ["не подменять способ получения ключевым словом", "не хранить секреты в переносимой карточке"],
+      "required_corpus_claims": ["KCSOURCES-1"]
     }
   ]
 }

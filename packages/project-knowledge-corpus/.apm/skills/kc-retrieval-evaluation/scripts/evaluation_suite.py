@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import re
 from pathlib import Path
@@ -372,3 +373,19 @@ def validate_string_list(
         return
     if not all(nonempty_string(item) for item in value):
         errors.append(f"{label} must contain only non-empty strings")
+
+
+def main() -> int:
+    """Expose a dependency-only self-check without changing a suite."""
+    parser = argparse.ArgumentParser(description="Проверить доступность библиотеки набора оценки.")
+    parser.add_argument("--self-check", action="store_true")
+    args = parser.parse_args()
+    if not args.self_check:
+        parser.print_help()
+        return 2
+    print("Библиотека набора оценки готова; зависимости не устанавливались.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

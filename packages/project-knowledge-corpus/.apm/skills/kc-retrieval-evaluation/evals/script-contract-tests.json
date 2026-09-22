@@ -1,0 +1,84 @@
+{
+  "version": 2,
+  "operations": [
+    {"id":"sample-sections","script":"scripts/sample-source-sections.py","command_prefix":["{fixture}/corpus"],"inputs":["corpus/data/release.md"]},
+    {"id":"validate-suite","script":"scripts/validate-evaluation-suite.py","command_prefix":["{fixture}/suite.local.yml"],"inputs":["suite.local.yml","corpus/data/release.md","corpus/data/release/statements.yml"]},
+    {"id":"run-suite","script":"scripts/run-evaluation-suite.py","command_prefix":["{fixture}/suite.local.yml"],"inputs":["suite.local.yml","config.local.yml","corpus/data/release.md","corpus/data/release/statements.yml","adapter.py"]},
+    {"id":"suite-library","script":"scripts/evaluation_suite.py","command_prefix":["--self-check"],"inputs":[]}
+  ],
+  "cases": [
+    {"id":"sample-real-source-sections","script":"scripts/sample-source-sections.py","fixture":"evals/script-fixtures/ready","covers":["sample-sections"],"command":["{python}","{script}","{fixture}/corpus","--source","data/release.md","--count","2","--seed","42","--suite-id","fixture-sample","--output","{fixture}/sample.local.yml"],"expect":{"stdout_contains":["Создано кандидатов"],"files":[{"path":"sample.local.yml","contains":"fixture-sample"}]}},
+    {"id":"validate-approved-suite","script":"scripts/validate-evaluation-suite.py","fixture":"evals/script-fixtures/ready","covers":["validate-suite"],"command":["{python}","{script}","{fixture}/suite.local.yml","--corpus-root","{fixture}/corpus"],"expect":{"stdout_contains":["Набор прошёл проверку"]}},
+    {"id":"run-isolated-local-adapter","script":"scripts/run-evaluation-suite.py","fixture":"evals/script-fixtures/ready","covers":["run-suite"],"command":["{python}","{script}","{fixture}/suite.local.yml","--config","{fixture}/config.local.yml","--corpus-root","{fixture}/corpus","--output","{fixture}/result.local.json"],"expect":{"stdout_contains":["Прогон завершён"],"files":[{"path":"result.local.json","json":true,"contains":"execution_errors"}]}},
+    {"id":"library-has-no-cli-side-effects","script":"scripts/evaluation_suite.py","fixture":"evals/script-fixtures/ready","covers":["suite-library"],"command":["{python}","{script}","--self-check"],"expect":{"stdout_contains":["зависимости не устанавливались"]}},
+    {"id":"invalid-suite-is-rejected","script":"scripts/validate-evaluation-suite.py","fixture":"evals/script-fixtures/invalid","covers":["validate-suite"],"command":["{python}","{script}","{fixture}/suite.local.yml","--corpus-root","{fixture}/corpus"],"expect":{"exit_code":1,"stderr_contains":["approved case requires"]}},
+    {"id":"missing-optional-automation-does-not-install","script":"scripts/run-evaluation-suite.py","fixture":"evals/script-fixtures/missing-automation","covers":["run-suite"],"command":["{python}","{script}","{fixture}/suite.local.yml","--config","{fixture}/config.local.yml","--corpus-root","{fixture}/corpus","--output","{fixture}/result.local.json"],"expect":{"exit_code":1,"stdout_contains":["Прогон завершён"],"files":[{"path":"result.local.json","json":true,"contains":"execution_errors"}]}}
+  ],
+  "unexercised_functions": [
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "dump_yaml",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "extract_source_text",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "load_yaml",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "nonempty_string",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "safe_relative_path",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "source_text_sha256",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "validate_approved_case",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "validate_corpus_expectation",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "validate_source",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "validate_source_content",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "validate_string_list",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/evaluation_suite.py",
+    "function": "validate_suite",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  },
+  {
+    "script": "scripts/sample-source-sections.py",
+    "function": "text_windows",
+    "reason": "Отдельные ошибочные и редкие ветви покрываются результатными сценариями; контракт исполняет публичные P1-операции и изолированный адаптер."
+  }
+]
+}

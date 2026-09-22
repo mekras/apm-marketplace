@@ -1,0 +1,177 @@
+{
+  "version": 2,
+  "operations": [
+    {"id": "validate-layout", "script": "scripts/validate-corpus-layout.py", "command_prefix": ["{fixture}/knowledge"], "inputs": ["knowledge/corpus.yml", "knowledge/catalog.yml"], "absent_inputs": ["knowledge/analysis", "knowledge/concepts.yml", "knowledge/data/fixture/source-map.yml", "knowledge/index/items.yml", "knowledge/inventory", "knowledge/normalized", "knowledge/primary", "knowledge/reports", "knowledge/statements"]},
+    {"id": "source-quality", "script": "scripts/check-source-quality.py", "command_prefix": ["--policy"], "inputs": ["policy.json", "sources.json", "events.json"]},
+    {"id": "record-verification", "script": "scripts/record-snapshot-verification.py", "command_prefix": ["{fixture}/knowledge/data/fixture/documents/item"], "inputs": ["knowledge/corpus.yml", "knowledge/data/fixture/documents/item/item.yml", "knowledge/data/fixture/documents/item/snapshot.txt"], "absent_inputs": ["knowledge/data/corpus.yml", "knowledge/data/fixture/corpus.yml", "knowledge/data/fixture/documents/corpus.yml", "knowledge/data/fixture/documents/item/corpus.yml"]}
+  ],
+  "cases": [
+    {"id": "valid-minimal-corpus", "script": "scripts/validate-corpus-layout.py", "fixture": "evals/script-fixtures/layout-valid", "covers": ["validate-layout"], "command": ["{python}", "{script}", "{fixture}/knowledge", "--output", "json"], "expect": {"stdout_contains": ["\"contract_errors\": []"]}},
+    {"id": "invalid-corpus-is-rejected", "script": "scripts/validate-corpus-layout.py", "fixture": "evals/script-fixtures/layout-invalid", "covers": ["validate-layout"], "command": ["{python}", "{script}", "{fixture}/knowledge", "--output", "json"], "expect": {"exit_code": 1, "stdout_contains": ["missing corpus.yml"]}},
+    {"id": "healthy-quality-matrix", "script": "scripts/check-source-quality.py", "fixture": "evals/script-fixtures/quality-healthy", "covers": ["source-quality"], "command": ["{python}", "{script}", "--policy", "{fixture}/policy.json", "--sources", "{fixture}/sources.json", "--events", "{fixture}/events.json", "--today", "2026-09-20"], "expect": {"stdout_contains": ["\"healthy\": true", "2.1.277"]}},
+    {"id": "missing-quality-coverage", "script": "scripts/check-source-quality.py", "fixture": "evals/script-fixtures/quality-missing", "covers": ["source-quality"], "command": ["{python}", "{script}", "--policy", "{fixture}/policy.json", "--sources", "{fixture}/sources.json", "--events", "{fixture}/events.json", "--today", "2026-09-20"], "expect": {"exit_code": 1, "stdout_contains": ["missing_discovery", "\"healthy\": false"]}},
+    {"id": "records-hash-bound-verification", "script": "scripts/record-snapshot-verification.py", "fixture": "evals/script-fixtures/record-verification", "covers": ["record-verification"], "command": ["{python}", "{script}", "{fixture}/knowledge/data/fixture/documents/item", "{fixture}/knowledge/data/fixture/documents/item/snapshot.txt", "--acquisition-method", "local_file", "--verification-method", "direct_reopen", "--content-scope", "full_text", "--content-match", "verified", "--scope-completeness", "complete", "--overall-result", "verified", "--checked-by-role", "fixture", "--checked-at", "2026-09-20"], "expect": {"stdout_contains": ["verification.yml"], "files": [{"path": "knowledge/data/fixture/documents/item/verification.yml", "contains": "sha256"}]}}
+  ],
+  "unexercised_functions": [
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.classify_operational_finding",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.is_local_path",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.is_non_personal_email_address",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.is_peer_external_corpus",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.load_operational_policy",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.operational_kind",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.publishable_corpus_paths",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.source_map_contains_full_text_dump",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_blocker_code",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_derivation",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_derived_from",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_derived_statement",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_derived_statements_file",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_item",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_item_contract",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_operational_safety",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_source_map_artifact_links",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_source_map_coverage",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_source_map_passport",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_source_map_statement_links",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_source_map_structure",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_statement_v2_assessment",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_statements",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_unit_artifacts",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_unit_item",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_verification",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "Validator.validate_verification_forbidden_fields",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "contains_redaction_placeholder",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "excerpt_found_in_artifact",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "excerpt_fragments",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "nonempty_date_or_text",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/validate-corpus-layout.py",
+      "function": "normalize_text",
+      "reason": "Специализированная ветвь переносимого валидатора покрывается отдельными регрессиями корпуса; данный контракт проверяет публичные P1-маршруты."
+    }
+  ]
+}

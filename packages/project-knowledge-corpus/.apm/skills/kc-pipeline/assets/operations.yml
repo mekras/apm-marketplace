@@ -4,6 +4,21 @@
 
 operations_version: 1
 
+transfer_policy:
+  mode: apply_now # apply_now | propose_only
+
+# In propose_only this local report is the checked hand-off for every apply_now
+# finding. It must stay outside the tracked product layer.
+impact_report:
+  path: .local/reports/impact-findings.yml
+
+# Required before a finding can propose or apply a product change. The consumer
+# owns these mappings; a surface name alone never authorizes a path.
+surface_paths:
+  user_documentation: [docs/**]
+  requirements: [docs/requirements.md]
+  code: [src/**]
+
 # Логические профили разрешаются только локально. Файл должен быть исключён из
 # Git и не должен содержать секреты в выводе или отчёте контроллера.
 access_profiles:
@@ -30,7 +45,9 @@ normalized_artifacts:
   - stenogram.txt
 
 # Команды являются проектными деталями. Средство запуска не выполняет их без
-# явного параметра --run-commands. argv передаётся без оболочки.
+# явного параметра --run-commands. argv передаётся без оболочки. Каждая такая
+# команда — trusted_project_executor, а не OS-level sandbox: владелец задаёт
+# её заранее, и данные Atom/источников не интерполируются в argv.
 stages:
   source_sync:
     commands:
@@ -121,6 +138,10 @@ adapters:
         argv: [python3, tools/restricted-source-adapter.py, probe, --source-id, "{source_id}", --profile, "{profile_name}"]
         working_directory: .
         write_paths: []
+      index:
+        argv: [python3, tools/restricted-source-adapter.py, index, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}", --profile, "{profile_name}"]
+        working_directory: .
+        write_paths: [knowledge/data]
       fetch:
         argv: [python3, tools/restricted-source-adapter.py, fetch, --source-id, "{source_id}", --source-dir, "{source_dir}", --locator, "{locator}", --profile, "{profile_name}"]
         working_directory: .

@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "operations": [{"id": "validate-transcript", "script": "scripts/validate-transcription-result.py", "command_prefix": ["{fixture}/item"], "inputs": ["item/transcript.txt", "item/audio.tmp.wav"]}],
+  "cases": [{"id": "verified-transcript-cleanup", "script": "scripts/validate-transcription-result.py", "fixture": "evals/script-fixtures/ready-item", "covers": ["validate-transcript"], "command": ["{python}", "{script}", "{fixture}/item", "--media", "audio.tmp.wav", "--cleanup"], "expect": {"stdout_contains": ["ready_for_normalization"], "files": [{"path": "item/transcript.txt", "contains": "Проверяемая"}]}}],
+  "unexercised_functions": []
+}

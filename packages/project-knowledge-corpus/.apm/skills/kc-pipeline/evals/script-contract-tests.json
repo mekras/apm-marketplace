@@ -1,0 +1,549 @@
+{
+  "version": 2,
+  "operations": [
+    {"id": "atom-discovery", "script": "scripts/atom-discovery.py", "command_prefix": ["--url"], "inputs": ["after.xml"]},
+    {"id": "corpus-operations", "script": "scripts/run-corpus-operations.py", "command_prefix": ["knowledge"], "inputs": ["knowledge/corpus.yml", "operations.yml"]}
+  ],
+  "cases": [
+    {"id": "atom-added-release", "script": "scripts/atom-discovery.py", "fixture": "evals/script-fixtures/atom", "covers": ["atom-discovery"], "command": ["{python}", "{script}", "--url", "https://raw.githubusercontent.com/anthropics/claude-code/main/feed.xml", "--state", "{fixture}/state.json", "--fixture", "{fixture}/after.xml"], "expect": {"stdout_contains": ["2.1.277"], "files": [{"path": "state.json", "json": true, "contains": "snapshot_sha256"}]}},
+    {"id": "minimal-corpus-plan", "script": "scripts/run-corpus-operations.py", "fixture": "evals/script-fixtures/minimal", "covers": ["corpus-operations"], "command": ["{python}", "{script}", "knowledge", "--operations", "operations.yml"], "expect": {"stdout_contains": ["## Очереди"]}},
+    {"id": "command-executor-cannot-apply-changes", "script": "scripts/run-corpus-operations.py", "fixture": "evals/script-fixtures/minimal", "covers": ["corpus-operations"], "command": ["{python}", "{script}", "knowledge", "--operations", "operations.yml", "--run-commands", "--stage", "apply_changes"], "expect": {"exit_code": 2, "stderr_contains": ["apply_changes"]}}
+  ],
+  "unexercised_functions": [
+  {
+    "script": "scripts/atom-discovery.py",
+    "function": "fetch",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusItem.contract_version",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusItem.item_id",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusItem.stage",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusItem.storage_strategy",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusItem.value",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusSource.adapter",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusSource.agent_route",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusSource.locator",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "CorpusSource.profile_name",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "accept_agent_task_evidence",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "active_process_matches",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "adapter_contract_version",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "adapter_definitions",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "adapter_operation_definition",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "aggregate_index_delta",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "apply_controlled_change_sets",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "available_task_count",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "blocker_codes",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "build_agent_task_packet",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "build_owner_summary",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "canonical_data",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "changed_fingerprint_paths",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "command_paths_allowed",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "complete_global_stage",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "configured_commands",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "content_file_digest",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "controlled_path_parts",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "decision_groups",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "dump_yaml_atomically",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "file_content_digest",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "finding_path_surfaces",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "finish_run_state",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "flatten_values",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "format_adapter_argv",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "format_completed_global_stages",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "format_resource_waiting_lines",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "git_file_fingerprints",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "git_file_paths",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "has_normalized_artifact",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "has_raw_transcript",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "has_statements",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "impact_report_path",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "index_paths",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "index_rebuild_transaction_path",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "item_is_negatively_selected",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "item_is_unpublished",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "load_impact_findings",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "main.<locals>.persist_activity",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "max_active_decision_groups",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "next_automated_queue",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "normalize_change_set",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "normalize_impact_finding",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "owner_unit_entries",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "path_matches_surface",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "process_is_alive",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "process_started_ticks",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "queue_name",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "read_run_state",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "rebuild_indexes",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "reconcile_interrupted_run_state",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "record_is_negatively_selected",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "recover_index_rebuild",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "relative_path",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "repo_relative",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "report_path",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_adapter_operation",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_adapters",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_index_refresh",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_operational_check",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_operational_check.<locals>.findings",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_pipeline",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_pipeline.<locals>.completed_stages",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "run_state_lock",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "runnable_queue",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "safe_adapter_message",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "safe_delete_file",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "safe_file_bytes",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "safe_parent_fd",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "safe_replace_bytes",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "scoped_file_manifest",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "sha256_bytes",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "snapshot_digest",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "source_change_policy",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "source_index_delta",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "source_index_snapshot",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "source_quality_result",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "stage_fingerprint",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "stage_resource_reason",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "start_run_state",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "state_path",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "statement_delta",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "statement_processing_tasks",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "statement_snapshot",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "surface_path_contract",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "unit_eligibility",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "valid_agent_route",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "valid_agent_write_scope",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "validate_access_escalation",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "validate_adapter_result",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "validate_agent_index_evidence",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "validate_apply_findings",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "validate_finding_source_units",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "validate_impact_findings",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "verification_fingerprints",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "write_json_atomically",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  },
+  {
+    "script": "scripts/run-corpus-operations.py",
+    "function": "write_run_state",
+    "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+  }
+]
+}

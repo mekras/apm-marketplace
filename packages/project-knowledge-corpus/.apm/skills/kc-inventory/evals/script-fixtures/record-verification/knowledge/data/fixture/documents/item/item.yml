@@ -1,0 +1,5 @@
+id: FIXTURE-ITEM
+title: "Fixture item"
+access: "Public fixture."
+status: active
+workflow_stage: indexed

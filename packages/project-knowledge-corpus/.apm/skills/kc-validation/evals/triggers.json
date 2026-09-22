@@ -50,6 +50,12 @@
       "rationale": "Оценка ценности источников встроена в комплексную проверку корпуса."
     },
     {
+      "id": "kc-validation-positive-pipeline-completion-gate",
+      "prompt": "Проверь, можно ли объявить полный проход завершённым при неполном индексе, доступной очереди и незакрытой глобальной стадии.",
+      "should_trigger": true,
+      "rationale": "Запрос требует финальной проверки критерия завершения корпуса."
+    },
+    {
       "id": "kc-validation-negative-one-file",
       "prompt": "Проверь синтаксис одного файла JSON в primary-слое.",
       "should_trigger": false,

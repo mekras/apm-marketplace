@@ -9,7 +9,17 @@ priority: normal # high | normal | low
 carrier_type: other # см. assets/source-carrier-types.yml
 source_kind: other # см. assets/source-kinds.yml
 long_source: false # true для книги, стандарта, большого документа или набора документации
-adapter: manual
+# adapter is mandatory. Use a registered project adapter, or the portable
+# agent-managed route below when the agent is explicitly allowed to obtain the
+# material and update the source index.
+adapter: agent
+agent_route:
+  mode: agent
+  allowed_operations: [index, fetch, verify]
+  # Required: replace with the project-relative directory of this source.
+  # It must be narrow, relative and may not contain wildcards or '..'.
+  write_scope: [knowledge/data/<source-slug>]
+  instructions: "Опишите воспроизводимый маршрут получения и границы материала."
 storage_strategy: index_only # full_copy | local_only | index_only | external_reference
 processing_scope: metadata_only # metadata_only | selected_fragments | full | full_redacted
 retrieval_mode: on_demand # synced | on_demand | external_reference | blocked
@@ -46,6 +56,15 @@ stability: mutable # stable | mutable | unknown
 refresh_policy: manual # none | manual | periodic | event-driven
 refresh_interval_days:
 
+# Rules for interpreting the provider index. They are project/source policy,
+# not provider-specific keyword matching.
+change_policy:
+  technical_fields: [content_hash, etag, format, updated_at, retrieved_at]
+  project_purpose: "Свяжите источник с назначением проекта."
+  applicability: "Опишите область действия и ограничения."
+  stability_policy: "Опишите, какие состояния выпуска считаются стабильными."
+  require_primary_confirmation: true
+
 retrieved_at: YYYY-MM-DD
 # Дата ниже относится только к старому договору. Для нового снимка используйте
 # verification.yml рядом с item.yml.
@@ -54,12 +73,12 @@ checked_by:
 content_hash:
 content_hash_algorithm:
 
-# Для внешнего корпуса знаний без полной локальной копии.
-# Используйте вместе с source_kind: knowledge_corpus.
-external_corpus:
-  contract: # portable_v1
-  use_as: # peer
-  local_checkout: # data/<source-slug>/external-corpus.local (каталог под маской *.local)
+# Для внешнего корпуса знаний без полной локальной копии раскомментируйте
+# блок ниже и используйте его только вместе с source_kind: knowledge_corpus.
+# external_corpus:
+#   contract: portable_v1
+#   use_as: peer
+#   local_checkout: data/<source-slug>/external-corpus.local
 
 # Для локальных книг и длинных документов.
 original_filename:

@@ -1011,6 +1011,73 @@
       ]
     },
     {
+      "id": "kc-pipeline-result-empty-local-queues-not-completed",
+      "prompt": "Планировщик показывает пустые локальные очереди, но сообщает, что corpus_validation не завершена. Отдельный validate-corpus-layout.py завершился успешно. В operations.yml для corpus_validation зарегистрирована обязательная команда проверки принятия внешних источников. Можно ли объявить полный проход completed?",
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-pipeline/SKILL.md",
+          "purpose": "свидетельство completed и граница хода"
+        },
+        {
+          "path": ".apm/skills/kc-pipeline/references/operations-contract.md",
+          "purpose": "значение конечного состояния и глобальные стадии"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "различие локальных очередей и глобальных стадий",
+          "вывод о незавершённом проходе",
+          "штатный следующий шаг и требуемое свидетельство"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Пустые локальные очереди и успешный отдельный валидатор выданы за завершение полного прохода при незакрытой corpus_validation.",
+            "expected_conclusion": "Объявлять completed нельзя. Нужно продолжить штатный полный проход, выполнить зарегистрированную corpus_validation и предъявить сохранённое состояние completed с кодом 0.",
+            "acceptable_fix_direction": "Сохранить незавершённое состояние и не подменять глобальную стадию прямым запуском валидатора или ручным изменением workflow_stage.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ объявляет completed по пустым очередям или по успешному validate-corpus-layout.py.",
+        "expected_failure": "Локальное наблюдение подменяет доказательство выполнения обязательной глобальной стадии и принятия внешнего состояния."
+      },
+      "oracle": {
+        "success_criteria": [
+          "completed отвергнут при незавершённой corpus_validation",
+          "отдельный валидатор не признан доказательством полного прохода",
+          "следующий шаг требует штатного полного прохода и свидетельства состояния"
+        ],
+        "failure_indicators": [
+          "completed объявлен по пустой локальной очереди",
+          "workflow_stage предложено изменить вручную для закрытия прохода",
+          "успешный отдельный валидатор назван заменой corpus_validation"
+        ]
+      },
+      "application_evidence": [
+        "результат отличает планирование от исполнения",
+        "результат называет corpus_validation обязательной глобальной стадией",
+        "результат требует run_id, состояние completed и код 0"
+      ],
+      "evaluation_surface": "критерий завершения и отрицательный контроль глобальной проверки",
+      "assertions": [
+        "Пустые локальные очереди не доказывают принятие внешнего состояния.",
+        "Зарегистрированная corpus_validation должна успешно завершиться до completed.",
+        "Отчёт агента и отдельный валидатор не заменяют состояние полного прохода."
+      ],
+      "must_not": [
+        "не объявлять completed без свидетельства полного прохода",
+        "не обходить corpus_validation ручной правкой workflow_stage",
+        "не выдавать планирование за выполнение команд"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
+    },
+    {
       "id": "kc-pipeline-result-semantic-queue-automation-offer",
       "prompt": "Идёт полный проход. В очереди нормализации 128 единиц, это третий ход подряд по этой очереди. Нормализация здесь смысловая: страницы разнородны, механическим преобразованием их не закрыть. Настроек операций в проекте нет. Реши, нужно ли предлагать автоматизацию.",
       "input_files": [
@@ -1167,6 +1234,45 @@
       "evaluation_surface": "исполняемый договор, ограничение и совместимость",
       "assertions": ["fetch и verify требуют успешный probe.", "Неуспешная попытка не меняет проверку снимка."],
       "must_not": ["не передавать секрет через argv или отчёт", "не считать manual без регистрации успешной синхронизацией"],
+      "required_corpus_claims": ["KCPIPELINE-1"]
+    },
+    {
+      "id": "kc-pipeline-result-index-delta-before-queues",
+      "prompt": "В индекс changelog попала новая релевантная единица, рядом изменился только хэш другой страницы, а patch-релиз отмечен как нерелевантный. Выполни ручной полный проход.",
+      "input_files": [{"path": ".apm/skills/kc-pipeline/references/operations-contract.md", "purpose": "порядок index, дельта и очереди"}, {"path": ".apm/skills/kc-impact-audit/references/impact-report.md", "purpose": "проверяемые статусы влияния"}],
+      "expected_output": {"report_structure": ["обновление индекса до очередей", "added/changed/unchanged", "technical_only", "нерелевантный patch без рекомендации"], "findings": [{"severity": "high", "observed_problem": "Индекс обновляется после построения очередей или техническая дельта превращается в рекомендацию.", "expected_conclusion": "Новая единица попадает в следующие стадии, изменение только хэша отмечено техническим, patch-релиз остаётся в технической дельте без необоснованного предложения.", "acceptable_fix_direction": "Сохранить дельту и передать на содержательный отбор только релевантную единицу.", "corpus_claims": ["KCPIPELINE-1"]}]},
+      "negative_control": {"description": "Ответ обрабатывает только ранее известные единицы или рекомендует продуктовую правку по одному хэшу/patch-релизу.", "expected_failure": "Нарушены порядок полного прохода и отбор значимых изменений."},
+      "oracle": {"success_criteria": ["index обновлён до построения очередей", "новая единица обнаружена", "техническое изменение отделено", "patch-релиз не стал рекомендацией без последствия"], "failure_indicators": ["новая единица потеряна", "хэш назван содержательной рекомендацией", "patch-релиз автоматически объявлен значимым"]},
+      "application_evidence": ["отчёт связывает counts с дельтой индекса", "очередь содержит новую единицу", "техническое изменение не проходит в apply_now"],
+      "evaluation_surface": "сквозное поведение полного прохода",
+      "assertions": ["Сначала обновляется индекс, затем строятся очереди.", "Техническая дельта не равна влиянию на продукт."],
+      "must_not": ["не обрабатывать весь index_only источник", "не зашивать поставщика или суффикс релиза в переносимое правило"],
+      "required_corpus_claims": ["KCPIPELINE-1"]
+    },
+    {
+      "id": "kc-pipeline-result-propose-only-summary",
+      "prompt": "Владелец выбрал режим только предложений. Существенная находка затрагивает требования и пользовательскую документацию. Проведи полный проход и подготовь итог для владельца.",
+      "input_files": [{"path": ".apm/skills/kc-pipeline/references/operations-contract.md", "purpose": "transfer_policy и обязательная сводка"}, {"path": ".apm/skills/kc-impact-audit/references/impact-report.md", "purpose": "поля предложения и вопроса владельца"}],
+      "expected_output": {"report_structure": ["run_id и конечное состояние", "propose_only", "основание/источник/поверхность/ожидаемый результат/правка", "файл продукта не изменён"], "findings": [{"severity": "high", "observed_problem": "Предложение применено к производному файлу в режиме только предложений.", "expected_conclusion": "Корпус, анализ, состояние и локальный отчёт обновлены, предложение проверяемо, файл продукта не менялся, проход имеет корректное конечное состояние.", "acceptable_fix_direction": "Оставить apply_now в impact_report и передать его владельцу.", "corpus_claims": ["KCPIPELINE-1"]}]},
+      "negative_control": {"description": "Ответ меняет docs/src или считает предложение необработанным хвостом.", "expected_failure": "Нарушены граница записи и конечность режима предложений."},
+      "oracle": {"success_criteria": ["режим выбран явно", "продуктовые файлы не изменены", "каждое предложение содержит пять оснований", "owner_decision отделён от apply_now", "completed не скрывает хвост или блокер"], "failure_indicators": ["изменён продукт", "нет основания предложения", "предложение попало в human_decision без причины", "completed при непустом хвосте"]},
+      "application_evidence": ["итоговая сводка показывает число предложений и поверхности", "локальный impact_report остаётся проверяемым"],
+      "evaluation_surface": "политика переноса и управленческая сводка",
+      "assertions": ["propose_only не запускает apply_changes.", "Предложения не считаются необработанным хвостом."],
+      "must_not": ["не изменять производные файлы продукта", "не вводить новый статус находки вместо политики"],
+      "required_corpus_claims": ["KCPIPELINE-1"]
+    },
+    {
+      "id": "kc-pipeline-result-agent-route-compatibility",
+      "prompt": "Добавь новый источник, который агент получает сам. Проверь карточку, старую карточку с adapter: manual и результат полного запуска.",
+      "input_files": [{"path": ".apm/skills/kc-inventory/references/manifest-and-registry.md", "purpose": "договор registered adapter, agent и legacy manual"}, {"path": ".apm/skills/kc-inventory/assets/source.yml", "purpose": "шаблон карточки"}],
+      "expected_output": {"report_structure": ["adapter agent и agent_route", "manual compatibility warning", "проверяемое свидетельство index с run_id и хэшами", "точный блокер при отсутствии свидетельства"], "findings": [{"severity": "high", "observed_problem": "Отсутствующий способ получения замаскирован значением manual.", "expected_conclusion": "Новый источник требует зарегистрированный адаптер или валидный agent_route; старый manual диагностируется и не завершает проход без маршрута и свидетельства.", "acceptable_fix_direction": "Мигрировать на adapter: agent и оставить свидетельство обновления индекса.", "corpus_claims": ["KCPIPELINE-1"]}]},
+      "negative_control": {"description": "Ответ объявляет manual настоящим адаптером или считает agent настроенным без agent_route и подтверждения.", "expected_failure": "Нарушены происхождение и воспроизводимость получения."},
+      "oracle": {"success_criteria": ["agent не регистрируется как поставщик", "manual явно предупреждается", "без свидетельства index проход не completed", "agent_route не содержит секретов"], "failure_indicators": ["manual успешно синхронизирован", "нет agent_route", "пропущено свидетельство индекса"]},
+      "application_evidence": ["валидатор отличает предупреждение legacy от новой ошибки маршрута", "состояние содержит manual-required или index_refresh_incomplete"],
+      "evaluation_surface": "совместимость договора источника",
+      "assertions": ["Новый источник без воспроизводимого маршрута не настроен.", "Старый корпус не ломается молча."],
+      "must_not": ["не изобретать provider-specific adapter", "не хранить текущую сессию в карточке"],
       "required_corpus_claims": ["KCPIPELINE-1"]
     }
   ]

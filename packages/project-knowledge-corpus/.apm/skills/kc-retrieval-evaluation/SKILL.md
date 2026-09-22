@@ -3,9 +3,18 @@ name: kc-retrieval-evaluation
 description: >
   Используй, когда нужно оценить, находит ли модель через корпус важные
   утверждения источников и отвечает ли по ним на пользовательские вопросы.
+compatibility: "P0: ручная выборка и оценка. P1: Python 3.10+. P2: не требуется."
+optional_dependencies: PyYAML
 ---
 
 # Навык: проверка доступности знаний
+
+## Переносимость
+
+P0 — вручную выбрать фрагменты, записать вопросы и сравнить ответ с источником.
+P1 требует Python 3.10+ и необязательный PyYAML для сценариев. При недоступной
+автоматизации результат P0 остаётся допустимым с явно записанным ограничением.
+P2 отсутствует.
 
 ## Назначение
 
@@ -65,7 +74,7 @@ description: >
 Для воспроизводимой выборки можно использовать:
 
 ```bash
-python3 scripts/sample-source-sections.py CORPUS_ROOT \
+python scripts/sample-source-sections.py CORPUS_ROOT \
   --source data/example/documents/guide/normalized.md \
   --count 10 --seed 20260724 \
   --suite-id guide-sample \
@@ -110,7 +119,7 @@ python3 scripts/sample-source-sections.py CORPUS_ROOT \
 `assets/evaluation-suite.yml`.
 
 ```bash
-python3 scripts/validate-evaluation-suite.py \
+python scripts/validate-evaluation-suite.py \
   knowledge-evaluation.local.yml --corpus-root CORPUS_ROOT
 ```
 
@@ -123,7 +132,7 @@ python3 scripts/validate-evaluation-suite.py \
 адаптеры и явно подтверди допустимые границы доступа.
 
 ```bash
-python3 scripts/run-evaluation-suite.py \
+python scripts/run-evaluation-suite.py \
   knowledge-evaluation.local.yml \
   --config knowledge-evaluation-config.local.yml \
   --corpus-root CORPUS_ROOT \

@@ -1,0 +1,8 @@
+operations_version: 1
+stages:
+  apply_changes:
+    commands:
+      - id: forbidden-apply
+        argv: [python3, -c, "pass"]
+        working_directory: .
+        write_paths: []

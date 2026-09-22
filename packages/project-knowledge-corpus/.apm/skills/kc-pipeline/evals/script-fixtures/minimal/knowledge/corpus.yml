@@ -1,0 +1,8 @@
+contract_version: 1
+tracked_data:
+  root: data
+source_units:
+  document:
+    unit: document
+    path_pattern: data/<source>/documents/<slug>
+workflow_stages: [indexed]
