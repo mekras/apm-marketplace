@@ -142,31 +142,31 @@
   персонажи, цели против задач, сценарии, проектирование до реализации.
 - `ait-writing` — роль: `technical-writer` — техническое письмо.
 - `kc-analysis` — роль: `analyst` — анализ корпуса знаний. Источник:
-  `github.com/mekras/project-knowlege-corpus`.
+  `github.com/mekras/project-knowledge-corpus`.
 - `kc-concepts` — роль: `normalizer` — согласование понятий между корпусом и
-  продуктом. Источник: `github.com/mekras/project-knowlege-corpus`.
+  продуктом. Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-impact-audit` — роль: `analyst` — анализ влияния источников на производные
-  материалы. Источник: `github.com/mekras/project-knowlege-corpus`.
+  материалы. Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-inventory` — роль: `source-inventory` — учёт и техническая синхронизация
-  источников. Источник: `github.com/mekras/project-knowlege-corpus`.
+  источников. Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-normalization` — роль: `normalizer` — нормализация первичных данных.
-  Источник: `github.com/mekras/project-knowlege-corpus`.
+  Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-pipeline` — роль: `cross-role` — координация конвейера первичных данных.
-  Источник: `github.com/mekras/project-knowlege-corpus`.
+  Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-setup` — роль: `source-inventory` — настройка проекта на работу с корпусом
-  знаний. Источник: `github.com/mekras/project-knowlege-corpus`.
+  знаний. Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-sources-add` — роль: `source-inventory` — техническое добавление нового
   источника в корпус знаний. Источник:
-  `github.com/mekras/project-knowlege-corpus`.
+  `github.com/mekras/project-knowledge-corpus`.
 - `kc-statements` — роль: `statement-extractor` — извлечение утверждений, фактов
   и наблюдений из источников. Источник:
-  `github.com/mekras/project-knowlege-corpus`.
+  `github.com/mekras/project-knowledge-corpus`.
 - `kc-status` — роль: `source-inventory` — сводка состояния корпуса знаний.
-  Источник: `github.com/mekras/project-knowlege-corpus`.
+  Источник: `github.com/mekras/project-knowledge-corpus`.
 - `kc-validation` — роль: `source-inventory` — проверка корпуса знаний.
-  Источник: `github.com/mekras/project-knowlege-corpus`.
+  Источник: `github.com/mekras/project-knowledge-corpus`.
 - `transcript-analysis` — роль: `technical-writer` — разбор и очистка
-  стенограмм. Источник: `github.com/mekras/project-knowlege-corpus`.
+  стенограмм. Источник: `github.com/mekras/project-knowledge-corpus`.
 
 ## Правило размещения
 

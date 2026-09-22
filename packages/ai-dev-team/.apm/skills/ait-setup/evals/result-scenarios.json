@@ -996,7 +996,7 @@
         ]
       },
       "negative_control": {
-        "description": "Сравнить с ответом, где агент добавляет ai-agent-supervisor, ai-russian-language, project-knowlege-corpus и ru-text как прямые зависимости проекта только потому, что audit считает их осиротевшими.",
+        "description": "Сравнить с ответом, где агент добавляет ai-agent-supervisor, ai-russian-language, project-knowledge-corpus и ru-text как прямые зависимости проекта только потому, что audit считает их осиротевшими.",
         "expected_failure": "Такой ответ должен провалиться по сохранению намерения зависимости, остановке на диагностическом риске и must_not."
       },
       "oracle": {

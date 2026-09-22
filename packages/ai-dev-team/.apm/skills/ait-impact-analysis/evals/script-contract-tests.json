@@ -1,5 +1,17 @@
 {
   "version": 2,
+  "unexercised_functions": [
+    {
+      "script": "scripts/impact_graph.py",
+      "function": "require_bool",
+      "reason": "В успешных сценариях значение basis всегда корректно. Неверный тип проверяется ветвью отказа и не может быть активирован успешным сценарием."
+    },
+    {
+      "script": "scripts/impact_graph.py",
+      "function": "find_basis_cycle.<locals>.visit",
+      "reason": "Успешные сценарии содержат ациклический граф. Цикл основания должен завершать валидацию ошибкой и не может быть активирован успешным сценарием."
+    }
+  ],
   "operations": [
     {
       "id": "impact-graph-validate",

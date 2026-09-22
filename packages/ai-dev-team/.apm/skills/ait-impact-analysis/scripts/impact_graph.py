@@ -105,6 +105,12 @@ def require_string(value: Any, location: str) -> str:
     return value
 
 
+def require_bool(value: Any, location: str) -> bool:
+    if not isinstance(value, bool):
+        raise ContractError(f"{location}: expected boolean")
+    return value
+
+
 def reject_unknown(
     value: dict[str, Any],
     allowed: set[str],
@@ -338,7 +344,7 @@ def validate_graph(data: Any) -> dict[str, Any]:
         edge = require_mapping(raw_edge, location)
         reject_unknown(
             edge,
-            {"from", "to", "relation", "facets", "rationale"},
+            {"from", "to", "relation", "facets", "rationale", "basis"},
             location,
         )
         source = require_string(edge.get("from"), f"{location}.from")
@@ -366,6 +372,8 @@ def validate_graph(data: Any) -> dict[str, Any]:
                 + ", ".join(unsupported_facets),
             )
         require_string(edge.get("rationale"), f"{location}.rationale")
+        if "basis" in edge:
+            require_bool(edge.get("basis"), f"{location}.basis")
         key = (source, target, relation)
         if key in edge_keys:
             raise ContractError(
@@ -633,6 +641,37 @@ def coverage_result(graph: dict[str, Any], repo: Path) -> tuple[dict[str, Any], 
     return result, 0
 
 
+def find_basis_cycle(graph: dict[str, Any]) -> list[str] | None:
+    outgoing: dict[str, list[str]] = {}
+    for edge in graph["edges"]:
+        if edge.get("basis") is True:
+            outgoing.setdefault(edge["from"], []).append(edge["to"])
+
+    WHITE, GRAY, BLACK = 0, 1, 2
+    color: dict[str, int] = {}
+
+    def visit(node_id: str, path: list[str]) -> list[str] | None:
+        color[node_id] = GRAY
+        path.append(node_id)
+        for target in sorted(outgoing.get(node_id, [])):
+            if color.get(target, WHITE) == GRAY:
+                return path[path.index(target):] + [target]
+            if color.get(target, WHITE) == WHITE:
+                found = visit(target, path)
+                if found is not None:
+                    return found
+        path.pop()
+        color[node_id] = BLACK
+        return None
+
+    for node_id in sorted(outgoing):
+        if color.get(node_id, WHITE) == WHITE:
+            cycle = visit(node_id, [])
+            if cycle is not None:
+                return cycle
+    return None
+
+
 def validation_result(graph: dict[str, Any]) -> tuple[dict[str, Any], int]:
     result = {
         "graph": graph["graph"]["name"],
@@ -640,25 +679,32 @@ def validation_result(graph: dict[str, Any]) -> tuple[dict[str, Any], int]:
         "edges": len(graph["edges"]),
         "schema_version": graph["schema_version"],
     }
+    problems: list[dict[str, str]] = []
     if graph["schema_version"] != SEMANTIC_GRAPH_SCHEMA_VERSION:
-        result.update(
+        result.update({"status": "incomplete", "semantic_model": False})
+        problems.append(
             {
-                "status": "incomplete",
-                "semantic_model": False,
-                "problems": [
-                    {
-                        "code": "semantic-model-unavailable",
-                        "message": (
-                            "schema_version 1 has no semantic types, authorities, "
-                            "or representation roles"
-                        ),
-                    },
-                ],
+                "code": "semantic-model-unavailable",
+                "message": (
+                    "schema_version 1 has no semantic types, authorities, "
+                    "or representation roles"
+                ),
             },
         )
-        return result, 3
-    result.update({"status": "ok", "semantic_model": True, "problems": []})
-    return result, 0
+    else:
+        result.update({"status": "ok", "semantic_model": True})
+        cycle = find_basis_cycle(graph)
+        if cycle is not None:
+            problems.append(
+                {
+                    "code": "basis-cycle",
+                    "message": (
+                        "basis: true edges form a cycle: " + " -> ".join(cycle)
+                    ),
+                },
+            )
+    result["problems"] = problems
+    return result, 3 if problems else 0
 
 
 def add_trace_arguments(parser: argparse.ArgumentParser) -> None:
