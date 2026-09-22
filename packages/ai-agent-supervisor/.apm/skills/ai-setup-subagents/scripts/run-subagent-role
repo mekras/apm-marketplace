@@ -87,15 +87,37 @@ def main() -> int:
         header = json.loads(completed.stdout.splitlines()[0])
     except (IndexError, json.JSONDecodeError):
         header = {}
-    evidence = verify_model(header, journal)
+    evidence = verify_model(
+        header,
+        journal,
+        assigned_model=model,
+        assigned_effort=effort,
+    )
     actual_model = evidence["actual_model"]
+    if actual_model is not None:
+        evidence["model_matches"] = actual_model == model
+        if evidence["client_model_status"] == "confirmed":
+            evidence["client_model_matches"] = evidence["model_matches"]
+        if evidence["server_model_status"] == "confirmed":
+            evidence["server_model_matches"] = evidence["model_matches"]
+    if (
+        evidence["model_matches"] is True
+        and evidence["client_model_status"] == "confirmed"
+        and evidence["effort_matches"] is not False
+    ):
+        evidence["client_route_status"] = (
+            "confirmed"
+            if evidence["effort_matches"] is True
+            else "model_only"
+        )
     record = {
         "run_id": run_id,
         "role": args.role,
         "assigned_model": model,
+        "assigned_effort": effort,
         **evidence,
         "reported_model": header.get("model") if isinstance(header, dict) else None,
-        "model_matches": actual_model == model if actual_model else None,
+        "reported_effort": header.get("effort") if isinstance(header, dict) else None,
         "usage": header.get("usage") if isinstance(header, dict) else None,
         "effort": effort,
         "sandbox": sandbox,
@@ -111,7 +133,11 @@ def main() -> int:
     if args.obligation is not None:
         record["obligation_id"] = args.obligation
     log.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
-    if completed.returncode or not record["model_matches"]:
+    if (
+        completed.returncode
+        or record["model_matches"] is not True
+        or record["client_route_status"] in {"unconfirmed", "mismatch", "conflict"}
+    ):
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
         return 1
     print(json.dumps(record, ensure_ascii=False))

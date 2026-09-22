@@ -1,6 +1,7 @@
 {
   "version": 1,
   "execution_class": "<класс-задач>",
+  "evidence_level": "client_execution",
   "contract_sha256": "<sha256-контракта-класса>",
   "settings": {
     "confidence_level": 0.95,

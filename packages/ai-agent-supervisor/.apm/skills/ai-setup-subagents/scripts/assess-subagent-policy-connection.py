@@ -29,6 +29,7 @@ REQUIRED_RUNTIME_FIELDS = {
     "unknown_parent_parameters",
     "parent_change",
     "assignment_basis",
+    "comparison_evidence_level",
     "unavailable_route",
     "execution_failure",
     "unconfirmed_model",
@@ -43,6 +44,7 @@ RUNTIME_ENUMS = {
     "unknown_parent_parameters": {"comparison_unresolved"},
     "parent_change": {"invalidate_comparison"},
     "assignment_basis": {"historical_only"},
+    "comparison_evidence_level": {"client_execution", "server_execution", "client_or_server"},
 }
 
 
@@ -104,7 +106,34 @@ def entrypoint_status(path: Path, policy_name: str) -> tuple[bool, str]:
     return True, "подключена"
 
 
-def run_status(path: Path | None) -> dict[str, Any]:
+def _evidence_status(record: dict[str, Any], name: str, level: str) -> str:
+    execution = record.get("execution_evidence")
+    client = execution.get("client") if isinstance(execution, dict) else None
+    server = execution.get("server") if isinstance(execution, dict) else None
+    if level == "client_execution":
+        source = client if isinstance(client, dict) else {}
+        status = record.get(f"client_{name}_status")
+        matches = record.get(f"client_{name}_matches")
+    elif level == "server_execution":
+        source = server if isinstance(server, dict) else {}
+        status = record.get(f"server_{name}_status")
+        matches = record.get(f"server_{name}_matches")
+    else:
+        source = {}
+        status = record.get(f"{name}_status")
+        matches = record.get(f"{name}_matches")
+    if isinstance(source.get(name), dict):
+        status = source[name].get("status", status)
+    if status == "conflict":
+        return "conflict"
+    if matches is False:
+        return "mismatch"
+    if status == "confirmed" and matches is True:
+        return "confirmed"
+    return "unconfirmed"
+
+
+def run_status(path: Path | None, evidence_level: str = "client_execution") -> dict[str, Any]:
     if path is None:
         return {
             "process": "not_checked",
@@ -112,6 +141,9 @@ def run_status(path: Path | None) -> dict[str, Any]:
             "acceptance_record": "not_checked",
             "quality": "not_evidenced",
             "model": "not_checked",
+            "effort": "not_checked",
+            "client_route": "not_checked",
+            "evidence_level": evidence_level,
             "economy": "not_checked",
         }
     try:
@@ -127,7 +159,9 @@ def run_status(path: Path | None) -> dict[str, Any]:
     accepted = record.get("acceptance")
     if isinstance(accepted, dict):
         acceptance = "accepted_recorded" if accepted.get("status") == "accepted" else "not_accepted"
-    model = "confirmed" if record.get("model_status") == "confirmed" and record.get("model_matches") is True else "unconfirmed"
+    model = _evidence_status(record, "model", evidence_level)
+    effort = _evidence_status(record, "effort", evidence_level)
+    client_route = record.get("client_route_status", "not_recorded")
     quality = "not_evidenced"
     quality_record = record.get("quality_assessment")
     if isinstance(quality_record, dict):
@@ -136,7 +170,17 @@ def run_status(path: Path | None) -> dict[str, Any]:
     measurement = record.get("economy")
     if isinstance(measurement, dict):
         economy = "measurement_recorded" if measurement.get("status") == "measured" else "measurement_not_confirmed"
-    return {"process": process, "result": result, "acceptance_record": acceptance, "quality": quality, "model": model, "economy": economy}
+    return {
+        "process": process,
+        "result": result,
+        "acceptance_record": acceptance,
+        "quality": quality,
+        "model": model,
+        "effort": effort,
+        "client_route": client_route,
+        "evidence_level": evidence_level,
+        "economy": economy,
+    }
 
 
 def main() -> int:
@@ -175,7 +219,7 @@ def main() -> int:
             **{key: policy[key] for key in REQUIRED_RUNTIME_FIELDS if key in policy},
             "routes": policy.get("routes", []),
         },
-        "execution": run_status(args.run_record),
+        "execution": run_status(args.run_record, policy.get("comparison_evidence_level", "client_execution")),
         "errors": errors,
     }
     rendered = json.dumps(report, ensure_ascii=False, indent=2)

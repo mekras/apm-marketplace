@@ -1,0 +1,27 @@
+{
+  "returncode": 0,
+  "result_path": "worker-instructions.md",
+  "model_status": "confirmed",
+  "effort_status": "confirmed",
+  "model_matches": true,
+  "effort_matches": true,
+  "client_model_status": "confirmed",
+  "client_effort_status": "confirmed",
+  "client_model_matches": true,
+  "client_effort_matches": true,
+  "server_model_status": "unconfirmed",
+  "server_effort_status": "unconfirmed",
+  "execution_evidence": {
+    "schema_version": 2,
+    "thread_id": "fixture-thread",
+    "client": {
+      "model": {"status": "confirmed"},
+      "effort": {"status": "confirmed"}
+    },
+    "server": {
+      "model": {"status": "unconfirmed"},
+      "effort": {"status": "unconfirmed"}
+    }
+  },
+  "client_route_status": "confirmed"
+}

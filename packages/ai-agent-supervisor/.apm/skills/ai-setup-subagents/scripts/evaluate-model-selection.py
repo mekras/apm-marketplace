@@ -31,6 +31,7 @@ ELIGIBILITY_GATES = (
     "required_capabilities",
     "within_budget",
 )
+EVIDENCE_LEVELS = {"client_execution", "server_execution", "client_or_server"}
 
 
 class InputError(ValueError):
@@ -129,6 +130,14 @@ def validate_settings(data: dict[str, Any]) -> dict[str, float | int]:
             "refutation_savings_percent не может превышать confirmation_savings_percent"
         )
     return result
+
+
+def validate_evidence_level(data: dict[str, Any]) -> str:
+    level = data.get("evidence_level")
+    if level not in EVIDENCE_LEVELS:
+        values = ", ".join(sorted(EVIDENCE_LEVELS))
+        raise InputError(f"evidence_level: ожидается одно из: {values}")
+    return level
 
 
 def validate_candidates(data: dict[str, Any]) -> tuple[list[str], dict[str, list[str]]]:
@@ -386,6 +395,7 @@ def evaluate(data: dict[str, Any], digest: str) -> dict[str, Any]:
         r"[0-9a-f]{64}", contract_sha256
     ):
         raise InputError("contract_sha256: нужен SHA-256 контракта в нижнем регистре")
+    evidence_level = validate_evidence_level(data)
     settings = validate_settings(data)
     eligible, excluded = validate_candidates(data)
     tuning, holdout, cases = validate_cases(data)
@@ -427,6 +437,7 @@ def evaluate(data: dict[str, Any], digest: str) -> dict[str, Any]:
         "version": 1,
         "execution_class": execution_class,
         "contract_sha256": contract_sha256,
+        "evidence_level": evidence_level,
         "input_sha256": digest,
         "eligible_candidates": eligible,
         "excluded_candidates": excluded,

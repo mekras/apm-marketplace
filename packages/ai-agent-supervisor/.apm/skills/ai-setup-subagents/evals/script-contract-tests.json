@@ -42,6 +42,20 @@
       }
     },
     {
+      "id": "assess-client-evidence-boundary",
+      "script": "scripts/assess-subagent-policy-connection.py",
+      "fixture": "evals/script-fixtures/policy-connection",
+      "covers": ["assess-policy-connection"],
+      "command": [
+        "{python}", "{script}", "--config", "{fixture}/subagents.local.toml",
+        "--entrypoint", "codex={fixture}/worker-instructions.md",
+        "--run-record", "{fixture}/run.json", "--json"
+      ],
+      "expect": {
+        "stdout_contains": ["\"model\": \"confirmed\"", "\"effort\": \"confirmed\""]
+      }
+    },
+    {
       "id": "migrate-v1-policy-and-entrypoint",
       "script": "scripts/migrate-subagent-policy.py",
       "fixture": "evals/script-fixtures/policy-migration",

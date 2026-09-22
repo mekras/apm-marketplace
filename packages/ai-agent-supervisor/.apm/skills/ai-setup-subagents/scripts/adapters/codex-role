@@ -2,8 +2,13 @@
 """Запуск роли Codex: модель, усилие, режим доступа; задача приходит через stdin."""
 from __future__ import annotations
 
-import json, os, subprocess, sys, tempfile
+import json, os, runpy, subprocess, sys, tempfile
 from pathlib import Path
+
+
+verify_model = runpy.run_path(
+    str(Path(__file__).resolve().parents[1] / "lib/model_evidence.py")
+)["verify_model"]
 
 # Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
 for _stream in (sys.stdout, sys.stderr):
@@ -26,11 +31,25 @@ with tempfile.TemporaryDirectory() as directory:
             event = json.loads(line)
             if event.get("type") == "turn.completed": usage = event.get("usage")
         except json.JSONDecodeError: pass
-    # Параметр --model фиксирует назначение, но не свидетельство исполнения.
-    # Этот адаптер пока не извлекает модель из независимого события оснастки.
-    print(json.dumps({"model": None, "model_evidence": None,
-                      "model_notice": "Фактическая модель не подтверждена",
-                      "usage": usage}, ensure_ascii=False))
+    evidence = verify_model(
+        {},
+        Path(raw_log) if raw_log else Path(os.devnull),
+        assigned_model=model,
+        assigned_effort=effort,
+    )
+    print(json.dumps({
+        "model": evidence["actual_model"],
+        "model_evidence": evidence["model_evidence"],
+        "effort": evidence["actual_effort"],
+        "effort_evidence": evidence["effort_evidence"],
+        "execution_evidence": evidence["execution_evidence"],
+        "model_notice": (
+            None
+            if evidence["model_status"] == "confirmed"
+            else "Фактическая модель не подтверждена"
+        ),
+        "usage": usage,
+    }, ensure_ascii=False))
     if final.exists(): print(final.read_text(encoding="utf-8"), end="")
     if run.returncode: print(run.stderr, file=sys.stderr, end="")
     raise SystemExit(run.returncode)

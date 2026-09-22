@@ -26,6 +26,7 @@ SEMANTIC_DEFAULTS = (
     ('unknown_parent_parameters = "comparison_unresolved"', "unknown_parent_parameters"),
     ('parent_change = "invalidate_comparison"', "parent_change"),
     ('assignment_basis = "historical_only"', "assignment_basis"),
+    ('comparison_evidence_level = "client_execution"', "comparison_evidence_level"),
 )
 PARENT_FIELDS = {
     "parent_model": "parent_basis_model",

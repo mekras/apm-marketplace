@@ -148,8 +148,30 @@ def main() -> int:
         header = json.loads(completed.stdout.splitlines()[0])
     except (IndexError, json.JSONDecodeError):
         header = {}
-    evidence = verify_model(header, journal)
+    evidence = verify_model(
+        header,
+        journal,
+        assigned_model=model,
+        assigned_effort=effort,
+    )
     actual = evidence["actual_model"]
+    assigned_model_matches = model_matches(configured, actual) if actual else None
+    if assigned_model_matches is not None:
+        evidence["model_matches"] = assigned_model_matches
+        if evidence["client_model_status"] == "confirmed":
+            evidence["client_model_matches"] = assigned_model_matches
+        if evidence["server_model_status"] == "confirmed":
+            evidence["server_model_matches"] = assigned_model_matches
+    if (
+        evidence["model_matches"] is True
+        and evidence["client_model_status"] == "confirmed"
+        and evidence["effort_matches"] is not False
+    ):
+        evidence["client_route_status"] = (
+            "confirmed"
+            if evidence["effort_matches"] is True
+            else "model_only"
+        )
     notice = header.get("model_notice") if isinstance(header, dict) else None
     usage = header.get("usage") if isinstance(header, dict) else None
     record = {
@@ -157,9 +179,11 @@ def main() -> int:
         "execution_class": args.execution_class,
         "target": args.target,
         "assigned_model": model,
+        "assigned_effort": effort,
         **evidence,
         "reported_model": header.get("model") if isinstance(header, dict) else None,
-        "model_matches": model_matches(configured, actual) if actual else None,
+        "model_matches": assigned_model_matches,
+        "reported_effort": header.get("effort") if isinstance(header, dict) else None,
         "model_notice": notice,
         "usage": usage,
         "effort": effort,
@@ -182,7 +206,10 @@ def main() -> int:
     if completed.returncode:
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
         return 2
-    if not record["model_matches"]:
+    if (
+        record["model_matches"] is not True
+        or record["client_route_status"] in {"unconfirmed", "mismatch", "conflict"}
+    ):
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
         return 3
     print(json.dumps(record, ensure_ascii=False))

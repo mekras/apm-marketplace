@@ -1,6 +1,7 @@
 {
   "version": 1,
   "execution_class": "bounded_readonly_review",
+  "evidence_level": "client_execution",
   "contract_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   "settings": {
     "confidence_level": 0.95,
