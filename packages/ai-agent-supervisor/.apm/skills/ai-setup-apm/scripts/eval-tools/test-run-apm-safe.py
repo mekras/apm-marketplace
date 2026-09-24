@@ -27,7 +27,24 @@ def prepare(project: Path, mode: str = "clean") -> Path:
     tools.mkdir()
     shutil.copy2(SOURCE_TOOLS / "validate-python-artifacts.py", tools)
     (project / ".apm" / "skills" / "example").mkdir(parents=True)
-    (project / "apm.lock.yaml").write_text("deployments: []\n", encoding="utf-8")
+    (project / "apm.lock.yaml").write_text(
+        "lockfile_version: '2'\n"
+        "generated_at: before\n"
+        "apm_version: 0.31.0\n"
+        "dependencies:\n"
+        "- repo_url: example/lock\n"
+        "  name: lock\n"
+        "  resolved_commit: before\n"
+        "  version: 1.0.0\n"
+        "  deployed_files:\n"
+        "  - .agents/skills/example\n"
+        "  deployed_file_hashes:\n"
+        "    .agents/skills/example: sha256:before\n"
+        "  content_hash: sha256:before\n"
+        "  resolved_at: before\n"
+        "deployments: []\n",
+        encoding="utf-8",
+    )
     fake = project / "fake-apm"
     fake.write_text(
         "#!/usr/bin/env python3\n"
@@ -41,6 +58,21 @@ def prepare(project: Path, mode: str = "clean") -> Path:
         "    cache = root / '.agents/skills/example/__pycache__'\n"
         "    cache.mkdir(parents=True, exist_ok=True)\n"
         "    (cache / 'module.cpython-313.pyc').write_bytes(b'cache')\n"
+        "if mode == 'install-generated-at' and sys.argv[1] == 'install':\n"
+        "    lock = root / 'apm.lock.yaml'\n"
+        "    lock.write_text(lock.read_text(encoding='utf-8').replace('generated_at: before', 'generated_at: after'), encoding='utf-8')\n"
+        "if mode == 'install-lock-metadata' and sys.argv[1] == 'install':\n"
+        "    lock = root / 'apm.lock.yaml'\n"
+        "    content = lock.read_text(encoding='utf-8')\n"
+        "    content = content.replace('generated_at: before', 'generated_at: after')\n"
+        "    content = content.replace('  - .agents/skills/example\\n', '  - .agents/skills/changed\\n')\n"
+        "    content = content.replace('    .agents/skills/example: sha256:before\\n', '    .agents/skills/changed: sha256:after\\n')\n"
+        "    content = content.replace('content_hash: sha256:before', 'content_hash: sha256:after')\n"
+        "    content = content.replace('resolved_at: before', 'resolved_at: after')\n"
+        "    lock.write_text(content, encoding='utf-8')\n"
+        "if mode == 'install-lock-graph' and sys.argv[1] == 'install':\n"
+        "    lock = root / 'apm.lock.yaml'\n"
+        "    lock.write_text(lock.read_text(encoding='utf-8').replace('resolved_commit: before', 'resolved_commit: after'), encoding='utf-8')\n"
         "if mode == 'audit-cache' and sys.argv[1] == 'audit':\n"
         "    cache = root / '.claude/skills/example/__pycache__'\n"
         "    cache.mkdir(parents=True, exist_ok=True)\n"
@@ -100,6 +132,33 @@ def main() -> int:
             "install --frozen",
             "audit --ci",
         ]
+
+    with tempfile.TemporaryDirectory() as temporary:
+        project = Path(temporary)
+        passed = run(project, prepare(project, "install-generated-at"))
+        assert passed.returncode == 0, passed.stdout + passed.stderr
+        assert (project / "apm-calls.log").read_text(encoding="utf-8").splitlines() == [
+            "install --frozen",
+            "audit --ci",
+        ]
+
+    with tempfile.TemporaryDirectory() as temporary:
+        project = Path(temporary)
+        passed = run(project, prepare(project, "install-lock-metadata"))
+        assert passed.returncode == 0, passed.stdout + passed.stderr
+        assert (project / "apm-calls.log").read_text(encoding="utf-8").splitlines() == [
+            "install --frozen",
+            "audit --ci",
+        ]
+
+    with tempfile.TemporaryDirectory() as temporary:
+        project = Path(temporary)
+        rejected_graph = run(project, prepare(project, "install-lock-graph"))
+        assert rejected_graph.returncode == 1
+        assert (project / "apm-calls.log").read_text(encoding="utf-8").splitlines() == [
+            "install --frozen"
+        ]
+        assert "изменил lock-граф" in rejected_graph.stderr
 
     with tempfile.TemporaryDirectory() as temporary:
         project = Path(temporary)

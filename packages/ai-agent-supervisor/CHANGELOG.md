@@ -5,6 +5,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект использует [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.10] - 2026-09-24
+
+### Исправлено
+
+- Безопасный APM-цикл теперь останавливается до аудита, если
+  `apm install --frozen` изменяет lock-граф, и показывает различия снимков.
+- Запускатель подагентов теперь создаёт запись и диагностические файлы до
+  запуска адаптера, сохраняет потоковые события и stderr по мере работы и
+  различает штатное завершение, ошибку, управляемый тайм-аут и прерывание.
+- Рабочая политика подагентов теперь требует до предметной работы сохранить
+  краткое обоснованное решение о маршруте во внешнем следе сессии. Неизвестное
+  усилие родителя больше не выдаёт непроверенное сравнение за преимущество,
+  но не запрещает передачу с независимым предметным основанием.
+
 ## [2.6.9] - 2026-09-22
 
 ### Изменено
@@ -995,7 +1009,9 @@
 
 - Выпущена начальная версия коллекции.
 
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.8...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.10...HEAD
+[2.6.10]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.9...2.6.10
+[2.6.9]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.8...2.6.9
 [2.6.8]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.7...2.6.8
 [2.6.7]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.6...2.6.7
 [2.6.6]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.5...2.6.6

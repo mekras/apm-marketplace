@@ -54,12 +54,15 @@ def main() -> int:
         if not path.is_file():
             parser.error(f"входной файл не найден: {name}")
         files.append(str(path))
+    task = sys.stdin.read()
+    if not task.strip():
+        parser.error("задание для роли пусто: передайте непустой текст через stdin")
     prompt = json.dumps(
         {
             "role": args.role,
             "contract": role.get("contract", {}),
             "inputs": files,
-            "task": sys.stdin.read(),
+            "task": task,
         },
         ensure_ascii=False,
     )
@@ -69,6 +72,8 @@ def main() -> int:
     run_id = str(uuid.uuid4())
     prefix = f"{int(started)}-{args.role}-{run_id}"
     final = args.out / f"{prefix}.final.txt"
+    transport = args.out / f"{prefix}.transport.txt"
+    transport_header = args.out / f"{prefix}.transport-header.json"
     log = args.out / f"{prefix}.json"
     journal = args.out / f"{prefix}.jsonl"
     completed = subprocess.run(
@@ -81,12 +86,17 @@ def main() -> int:
         env={**os.environ, "CODEX_ROLE_LOG": str(journal), "CLAUDE_ROLE_LOG": str(journal)},
         check=False,
     )
-    final.write_text(completed.stdout, encoding="utf-8")
-
     try:
-        header = json.loads(completed.stdout.splitlines()[0])
+        header_line, _separator, result = completed.stdout.partition("\n")
+        header = json.loads(header_line)
     except (IndexError, json.JSONDecodeError):
         header = {}
+        header_line = ""
+        result = completed.stdout
+    transport.write_text(completed.stdout, encoding="utf-8")
+    if header_line:
+        transport_header.write_text(header_line + "\n", encoding="utf-8")
+    final.write_text(result, encoding="utf-8")
     evidence = verify_model(
         header,
         journal,
@@ -124,6 +134,8 @@ def main() -> int:
         "inputs": files,
         "final": str(final),
         "result_path": str(final),
+        "transport_path": str(transport),
+        "transport_header_path": str(transport_header) if header_line else None,
         "result_available": final.is_file(),
         "journal": str(journal),
         "seconds": round(time.time() - started, 3),

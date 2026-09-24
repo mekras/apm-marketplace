@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import difflib
+import hashlib
 import os
 import subprocess
 import sys
@@ -43,6 +45,146 @@ def run(command: list[str], root: Path, env: dict[str, str]) -> int:
     return result.returncode
 
 
+IGNORED_LOCK_GRAPH_BLOCKS = frozenset({"deployed_files", "deployed_file_hashes"})
+IGNORED_LOCK_GRAPH_FIELDS = frozenset({"content_hash", "resolved_at"})
+
+
+def indentation(line: str) -> int:
+    return len(line) - len(line.lstrip(" \t"))
+
+
+def yaml_key_value(line: str) -> tuple[str | None, str | None]:
+    value = line.strip()
+    if value.startswith("- "):
+        value = value[2:].lstrip()
+    key, separator, scalar = value.partition(":")
+    if not separator:
+        return None, None
+    return key.strip(), scalar.strip()
+
+
+def normalize_scalar(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == "'" and value[-1] == "'":
+        return value[1:-1].replace("''", "'")
+    return value
+
+
+def canonical_graph_line(line: str) -> str:
+    key, value = yaml_key_value(line)
+    if key is None or value is None:
+        return line.strip()
+    return f"{key}={normalize_scalar(value)}"
+
+
+def lock_graph_snapshot(lockfile: Path) -> str:
+    """Return a stable representation of the dependency graph in a lockfile."""
+
+    lines = lockfile.read_text(encoding="utf-8").splitlines()
+    top_level: list[str] = []
+    dependencies: list[tuple[str, ...]] = []
+    dependency: list[str] | None = None
+    in_dependencies = False
+    skip_indent: int | None = None
+
+    for line_number, line in enumerate(lines, start=1):
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        level = indentation(line)
+
+        if not in_dependencies:
+            if level != 0:
+                continue
+            key, value = yaml_key_value(line)
+            if key == "dependencies":
+                if value not in ("", "[]"):
+                    raise ValueError(
+                        f"строка {line_number}: неподдерживаемая запись dependencies"
+                    )
+                in_dependencies = True
+            elif key in {"lockfile_version", "apm_version"} and value is not None:
+                top_level.append(f"{key}={normalize_scalar(value)}")
+            continue
+
+        if level == 0 and stripped.startswith("- "):
+            if dependency is not None:
+                dependencies.append(tuple(sorted(dependency)))
+            dependency = [canonical_graph_line(stripped[2:])]
+            skip_indent = None
+            continue
+
+        if level == 0:
+            if dependency is not None:
+                dependencies.append(tuple(sorted(dependency)))
+            dependency = None
+            in_dependencies = False
+            continue
+
+        if dependency is None:
+            raise ValueError(
+                f"строка {line_number}: поле зависимости вне записи пакета"
+            )
+
+        if skip_indent is not None:
+            if level <= skip_indent and not stripped.startswith("- "):
+                skip_indent = None
+            else:
+                continue
+
+        key, value = yaml_key_value(line)
+        if key is None:
+            continue
+        if level == 2 and key in IGNORED_LOCK_GRAPH_BLOCKS:
+            if value == "":
+                skip_indent = level
+            continue
+        if level == 2 and key in IGNORED_LOCK_GRAPH_FIELDS:
+            continue
+        dependency.append(canonical_graph_line(line))
+
+    if dependency is not None:
+        dependencies.append(tuple(sorted(dependency)))
+
+    parts = [f"top:{item}" for item in sorted(top_level)]
+    for item in sorted(dependencies):
+        parts.append("dependency")
+        parts.extend(item)
+        parts.append("end-dependency")
+    return "\n".join(parts) + "\n"
+
+
+def lock_graph_digest(snapshot: str) -> str:
+    return hashlib.sha256(snapshot.encode("utf-8")).hexdigest()
+
+
+def report_lock_graph_change(before: str, after: str) -> None:
+    before_digest = lock_graph_digest(before)
+    after_digest = lock_graph_digest(after)
+    print(
+        "Безопасный цикл APM остановлен: "
+        "apm install --frozen изменил lock-граф.",
+        file=sys.stderr,
+    )
+    print(f"Снимок до установки: sha256:{before_digest}", file=sys.stderr)
+    print(f"Снимок после установки: sha256:{after_digest}", file=sys.stderr)
+    diff = list(
+        difflib.unified_diff(
+            before.splitlines(),
+            after.splitlines(),
+            fromfile="lock-graph-before",
+            tofile="lock-graph-after",
+            lineterm="",
+        )
+    )
+    if diff:
+        limit = 80
+        print("Различия lock-графа:", file=sys.stderr)
+        print("\n".join(diff[:limit]), file=sys.stderr)
+        if len(diff) > limit:
+            print("Различия сокращены после 80 строк.", file=sys.stderr)
+
+
 def main() -> int:
     args = parse_args()
     root = args.project_root.resolve()
@@ -68,7 +210,24 @@ def main() -> int:
     if run(preflight, root, env) != 0:
         print("Установка APM остановлена предварительным барьером.", file=sys.stderr)
         return 1
-    if run([args.apm, "install", "--frozen"], root, env) != 0:
+
+    lockfile = root / "apm.lock.yaml"
+    try:
+        before_lock_graph = lock_graph_snapshot(lockfile)
+    except (OSError, ValueError) as error:
+        print(f"Не удалось сохранить снимок lock-графа: {error}", file=sys.stderr)
+        return 1
+
+    install_status = run([args.apm, "install", "--frozen"], root, env)
+    try:
+        after_lock_graph = lock_graph_snapshot(lockfile)
+    except (OSError, ValueError) as error:
+        print(f"Не удалось проверить lock-граф после установки: {error}", file=sys.stderr)
+        return 1
+    if before_lock_graph != after_lock_graph:
+        report_lock_graph_change(before_lock_graph, after_lock_graph)
+        return 1
+    if install_status != 0:
         return 1
     if run(preflight, root, env) != 0:
         print("Установка APM создала или распространила Python-артефакт.", file=sys.stderr)

@@ -153,8 +153,12 @@ def run_status(path: Path | None, evidence_level: str = "client_execution") -> d
     if not isinstance(record, dict):
         return {"error": "запись запуска должна быть объектом JSON"}
     process = "completed" if record.get("returncode") == 0 else "failed"
+    stop_reason = record.get("stop_reason")
     result_path = record.get("result_path")
-    result = "available" if isinstance(result_path, str) and Path(result_path).is_file() else "missing"
+    result = "usable" if record.get("result_usable") is True else (
+        "not_usable" if record.get("result_usable") is False else
+        ("available" if isinstance(result_path, str) and Path(result_path).is_file() else "missing")
+    )
     acceptance = "not_checked"
     accepted = record.get("acceptance")
     if isinstance(accepted, dict):
@@ -172,6 +176,7 @@ def run_status(path: Path | None, evidence_level: str = "client_execution") -> d
         economy = "measurement_recorded" if measurement.get("status") == "measured" else "measurement_not_confirmed"
     return {
         "process": process,
+        "stop_reason": stop_reason,
         "result": result,
         "acceptance_record": acceptance,
         "quality": quality,

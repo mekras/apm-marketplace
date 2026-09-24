@@ -2,7 +2,7 @@
 """Запуск роли Codex: модель, усилие, режим доступа; задача приходит через stdin."""
 from __future__ import annotations
 
-import json, os, runpy, subprocess, sys, tempfile
+import json, os, runpy, subprocess, sys, tempfile, threading
 from pathlib import Path
 
 
@@ -21,19 +21,66 @@ if len(sys.argv) != 4:
 model, effort, sandbox = sys.argv[1:]
 with tempfile.TemporaryDirectory() as directory:
     final = Path(directory) / "final.txt"
-    run = subprocess.run(["codex", "exec", "--json", "--color", "never", "--strict-config", "--skip-git-repo-check", "--sandbox", sandbox, "--model", model, "-c", f'model_reasoning_effort="{effort}"', "--output-last-message", str(final), "-"], input=sys.stdin.read(), text=True, encoding="utf-8", errors="replace", capture_output=True)
     raw_log = os.environ.get("CODEX_ROLE_LOG")
-    if raw_log:
-        Path(raw_log).write_text(run.stdout, encoding="utf-8")
+    raw_stderr = os.environ.get("CODEX_ROLE_STDERR")
+    log_path = Path(raw_log) if raw_log else None
+    stderr_path = Path(raw_stderr) if raw_stderr else None
+    for path in (log_path, stderr_path):
+        if path is not None:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.touch()
+    run = subprocess.Popen(
+        ["codex", "exec", "--json", "--color", "never", "--strict-config", "--skip-git-repo-check", "--sandbox", sandbox, "--model", model, "-c", f'model_reasoning_effort="{effort}"', "--output-last-message", str(final), "-"],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    assert run.stdin is not None
+    assert run.stdout is not None
+    assert run.stderr is not None
+    run.stdin.write(sys.stdin.read())
+    run.stdin.close()
+
+    def copy_stream(stream: object, path: Path | None, chunks: list[str]) -> None:
+        destination = path.open("a", encoding="utf-8") if path is not None else None
+        try:
+            while chunk := stream.readline():  # type: ignore[union-attr]
+                chunks.append(chunk)
+                if destination is not None:
+                    destination.write(chunk)
+                    destination.flush()
+        finally:
+            if destination is not None:
+                destination.close()
+
+    stdout_chunks: list[str] = []
+    stderr_chunks: list[str] = []
+    readers = [
+        threading.Thread(target=copy_stream, args=(run.stdout, log_path, stdout_chunks)),
+        threading.Thread(target=copy_stream, args=(run.stderr, stderr_path, stderr_chunks)),
+    ]
+    for reader in readers:
+        reader.start()
+    returncode = run.wait()
+    for reader in readers:
+        reader.join()
+    stdout = "".join(stdout_chunks)
+    stderr = "".join(stderr_chunks)
     usage = None
-    for line in run.stdout.splitlines():
+    turn_completed = False
+    for line in stdout.splitlines():
         try:
             event = json.loads(line)
-            if event.get("type") == "turn.completed": usage = event.get("usage")
+            if event.get("type") == "turn.completed":
+                usage = event.get("usage")
+                turn_completed = True
         except json.JSONDecodeError: pass
     evidence = verify_model(
         {},
-        Path(raw_log) if raw_log else Path(os.devnull),
+        log_path if log_path is not None else Path(os.devnull),
         assigned_model=model,
         assigned_effort=effort,
     )
@@ -49,7 +96,8 @@ with tempfile.TemporaryDirectory() as directory:
             else "Фактическая модель не подтверждена"
         ),
         "usage": usage,
+        "turn_completed": turn_completed,
     }, ensure_ascii=False))
     if final.exists(): print(final.read_text(encoding="utf-8"), end="")
-    if run.returncode: print(run.stderr, file=sys.stderr, end="")
-    raise SystemExit(run.returncode)
+    if returncode: print(stderr, file=sys.stderr, end="")
+    raise SystemExit(returncode)

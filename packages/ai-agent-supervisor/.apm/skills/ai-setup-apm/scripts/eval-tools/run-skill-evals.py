@@ -1093,6 +1093,12 @@ def answer_prompt(
     data: dict[str, Any],
     cases: list[dict[str, Any]],
 ) -> str:
+    initial_skill = cases[0].get("initial_skill", data["skill_name"])
+    initial_skill_note = (
+        "Начальный навык не задан."
+        if initial_skill is None
+        else f"Начальный навык: {initial_skill}."
+    )
     target_cases = [
         {
             "id": case["id"],
@@ -1111,7 +1117,7 @@ def answer_prompt(
         "Не ищи критерии оценки в evals и не оценивай себя. "
         "Комплект навыков доступен в .agents/skills и .claude/skills, включая "
         "справки, шаблоны и скрипты. Читай нужные материалы по месту. "
-        f"Начальный навык: {data['skill_name']}. Допускается подключить соседние "
+        f"{initial_skill_note} Допускается подключить соседние "
         "навыки или обоснованно обойтись без них.\n"
         f"Сценарии:\n{json.dumps(target_cases, ensure_ascii=False, indent=2)}\n"
     )

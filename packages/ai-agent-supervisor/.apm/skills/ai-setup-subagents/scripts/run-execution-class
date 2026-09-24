@@ -8,8 +8,10 @@ import json
 import os
 import runpy
 import shlex
+import signal
 import subprocess
 import sys
+import threading
 import time
 import tomllib
 import uuid
@@ -92,10 +94,17 @@ def main() -> int:
     parser.add_argument("--input", action="append", default=[])
     parser.add_argument("--out", type=Path, default=Path(".codex/subagents"))
     parser.add_argument(
+        "--timeout-seconds",
+        type=float,
+        help="ограничение времени адаптера в секундах",
+    )
+    parser.add_argument(
         "--obligation",
         help="идентификатор обязательства профильной роли, которое обслуживает запуск",
     )
     args = parser.parse_args()
+    if args.timeout_seconds is not None and args.timeout_seconds <= 0:
+        parser.error("--timeout-seconds должен быть больше нуля")
 
     try:
         data = tomllib.loads(args.config.read_text(encoding="utf-8"))
@@ -112,42 +121,184 @@ def main() -> int:
         parser.error(f"ошибка настройки: {error}")
 
     files = input_files(args.input, parser)
+    task = sys.stdin.read()
+    if not task.strip():
+        parser.error("задание для класса исполнения пусто: передайте непустой текст через stdin")
     request = {
         "execution_class": args.execution_class,
         "contract": contract,
         "inputs": files,
-        "task": sys.stdin.read(),
+        "task": task,
     }
     args.out.mkdir(parents=True, exist_ok=True)
     started = time.time()
     run_id = str(uuid.uuid4())
     prefix = f"{int(started)}-{args.target}-{args.execution_class}-{run_id}"
     final = args.out / f"{prefix}.final.txt"
+    transport = args.out / f"{prefix}.transport.txt"
+    transport_header = args.out / f"{prefix}.transport-header.json"
     record_path = args.out / f"{prefix}.json"
     stderr_path = args.out / f"{prefix}.stderr.txt"
     journal = args.out / f"{prefix}.jsonl"
+    codex_stderr_path = args.out / f"{prefix}.codex.stderr.txt"
+
+    def write_record(data: dict[str, Any]) -> None:
+        temporary = record_path.with_suffix(record_path.suffix + ".tmp")
+        temporary.write_text(
+            json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        temporary.replace(record_path)
+
+    initial_record = {
+        "run_id": run_id,
+        "execution_class": args.execution_class,
+        "target": args.target,
+        "assigned_model": model,
+        "assigned_effort": effort,
+        "effort": effort,
+        "sandbox": sandbox,
+        "inputs": files,
+        "contract": contract,
+        "command": {
+            "adapter_executable": Path(adapter[0]).name,
+            "adapter_argument_count": len(adapter),
+            "model": model,
+            "effort": effort,
+            "sandbox": sandbox,
+        },
+        "environment": {
+            "codex_home_configured": bool(os.environ.get("CODEX_HOME")),
+            "nested_codex_context": any(
+                os.environ.get(name) for name in ("CODEX_SESSION_ID", "CODEX_THREAD_ID")
+            ),
+        },
+        "final": str(final),
+        "result_path": str(final),
+        "transport_path": str(transport),
+        "transport_header_path": None,
+        "stderr": str(stderr_path),
+        "journal": str(journal),
+        "codex_stderr": str(codex_stderr_path),
+        "status": "started",
+        "termination_confirmed": False,
+        "started_at": started,
+    }
+    write_record(initial_record)
+    for path in (transport, stderr_path, journal, codex_stderr_path):
+        path.touch()
     environment = {
         **os.environ,
         "CODEX_ROLE_LOG": str(journal),
         "CLAUDE_ROLE_LOG": str(journal),
+        "CODEX_ROLE_STDERR": str(codex_stderr_path),
     }
-    completed = subprocess.run(
-        [*adapter, model, effort, sandbox],
-        input=json.dumps(request, ensure_ascii=False),
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        capture_output=True,
-        env=environment,
-        check=False,
-    )
-    final.write_text(completed.stdout, encoding="utf-8")
-    stderr_path.write_text(completed.stderr, encoding="utf-8")
+    process: subprocess.Popen[str] | None = None
+    def interrupt(signum: int, _frame: object) -> None:
+        write_record(
+            {
+                **initial_record,
+                "status": "interrupted",
+                "signal": signal.Signals(signum).name,
+                "interrupted_at": time.time(),
+                "termination_confirmed": False,
+            }
+        )
+        raise KeyboardInterrupt
+
+    previous_handlers = {
+        signum: signal.signal(signum, interrupt)
+        for signum in (signal.SIGINT, signal.SIGTERM)
+    }
+    stdout_parts: list[str] = []
+
+    def copy_stream(stream: Any, path: Path, parts: list[str] | None) -> None:
+        with path.open("a", encoding="utf-8") as destination:
+            while chunk := stream.readline():
+                destination.write(chunk)
+                destination.flush()
+                if parts is not None:
+                    parts.append(chunk)
 
     try:
-        header = json.loads(completed.stdout.splitlines()[0])
+        process = subprocess.Popen(
+            [*adapter, model, effort, sandbox],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=environment,
+        )
+        assert process.stdin is not None
+        assert process.stdout is not None
+        assert process.stderr is not None
+        process.stdin.write(json.dumps(request, ensure_ascii=False))
+        process.stdin.close()
+        readers = [
+            threading.Thread(target=copy_stream, args=(process.stdout, transport, stdout_parts)),
+            threading.Thread(target=copy_stream, args=(process.stderr, stderr_path, None)),
+        ]
+        for reader in readers:
+            reader.start()
+        try:
+            returncode = process.wait(timeout=args.timeout_seconds)
+            timed_out = False
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            process.terminate()
+            try:
+                returncode = process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                returncode = process.wait()
+        for reader in readers:
+            reader.join()
+    except KeyboardInterrupt:
+        if process is not None and process.poll() is None:
+            process.terminate()
+        raise
+    except OSError as error:
+        write_record(
+            {
+                **initial_record,
+                "status": "failed",
+                "stop_reason": "launch_error",
+                "error": str(error),
+                "completed_at": time.time(),
+                "termination_confirmed": True,
+            }
+        )
+        print(json.dumps({**initial_record, "status": "failed", "stop_reason": "launch_error"}, ensure_ascii=False), file=sys.stderr)
+        return 2
+    finally:
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
+
+    completed_stdout = "".join(stdout_parts)
+
+    try:
+        header_line, _separator, result = completed_stdout.partition("\n")
+        header = json.loads(header_line)
     except (IndexError, json.JSONDecodeError):
         header = {}
+        header_line = ""
+        result = completed_stdout
+    if header_line:
+        transport_header.write_text(header_line + "\n", encoding="utf-8")
+    final.write_text(result, encoding="utf-8")
+    result_nonempty = bool(result.strip())
+    turn_completed = header.get("turn_completed") if isinstance(header, dict) else None
+    if timed_out:
+        stop_reason = "timeout"
+    elif returncode:
+        stop_reason = "process_exit_nonzero"
+    elif turn_completed is False:
+        stop_reason = "model_turn_not_completed"
+    elif not result_nonempty:
+        stop_reason = "empty_model_result"
+    else:
+        stop_reason = None
     evidence = verify_model(
         header,
         journal,
@@ -175,6 +326,7 @@ def main() -> int:
     notice = header.get("model_notice") if isinstance(header, dict) else None
     usage = header.get("usage") if isinstance(header, dict) else None
     record = {
+        **initial_record,
         "run_id": run_id,
         "execution_class": args.execution_class,
         "target": args.target,
@@ -192,20 +344,31 @@ def main() -> int:
         "contract": contract,
         "final": str(final),
         "result_path": str(final),
+        "transport_path": str(transport),
+        "transport_header_path": str(transport_header) if header_line else None,
         "result_available": final.is_file(),
+        "result_file_available": final.is_file(),
+        "result_nonempty": result_nonempty,
+        "result_usable": result_nonempty and stop_reason is None,
+        "turn_completed": turn_completed,
+        "stop_reason": stop_reason,
         "stderr": str(stderr_path),
         "journal": str(journal),
         "seconds": round(time.time() - started, 3),
-        "returncode": completed.returncode,
+        "returncode": returncode,
+        "status": "timed_out" if timed_out else ("failed" if returncode else "completed"),
+        "completed_at": time.time(),
+        "termination_confirmed": True,
     }
     if args.obligation is not None:
         record["obligation_id"] = args.obligation
-    record_path.write_text(
-        json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
-    if completed.returncode:
+    write_record(record)
+    if returncode:
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
         return 2
+    if stop_reason is not None:
+        print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
+        return 4
     if (
         record["model_matches"] is not True
         or record["client_route_status"] in {"unconfirmed", "mismatch", "conflict"}
