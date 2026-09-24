@@ -49,7 +49,7 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras --target <цель>
+apm install ai-agent-supervisor@mekras#2.6.11 --target <цель>
 ```
 
 `<цель>` — это  `claude`, `codex` или `hermes`.
@@ -57,7 +57,7 @@ apm install ai-agent-supervisor@mekras --target <цель>
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras --target codex
+apm install ai-agent-supervisor@mekras#2.6.11 --target codex
 ```
 
 
@@ -519,7 +519,12 @@ APM_EVAL_LIMIT=1 apm run evals
 
 Перед выпуском обновите `version` в `apm.yml` и перенесите изменения из раздела
 «Невыпущено» в раздел этой версии в `CHANGELOG.md`. Номер тега исходного
-репозитория должен в точности совпадать с `version`, например `2.3.22`.
+репозитория и версия в командах установки выше должны в точности совпадать с
+`version`, например `2.3.22`.
+
+Перед выпуском проверьте раздел «Установка» на актуальность. Сверьте реестр,
+команды установки, список целей, первый шаг после установки и минимальную версию
+APM со всеми поддерживаемыми целями и текущими workflow проекта.
 
 После отправки такого тега GitHub Actions проверяет коллекцию, переносит её
 публичный состав в `mekras/apm-marketplace`, пересобирает описания реестра и
