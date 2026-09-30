@@ -27,12 +27,23 @@
 - [документации Promptfoo](https://www.promptfoo.dev/docs/intro/)
 - [документации Visual Studio Code о пользовательских инструкциях](https://code.visualstudio.com/docs/agent-customization/custom-instructions)
 
-## Ограничения
+<!-- compatibility-summary:start -->
+## Поддерживаемые среды
 
-Коллекция проверялась только с `Codex` и `Claude Code`. Манифест также
-указывает целью `Hermes`, но это подтверждено только на уровне инструментария
-APM (блокировка зависимостей, установка, аудит, сборка выпуска) — поведение
-самих навыков внутри среды Hermes ещё не проверено.
+Коллекция развивает поддержку Codex CLI, Claude Code и Hermes Agent.
+
+| Среда | Текущее состояние |
+| --- | --- |
+| Codex CLI | Предусмотрены установка и работа навыков. Для анализа истории может потребоваться её экспорт. |
+| Claude Code | Предусмотрены установка и работа навыков. Для анализа истории может потребоваться её экспорт. |
+| Hermes Agent | Версия 2.6.13 содержит установку и обнаружение локальных навыков. Сценарий правки AGENTS.md в Hermes проверен только на локальном кандидате. Новые инструкции Hermes отдельного модельного испытания не проходили. Остальные возможности и подагенты Hermes не проверены. |
+
+В Codex CLI и локальном кандидате коллекции для Hermes Agent проверена правка AGENTS.md с помощью установленного навыка. Проверки остальных возможностей ещё предстоят.
+
+
+Подробные сведения приведены в [реестре поддержки](.apm/skills/ai-setup-apm/references/compatibility.yml).
+
+<!-- compatibility-summary:end -->
 
 
 ## Установка
@@ -49,19 +60,24 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.12 --target <цель>
+apm install ai-agent-supervisor@mekras#2.6.13 --target <цель>
 ```
 
-`<цель>` — это  `claude`, `codex` или `hermes`.
+`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.13.
 
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.12 --target codex
+apm install ai-agent-supervisor@mekras#2.6.13 --target codex
 ```
 
+Для Hermes Agent:
 
-После установки навыки коллекции станут доступны агенту в этом проекте.
+```bash
+apm install ai-agent-supervisor@mekras#2.6.13 --target hermes
+```
+
+После установки коллекция будет размещена в проекте для выбранной среды. Установка и обнаружение локальных навыков Hermes проверены отдельно от работы навыков в среде агента. Правка `AGENTS.md` в Codex CLI прошла проверку, а в Hermes Agent — только на локальном кандидате. Новые инструкции Hermes отдельного модельного испытания не проходили.
 
 ### Настройка проекта
 

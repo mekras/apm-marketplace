@@ -1,11 +1,12 @@
 name: ai-agent-supervisor
-version: 2.6.12
+version: 2.6.13
 description: Коллекция навыков для контроля применения ИИ в продуктовых задачах
 author: Михаил Красильников
 license: MIT
 target:
 - claude
 - codex
+- hermes
 type: skill
 includes: auto
 dependencies:
