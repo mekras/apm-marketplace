@@ -60,21 +60,21 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.13 --target <цель>
+apm install ai-agent-supervisor@mekras#2.6.15 --target <цель>
 ```
 
-`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.13.
+`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.15.
 
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.13 --target codex
+apm install ai-agent-supervisor@mekras#2.6.15 --target codex
 ```
 
 Для Hermes Agent:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.13 --target hermes
+apm install ai-agent-supervisor@mekras#2.6.15 --target hermes
 ```
 
 После установки коллекция будет размещена в проекте для выбранной среды. Установка и обнаружение локальных навыков Hermes проверены отдельно от работы навыков в среде агента. Правка `AGENTS.md` в Codex CLI прошла проверку, а в Hermes Agent — только на локальном кандидате. Новые инструкции Hermes отдельного модельного испытания не проходили.
@@ -210,6 +210,13 @@ apm update
 ```
 Проверь, хватает ли данных для изменения правил доступа.
 ```
+
+#### ai-human-communication
+
+Задаёт краткий итог поручения, препятствия и конкретный следующий шаг.
+Учитывает уже полученные ответы и разрешения.
+
+[README навыка](.apm/skills/ai-human-communication/README.md)
 
 #### ai-rule-failure-analysis
 

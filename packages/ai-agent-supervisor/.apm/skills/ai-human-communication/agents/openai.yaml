@@ -1,0 +1,4 @@
+interface:
+  display_name: "Общение с человеком"
+  short_description: "Краткий итог и конкретное продолжение поручения"
+  default_prompt: "Используй $ai-human-communication перед итогом, остановкой работы или вопросом о продолжении."

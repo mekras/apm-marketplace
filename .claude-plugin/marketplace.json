@@ -16,7 +16,7 @@
     {
       "name": "ai-agent-supervisor",
       "description": "Переносимые навыки для управления применением ИИ",
-      "version": "2.6.13",
+      "version": "2.6.15",
       "category": "Productivity",
       "source": "./packages/ai-agent-supervisor"
     },

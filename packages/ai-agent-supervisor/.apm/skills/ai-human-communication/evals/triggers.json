@@ -1,0 +1,47 @@
+{
+  "skill_name": "ai-human-communication",
+  "cases": [
+    {
+      "id": "ai-human-communication-completed",
+      "prompt": "Сообщи итог выполненного поручения.",
+      "should_trigger": true,
+      "rationale": "Завершение поручения человеку."
+    },
+    {
+      "id": "ai-human-communication-blocked",
+      "prompt": "Работа остановилась. Объясни, что мешает и что делать дальше.",
+      "should_trigger": true,
+      "rationale": "Остановка требует конкретного продолжения."
+    },
+    {
+      "id": "ai-human-communication-decision",
+      "prompt": "Нужно моё решение для продолжения. Сформулируй вопрос.",
+      "should_trigger": true,
+      "rationale": "Запрос решения человека."
+    },
+    {
+      "id": "ai-human-communication-plain-fact",
+      "prompt": "Сколько будет два плюс два?",
+      "should_trigger": false,
+      "rationale": "Простая справка не требует отдельной процедуры завершения."
+    },
+    {
+      "id": "ai-human-communication-internal",
+      "prompt": "Верни родителю извлечённые факты по внутреннему контракту подзадачи.",
+      "should_trigger": false,
+      "rationale": "Внутренний результат исполнителя не является сообщением человеку."
+    },
+    {
+      "id": "ai-human-communication-failure-analysis",
+      "prompt": "Разбери системную причину нарушения агентом правила.",
+      "should_trigger": false,
+      "rationale": "Предметный разбор принадлежит ai-rule-failure-analysis. Навык общения может использоваться при завершении."
+    },
+    {
+      "id": "ai-human-communication-error-followup",
+      "prompt": "Ты признал ошибку, но я не понимаю, что произойдёт дальше.",
+      "should_trigger": true,
+      "rationale": "Исправление ответа требует конкретного состояния и действия."
+    }
+  ]
+}

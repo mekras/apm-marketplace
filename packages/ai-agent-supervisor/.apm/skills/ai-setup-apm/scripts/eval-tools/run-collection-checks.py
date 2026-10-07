@@ -36,6 +36,7 @@ def main() -> int:
         [tools / "test-validate-python-artifacts.py"],
         [tools / "test-validate-python-syntax.py"],
         [tools / "test-run-apm-safe.py"],
+        [tools / "test-apm-audit-ci.py"],
         [tools / "validate-hidden-unicode.py"],
         [tools / "validate-skill-descriptions.py", Path(args.skills_path)],
         [tools / "validate-trigger-evals.py", Path(args.skills_path), "--require-all"],

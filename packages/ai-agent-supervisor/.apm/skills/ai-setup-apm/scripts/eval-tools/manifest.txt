@@ -5,6 +5,8 @@
 run-skill-evals.py|tools/run-skill-evals.py|644
 run-collection-checks.py|tools/run-collection-checks.py|644
 run-apm-safe.py|tools/run-apm-safe.py|644
+apm-audit-ci|tools/apm-audit-ci|755
+test-apm-audit-ci.py|tools/test-apm-audit-ci.py|644
 test-run-skill-evals.py|tools/test-run-skill-evals.py|644
 test-run-fixture-checks.py|tools/test-run-fixture-checks.py|644
 test-run-apm-safe.py|tools/test-run-apm-safe.py|644
