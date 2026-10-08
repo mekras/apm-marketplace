@@ -1,0 +1,27 @@
+{
+  "concept_contract_version": 2,
+  "concepts": [
+    {
+      "id": "operating-mode",
+      "primary": "Режим работы",
+      "definition": "Набор настроек приложения.",
+      "boundaries": {
+        "includes": [
+          "Настройки поведения."
+        ],
+        "excludes": [
+          "Профиль пользователя."
+        ]
+      },
+      "authority": {
+        "type": "project_decision",
+        "ref": "docs/decisions/mode.yml"
+      },
+      "defined_by": [],
+      "decision": {
+        "ref": "docs/decisions/mode.yml",
+        "sha256": "f33f47207636645d4d0fdd7b0a0d5b7af9905b80536ecde070a130320d0ef6cf"
+      }
+    }
+  ]
+}

@@ -8,6 +8,16 @@ status: draft # approved | draft | deprecated | blocked
 priority: normal # high | normal | low
 carrier_type: other # см. assets/source-carrier-types.yml
 source_kind: other # см. assets/source-kinds.yml
+provenance:
+  origin: unknown # external_material | project_artifact | working_dialogue | unknown
+  locator: "Укажите исходный материал, а не его производную копию."
+# После проверки допуска заполните ровно один вариант по source-admission.md.
+# admission:
+#   rule: accepted-project-rule
+# admission:
+#   decision:
+#     ref: docs/decisions/source.yml
+#     sha256: "<SHA-256 принятой записи решения>"
 long_source: false # true для книги, стандарта, большого документа или набора документации
 # adapter is mandatory. Use a registered project adapter, or the portable
 # agent-managed route below when the agent is explicitly allowed to obtain the

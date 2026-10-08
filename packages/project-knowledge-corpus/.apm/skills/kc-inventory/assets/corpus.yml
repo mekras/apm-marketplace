@@ -16,6 +16,16 @@ action_policy:
   irreversible_transform: owner_decision
   secrets_in_tracked_storage: prohibit
 
+# Настройте границы допуска вместе с владельцем проекта. Этот договор
+# не заменяет разрешения на обработку, хранение и публикацию.
+source_admission:
+  version: 1
+  default: require_approval
+  rules:
+    - id: development-dialogues
+      origins: [working_dialogue]
+      action: prohibit
+
 tracked_data:
   root: data
   concepts: concepts.yml

@@ -4151,6 +4151,25 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def check_source_admission(root: Path, corpus_root: Path) -> None:
+    """Проверить принятый договор до исполнения и изменения данных корпуса."""
+    contract = load_yaml(corpus_root / "corpus.yml")
+    if not isinstance(contract, dict) or "source_admission" not in contract:
+        return  # Старые корпуса сохраняют прежний порядок исполнения.
+    validator = Path(__file__).resolve().parents[2] / "kc-inventory/scripts/validate-corpus-layout.py"
+    result = subprocess.run(
+        [sys.executable, str(validator), str(corpus_root), "--admission-only",
+         "--project-root", str(root), "--output", "json"],
+        cwd=root, capture_output=True, text=True, encoding="utf-8", errors="replace", check=False,
+    )
+    if result.returncode:
+        raise OperationsError(
+            "Допуск источников не подтверждён. Запустите validate-corpus-layout.py "
+            "с --strict-admission и --project-root для отчёта. "
+            "Контроллер не запускал исполнителей и не записывал состояние."
+        )
+
+
 def main() -> int:
     args = parse_args()
     root = Path.cwd().resolve()
@@ -4196,6 +4215,9 @@ def main() -> int:
         )
     if args.complete_global_stage and not operations_path:
         raise OperationsError("Для --complete-global-stage нужен параметр --operations.")
+    if any((args.run_pipeline, args.run_commands, args.run_adapters,
+            args.rebuild_indexes, args.reconcile_state, args.complete_global_stage)):
+        check_source_admission(root, corpus_root)
     if args.complete_global_stage:
         destination_state = state_path(root, operations, args.state)
         return complete_global_stage(

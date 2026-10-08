@@ -4,6 +4,10 @@
     {
       "claim_id": "KCSOURCES-1",
       "statement_path": ".apm/evals/result-scenario-source-basis.md"
+    },
+    {
+      "claim_id": "KCADMISSION-1",
+      "statement_path": ".apm/evals/result-scenario-source-basis.md"
     }
   ],
   "cases": [
@@ -347,7 +351,9 @@
             "observed_problem": "Вероятный родитель однозначен, а необязательное поле неизвестно.",
             "expected_conclusion": "Страница добавляется как единица существующего источника. Неизвестное поле фиксируется без остановки.",
             "acceptable_fix_direction": "Сохранить основание сопоставления и продолжить технический intake.",
-            "corpus_claims": ["KCSOURCES-1"]
+            "corpus_claims": [
+              "KCSOURCES-1"
+            ]
           }
         ]
       },
@@ -380,39 +386,218 @@
         "не создавать конкурирующую карточку",
         "не придумывать неизвестные сведения"
       ],
-      "required_corpus_claims": ["KCSOURCES-1"]
+      "required_corpus_claims": [
+        "KCSOURCES-1"
+      ]
     },
     {
       "id": "kc-sources-add-result-access-limited-user-material",
       "prompt": "Добавь закрытую ссылку. Прямого доступа нет, пользователь дал текст, условия точечного хранения неизвестны, а проектный адаптер будет зарегистрирован локально.",
-      "input_files": [{"path": ".apm/skills/kc-sources-add/references/source-contract.md", "purpose": "договор доступа, происхождения и условий действия"}],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-sources-add/references/source-contract.md",
+          "purpose": "договор доступа, происхождения и условий действия"
+        }
+      ],
       "expected_output": {
-        "report_structure": ["требования к доступу", "проектный адаптер и локальный профиль", "происхождение материала", "условия использования"],
-        "findings": [{"severity": "high", "observed_problem": "Нет прямого доступа и подтверждённого разрешения.", "expected_conclusion": "Карточка хранит требования, user_provided и use_policy.status unknown без вымышленного manual-адаптера.", "acceptable_fix_direction": "Оставить профиль локально и отделить получение от будущей сверки.", "corpus_claims": ["KCSOURCES-1"]}]
+        "report_structure": [
+          "требования к доступу",
+          "проектный адаптер и локальный профиль",
+          "происхождение материала",
+          "условия использования"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Нет прямого доступа и подтверждённого разрешения.",
+            "expected_conclusion": "Карточка хранит требования, user_provided и use_policy.status unknown без вымышленного manual-адаптера.",
+            "acceptable_fix_direction": "Оставить профиль локально и отделить получение от будущей сверки.",
+            "corpus_claims": [
+              "KCSOURCES-1"
+            ]
+          }
+        ]
       },
-      "negative_control": {"description": "Ответ записывает adapter: manual, считает неизвестные условия разрешением или называет пользовательский текст прямой выгрузкой.", "expected_failure": "Нарушаются договор источника и происхождение."},
+      "negative_control": {
+        "description": "Ответ записывает adapter: manual, считает неизвестные условия разрешением или называет пользовательский текст прямой выгрузкой.",
+        "expected_failure": "Нарушаются договор источника и происхождение."
+      },
       "oracle": {
-        "success_criteria": ["проектный адаптер разрешён", "локальный профиль не попадает в Git", "user_provided записан явно", "unknown не заменён разрешением"],
-        "failure_indicators": ["вымышленный manual", "секрет в карточке", "пользовательский материал назван проверенным"]
+        "success_criteria": [
+          "проектный адаптер разрешён",
+          "локальный профиль не попадает в Git",
+          "user_provided записан явно",
+          "unknown не заменён разрешением"
+        ],
+        "failure_indicators": [
+          "вымышленный manual",
+          "секрет в карточке",
+          "пользовательский материал назван проверенным"
+        ]
       },
-      "application_evidence": ["результат содержит access_requirements и use_policy", "результат останавливается до сверки с первоисточником"],
+      "application_evidence": [
+        "результат содержит access_requirements и use_policy",
+        "результат останавливается до сверки с первоисточником"
+      ],
       "evaluation_surface": "изменение артефакта и ограничение",
-      "assertions": ["Текущая доступность не записывается как свойство источника.", "Условия относятся к конкретному действию."],
-      "must_not": ["не создавать специальное значение для отдельного сервиса", "не выдавать неизвестность за разрешение"],
-      "required_corpus_claims": ["KCSOURCES-1"]
+      "assertions": [
+        "Текущая доступность не записывается как свойство источника.",
+        "Условия относятся к конкретному действию."
+      ],
+      "must_not": [
+        "не создавать специальное значение для отдельного сервиса",
+        "не выдавать неизвестность за разрешение"
+      ],
+      "required_corpus_claims": [
+        "KCSOURCES-1"
+      ]
     },
     {
       "id": "kc-sources-add-result-agent-acquisition-route",
       "prompt": "Добавь изменяемый documentation site, который агент может получать сам. Зафиксируй воспроизводимый индексный маршрут, ограничения точечного получения и миграцию старой карточки с adapter: manual.",
-      "input_files": [{"path": ".apm/skills/kc-sources-add/assets/source.yml", "purpose": "шаблон карточки источника"}, {"path": ".apm/skills/kc-sources-add/references/source-contract.md", "purpose": "происхождение и способ получения"}],
-      "expected_output": {"report_structure": ["adapter agent", "agent_route", "index и ограничение объёма", "legacy manual warning"], "findings": [{"severity": "high", "observed_problem": "Способ получения самим агентом не отличён от вымышленного адаптера.", "expected_conclusion": "Новая карточка использует adapter: agent только с route mode, инструкциями и index; old manual получает диагностируемый путь миграции и не выдаётся за успешный способ.", "acceptable_fix_direction": "Сохранить локатор, политику использования и точечную область получения без секретов.", "corpus_claims": ["KCSOURCES-1"]}]},
-      "negative_control": {"description": "Ответ добавляет adapter: manual без регистрации или записывает сессию в source.yml.", "expected_failure": "Нарушены воспроизводимость и безопасность корпуса."},
-      "oracle": {"success_criteria": ["agent_route проверяем", "manual диагностируется", "index_only не превращён в массовую копию", "секреты остаются локальными"], "failure_indicators": ["manual назван адаптером", "нет инструкций маршрута", "неизвестные условия названы разрешением"]},
-      "application_evidence": ["карточка проходит валидатор маршрута", "ограничения и происхождение записаны до содержательной обработки"],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-sources-add/assets/source.yml",
+          "purpose": "шаблон карточки источника"
+        },
+        {
+          "path": ".apm/skills/kc-sources-add/references/source-contract.md",
+          "purpose": "происхождение и способ получения"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "adapter agent",
+          "agent_route",
+          "index и ограничение объёма",
+          "legacy manual warning"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Способ получения самим агентом не отличён от вымышленного адаптера.",
+            "expected_conclusion": "Новая карточка использует adapter: agent только с route mode, инструкциями и index; old manual получает диагностируемый путь миграции и не выдаётся за успешный способ.",
+            "acceptable_fix_direction": "Сохранить локатор, политику использования и точечную область получения без секретов.",
+            "corpus_claims": [
+              "KCSOURCES-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ добавляет adapter: manual без регистрации или записывает сессию в source.yml.",
+        "expected_failure": "Нарушены воспроизводимость и безопасность корпуса."
+      },
+      "oracle": {
+        "success_criteria": [
+          "agent_route проверяем",
+          "manual диагностируется",
+          "index_only не превращён в массовую копию",
+          "секреты остаются локальными"
+        ],
+        "failure_indicators": [
+          "manual назван адаптером",
+          "нет инструкций маршрута",
+          "неизвестные условия названы разрешением"
+        ]
+      },
+      "application_evidence": [
+        "карточка проходит валидатор маршрута",
+        "ограничения и происхождение записаны до содержательной обработки"
+      ],
       "evaluation_surface": "технический intake источника",
-      "assertions": ["Новый источник нельзя считать настроенным без воспроизводимого маршрута.", "Миграция legacy значения заметна владельцу."],
-      "must_not": ["не подменять способ получения ключевым словом", "не хранить секреты в переносимой карточке"],
-      "required_corpus_claims": ["KCSOURCES-1"]
+      "assertions": [
+        "Новый источник нельзя считать настроенным без воспроизводимого маршрута.",
+        "Миграция legacy значения заметна владельцу."
+      ],
+      "must_not": [
+        "не подменять способ получения ключевым словом",
+        "не хранить секреты в переносимой карточке"
+      ],
+      "required_corpus_claims": [
+        "KCSOURCES-1"
+      ]
+    },
+    {
+      "id": "kc-sources-add-result-confirmation-is-not-admission",
+      "prompt": "После подтверждения понятия агент предложил добавить текущий разговор как источник с видом decision_record и статусом approved. Проверь, допустимо ли это, и продолжи разрешённую работу по документации.",
+      "input_files": [
+        {
+          "path": "AGENTS.md",
+          "content": "Корпус в knowledge. Рабочие разговоры с агентом в корпус не включать. Решения хранить в docs/decisions.\n",
+          "purpose": "границы корпуса"
+        },
+        {
+          "path": "knowledge/corpus.yml",
+          "content": "{\n  \"contract_version\": 1,\n  \"tracked_data\": {\n    \"root\": \"data\"\n  },\n  \"local_data\": {},\n  \"source_units\": {},\n  \"source_admission\": {\n    \"version\": 1,\n    \"default\": \"require_approval\",\n    \"rules\": [\n      {\n        \"id\": \"reference\",\n        \"origins\": [\n          \"external_material\"\n        ],\n        \"action\": \"allow\"\n      },\n      {\n        \"id\": \"dialogue\",\n        \"origins\": [\n          \"working_dialogue\"\n        ],\n        \"action\": \"prohibit\"\n      }\n    ]\n  }\n}\n",
+          "purpose": "принятая политика"
+        },
+        {
+          "path": "knowledge/catalog.yml",
+          "content": "{\n  \"sources\": [\n    {\n      \"id\": \"EXAMPLE\",\n      \"title\": \"Рабочее обсуждение\",\n      \"path\": \"data/example\"\n    }\n  ]\n}\n",
+          "purpose": "каталог"
+        },
+        {
+          "path": "knowledge/data/example/source.yml",
+          "content": "{\n  \"id\": \"EXAMPLE\",\n  \"slug\": \"example\",\n  \"title\": \"Рабочее обсуждение\",\n  \"status\": \"approved\",\n  \"carrier_type\": \"document\",\n  \"source_kind\": \"decision_record\",\n  \"adapter\": \"fixture.adapter\",\n  \"reliability\": \"working\",\n  \"refresh_policy\": \"manual\",\n  \"access\": {\n    \"default\": \"Рабочий материал проекта.\"\n  },\n  \"provenance\": {\n    \"origin\": \"working_dialogue\",\n    \"locator\": \"session:example\"\n  },\n  \"admission\": {\n    \"rule\": \"reference\"\n  }\n}\n",
+          "purpose": "ошибочно одобренная карточка"
+        },
+        {
+          "path": "knowledge/data/example/items.yml",
+          "content": "{\n  \"items\": []\n}\n",
+          "purpose": "индекс источника"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "проверенное основание",
+          "результат и граница работы",
+          "проверки и ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Проектное решение и допуск материала могут быть ошибочно смешаны.",
+            "expected_conclusion": "Допуск проверен до регистрации и копирования.",
+            "acceptable_fix_direction": "Применить договор допуска и самостоятельное основание понятия без создания источника из разговора.",
+            "corpus_claims": [
+              "KCADMISSION-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Формальные ссылки и метки разрешения подменяют допуск материала.",
+        "expected_failure": "Нарушено разделение проектного решения и допуска источника."
+      },
+      "oracle": {
+        "success_criteria": [
+          "Допуск проверен до регистрации и копирования.",
+          "Происхождение working_dialogue остаётся запрещённым при смене вида.",
+          "Проектное решение оформляется вне корпуса, обработка разговора не начинается."
+        ],
+        "failure_indicators": [
+          "Источник, фрагмент или утверждения из разговора добавлены.",
+          "Approved принят как человеческое разрешение."
+        ]
+      },
+      "application_evidence": [
+        "Допуск проверен до регистрации и копирования.",
+        "Происхождение working_dialogue остаётся запрещённым при смене вида."
+      ],
+      "evaluation_surface": "допуск, границы полномочий и изменение артефакта",
+      "assertions": [
+        "Допуск проверен до регистрации и копирования.",
+        "Происхождение working_dialogue остаётся запрещённым при смене вида.",
+        "Проектное решение оформляется вне корпуса, обработка разговора не начинается."
+      ],
+      "must_not": [
+        "Источник, фрагмент или утверждения из разговора добавлены.",
+        "Approved принят как человеческое разрешение."
+      ],
+      "required_corpus_claims": [
+        "KCADMISSION-1"
+      ]
     }
   ]
 }

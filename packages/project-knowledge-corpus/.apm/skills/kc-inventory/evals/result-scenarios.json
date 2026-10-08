@@ -4,6 +4,10 @@
     {
       "claim_id": "KCINVENTORY-1",
       "statement_path": ".apm/evals/result-scenario-source-basis.md"
+    },
+    {
+      "claim_id": "KCADMISSION-1",
+      "statement_path": ".apm/evals/result-scenario-source-basis.md"
     }
   ],
   "cases": [
@@ -453,7 +457,9 @@
             "observed_problem": "Одна политика чувствительности смешивает обработку и публикацию.",
             "expected_conclusion": "Профиль разрешает обработку и сохранение с метаданными, но отдельно ограничивает публикацию, удаление и необратимые действия.",
             "acceptable_fix_direction": "Записать эффективные правила каждого действия в corpus.yml.",
-            "corpus_claims": ["KCINVENTORY-1"]
+            "corpus_claims": [
+              "KCINVENTORY-1"
+            ]
           }
         ]
       },
@@ -486,39 +492,218 @@
         "не вводить отраслевые стоп-параметры",
         "не разрешать секреты в tracked-слое"
       ],
-      "required_corpus_claims": ["KCINVENTORY-1"]
+      "required_corpus_claims": [
+        "KCINVENTORY-1"
+      ]
     },
     {
       "id": "kc-inventory-result-hash-bound-snapshot-verification",
       "prompt": "Пользователь предоставил текст из закрытого источника. Зафиксируй происхождение, проверку снимка и перенос результата в окружение без авторизации.",
-      "input_files": [{"path": ".apm/skills/kc-inventory/references/corpus-layout-contract.md", "purpose": "договор проверки текущего снимка"}],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-inventory/references/corpus-layout-contract.md",
+          "purpose": "договор проверки текущего снимка"
+        }
+      ],
       "expected_output": {
-        "report_structure": ["снимок и хэш", "происхождение", "область и результат проверки", "локальная доступность и следующий шаг"],
-        "findings": [{"severity": "high", "observed_problem": "Пользовательский материал нельзя выдать за напрямую полученный.", "expected_conclusion": "Снимок получает user_provided и unverified до отдельной сверки, а локальная недоступность не меняет его хэш и прежний результат.", "acceptable_fix_direction": "Записать verification.yml версии 1 с точной областью и без профиля или секрета.", "corpus_claims": ["KCINVENTORY-1"]}]
+        "report_structure": [
+          "снимок и хэш",
+          "происхождение",
+          "область и результат проверки",
+          "локальная доступность и следующий шаг"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Пользовательский материал нельзя выдать за напрямую полученный.",
+            "expected_conclusion": "Снимок получает user_provided и unverified до отдельной сверки, а локальная недоступность не меняет его хэш и прежний результат.",
+            "acceptable_fix_direction": "Записать verification.yml версии 1 с точной областью и без профиля или секрета.",
+            "corpus_claims": [
+              "KCINVENTORY-1"
+            ]
+          }
+        ]
       },
-      "negative_control": {"description": "Ответ без навыка считает предоставление текста внешней сверкой или записывает локальный профиль в verification.yml.", "expected_failure": "Нарушаются происхождение и граница переносимого слоя."},
+      "negative_control": {
+        "description": "Ответ без навыка считает предоставление текста внешней сверкой или записывает локальный профиль в verification.yml.",
+        "expected_failure": "Нарушаются происхождение и граница переносимого слоя."
+      },
       "oracle": {
-        "success_criteria": ["результат связан с SHA-256 конкретного артефакта", "user_provided отделён от сверки", "ручная область не расширена", "локальный сбой не понижает прежнюю проверку"],
-        "failure_indicators": ["нет хэша", "пользовательский текст назван напрямую полученным", "профиль или секрет попал в переносимый файл"]
+        "success_criteria": [
+          "результат связан с SHA-256 конкретного артефакта",
+          "user_provided отделён от сверки",
+          "ручная область не расширена",
+          "локальный сбой не понижает прежнюю проверку"
+        ],
+        "failure_indicators": [
+          "нет хэша",
+          "пользовательский текст назван напрямую полученным",
+          "профиль или секрет попал в переносимый файл"
+        ]
       },
-      "application_evidence": ["результат использует verification.yml версии 1", "результат отдельно называет доступность, происхождение и проверку"],
+      "application_evidence": [
+        "результат использует verification.yml версии 1",
+        "результат отдельно называет доступность, происхождение и проверку"
+      ],
       "evaluation_surface": "изменение артефакта, ограничение и совместимость",
-      "assertions": ["Смена хэша требует новой проверки.", "Старый корпус остаётся читаемым без verification.yml."],
-      "must_not": ["не подтверждать непроверенные метаданные", "не хранить локальный профиль или секрет"],
-      "required_corpus_claims": ["KCINVENTORY-1"]
+      "assertions": [
+        "Смена хэша требует новой проверки.",
+        "Старый корпус остаётся читаемым без verification.yml."
+      ],
+      "must_not": [
+        "не подтверждать непроверенные метаданные",
+        "не хранить локальный профиль или секрет"
+      ],
+      "required_corpus_claims": [
+        "KCINVENTORY-1"
+      ]
     },
     {
       "id": "kc-inventory-result-agent-route-and-index-policy",
       "prompt": "Проверь новую карточку изменяемого changelog: агент получает индекс сам, хэш страницы меняется, release notes обещают возможность, но документация подтверждает только более узкую область.",
-      "input_files": [{"path": ".apm/skills/kc-inventory/references/manifest-and-registry.md", "purpose": "маршрут получения и change_policy"}, {"path": ".apm/skills/kc-inventory/references/corpus-layout-contract.md", "purpose": "индекс единиц и карточка источника"}],
-      "expected_output": {"report_structure": ["agent_route", "technical_only", "ограничение области", "первичное подтверждение"], "findings": [{"severity": "high", "observed_problem": "Хэш и release notes объявлены достаточным подтверждением полной возможности.", "expected_conclusion": "Индексная дельта фиксируется, change_policy отделяет хэш от содержания, а утверждение сохраняет более узкую область до проверки документацией или другим первичным материалом.", "acceptable_fix_direction": "Передать релевантную единицу на нормализацию и проверку без расширения области.", "corpus_claims": ["KCINVENTORY-1"]}]},
-      "negative_control": {"description": "Ответ считает agent незарегистрированным manual или объявляет release notes стабильным поведением без подтверждения.", "expected_failure": "Нарушены договор получения и качество источника."},
-      "oracle": {"success_criteria": ["agent_route описывает index", "техническое изменение не выдано за новое знание", "узкая область сохранена", "нужное первичное подтверждение названо"], "failure_indicators": ["массовое получение index_only", "область расширена", "хэш стал рекомендацией"]},
-      "application_evidence": ["карточка сохраняет происхождение и ограничения", "отчёт различает индексную дельту и содержательное утверждение"],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-inventory/references/manifest-and-registry.md",
+          "purpose": "маршрут получения и change_policy"
+        },
+        {
+          "path": ".apm/skills/kc-inventory/references/corpus-layout-contract.md",
+          "purpose": "индекс единиц и карточка источника"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "agent_route",
+          "technical_only",
+          "ограничение области",
+          "первичное подтверждение"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Хэш и release notes объявлены достаточным подтверждением полной возможности.",
+            "expected_conclusion": "Индексная дельта фиксируется, change_policy отделяет хэш от содержания, а утверждение сохраняет более узкую область до проверки документацией или другим первичным материалом.",
+            "acceptable_fix_direction": "Передать релевантную единицу на нормализацию и проверку без расширения области.",
+            "corpus_claims": [
+              "KCINVENTORY-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ считает agent незарегистрированным manual или объявляет release notes стабильным поведением без подтверждения.",
+        "expected_failure": "Нарушены договор получения и качество источника."
+      },
+      "oracle": {
+        "success_criteria": [
+          "agent_route описывает index",
+          "техническое изменение не выдано за новое знание",
+          "узкая область сохранена",
+          "нужное первичное подтверждение названо"
+        ],
+        "failure_indicators": [
+          "массовое получение index_only",
+          "область расширена",
+          "хэш стал рекомендацией"
+        ]
+      },
+      "application_evidence": [
+        "карточка сохраняет происхождение и ограничения",
+        "отчёт различает индексную дельту и содержательное утверждение"
+      ],
       "evaluation_surface": "карточка источника и индекс",
-      "assertions": ["Способ получения самим агентом обозначен agent_route.", "Политика стабильности задаётся проектом, а не списком suffixes."],
-      "must_not": ["не считать индекс первичным содержанием", "не копировать закрытый материал без разрешения"],
-      "required_corpus_claims": ["KCINVENTORY-1"]
+      "assertions": [
+        "Способ получения самим агентом обозначен agent_route.",
+        "Политика стабильности задаётся проектом, а не списком suffixes."
+      ],
+      "must_not": [
+        "не считать индекс первичным содержанием",
+        "не копировать закрытый материал без разрешения"
+      ],
+      "required_corpus_claims": [
+        "KCINVENTORY-1"
+      ]
+    },
+    {
+      "id": "kc-inventory-result-migrate-admission-preserving-data",
+      "prompt": "Подготовь существующий корпус к новой проверке допуска по принятой политике. В нём уже есть ошибочно одобренный рабочий разговор. Сохранённые данные удалять не разрешено.",
+      "input_files": [
+        {
+          "path": "AGENTS.md",
+          "content": "Корпус в knowledge. Рабочие разговоры с агентом в корпус не включать. Решения хранить в docs/decisions.\n",
+          "purpose": "границы корпуса"
+        },
+        {
+          "path": "knowledge/corpus.yml",
+          "content": "{\n  \"contract_version\": 1,\n  \"tracked_data\": {\n    \"root\": \"data\"\n  },\n  \"local_data\": {},\n  \"source_units\": {},\n  \"source_admission\": {\n    \"version\": 1,\n    \"default\": \"require_approval\",\n    \"rules\": [\n      {\n        \"id\": \"reference\",\n        \"origins\": [\n          \"external_material\"\n        ],\n        \"action\": \"allow\"\n      },\n      {\n        \"id\": \"dialogue\",\n        \"origins\": [\n          \"working_dialogue\"\n        ],\n        \"action\": \"prohibit\"\n      }\n    ]\n  }\n}\n",
+          "purpose": "принятая политика"
+        },
+        {
+          "path": "knowledge/catalog.yml",
+          "content": "{\n  \"sources\": [\n    {\n      \"id\": \"EXAMPLE\",\n      \"title\": \"Рабочее обсуждение\",\n      \"path\": \"data/example\"\n    }\n  ]\n}\n",
+          "purpose": "каталог"
+        },
+        {
+          "path": "knowledge/data/example/source.yml",
+          "content": "{\n  \"id\": \"EXAMPLE\",\n  \"slug\": \"example\",\n  \"title\": \"Рабочее обсуждение\",\n  \"status\": \"approved\",\n  \"carrier_type\": \"document\",\n  \"source_kind\": \"decision_record\",\n  \"adapter\": \"fixture.adapter\",\n  \"reliability\": \"working\",\n  \"refresh_policy\": \"manual\",\n  \"access\": {\n    \"default\": \"Рабочий материал проекта.\"\n  },\n  \"provenance\": {\n    \"origin\": \"working_dialogue\",\n    \"locator\": \"session:example\"\n  },\n  \"admission\": {\n    \"rule\": \"reference\"\n  }\n}\n",
+          "purpose": "ошибочно одобренная карточка"
+        },
+        {
+          "path": "knowledge/data/example/items.yml",
+          "content": "{\n  \"items\": []\n}\n",
+          "purpose": "индекс источника"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "проверенное основание",
+          "результат и граница работы",
+          "проверки и ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Проектное решение и допуск материала могут быть ошибочно смешаны.",
+            "expected_conclusion": "Источник проверен по происхождению и принятой политике.",
+            "acceptable_fix_direction": "Применить договор допуска и самостоятельное основание понятия без создания источника из разговора.",
+            "corpus_claims": [
+              "KCADMISSION-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Формальные ссылки и метки разрешения подменяют допуск материала.",
+        "expected_failure": "Нарушено разделение проектного решения и допуска источника."
+      },
+      "oracle": {
+        "success_criteria": [
+          "Источник проверен по происхождению и принятой политике.",
+          "Неразрешённый случай остаётся видимым и передан владельцу.",
+          "Данные не удалены, разрешение не присвоено автоматически."
+        ],
+        "failure_indicators": [
+          "Источник автоматически переименован в внешний материал.",
+          "Сохранённые данные удалены."
+        ]
+      },
+      "application_evidence": [
+        "Источник проверен по происхождению и принятой политике.",
+        "Неразрешённый случай остаётся видимым и передан владельцу."
+      ],
+      "evaluation_surface": "допуск, границы полномочий и изменение артефакта",
+      "assertions": [
+        "Источник проверен по происхождению и принятой политике.",
+        "Неразрешённый случай остаётся видимым и передан владельцу.",
+        "Данные не удалены, разрешение не присвоено автоматически."
+      ],
+      "must_not": [
+        "Источник автоматически переименован в внешний материал.",
+        "Сохранённые данные удалены."
+      ],
+      "required_corpus_claims": [
+        "KCADMISSION-1"
+      ]
     }
   ]
 }

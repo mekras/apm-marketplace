@@ -1,0 +1,4 @@
+sources:
+  - id: FIXTURE
+    title: "Fixture"
+    path: data/fixture

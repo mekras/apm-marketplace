@@ -1,0 +1,11 @@
+{
+  "status": "accepted",
+  "decided_by": "Владелец проекта",
+  "decided_at": "2026-10-08",
+  "scope": {
+    "concepts": [
+      "operating-mode"
+    ]
+  },
+  "decision": "Режим работы — именованный набор настроек приложения."
+}

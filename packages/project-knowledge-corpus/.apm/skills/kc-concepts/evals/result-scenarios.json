@@ -4,6 +4,10 @@
     {
       "claim_id": "KCCONCEPTS-1",
       "statement_path": ".apm/evals/result-scenario-source-basis.md"
+    },
+    {
+      "claim_id": "KCADMISSION-1",
+      "statement_path": ".apm/evals/result-scenario-source-basis.md"
     }
   ],
   "cases": [
@@ -131,6 +135,72 @@
       ],
       "required_corpus_claims": [
         "KCCONCEPTS-1"
+      ]
+    },
+    {
+      "id": "kc-concepts-result-owner-decision-without-dialogue",
+      "prompt": "Владелец подтвердил понятие «Режим работы» и поручил внести его в проектную документацию. Запись решения уже принята и дана во входах. Закрепи понятие в корпусе, сохрани прослеживаемость.",
+      "input_files": [
+        {
+          "path": "AGENTS.md",
+          "content": "Корпус в knowledge. Рабочие разговоры с агентом в корпус не включать. Решения хранить в docs/decisions.\n",
+          "purpose": "границы корпуса"
+        },
+        {
+          "path": "docs/decisions/mode.yml",
+          "content": "{\n  \"status\": \"accepted\",\n  \"decided_by\": \"Владелец проекта\",\n  \"decided_at\": \"2026-10-08\",\n  \"scope\": {\n    \"concepts\": [\n      \"operating-mode\"\n    ]\n  },\n  \"decision\": \"Режим работы — именованный набор настроек приложения.\"\n}\n",
+          "purpose": "принятое решение вне корпуса"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "проверенное основание",
+          "результат и граница работы",
+          "проверки и ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Проектное решение и допуск материала могут быть ошибочно смешаны.",
+            "expected_conclusion": "Понятие имеет определение и границы в concepts.yml по договору версии 2.",
+            "acceptable_fix_direction": "Применить договор допуска и самостоятельное основание понятия без создания источника из разговора.",
+            "corpus_claims": [
+              "KCADMISSION-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Формальные ссылки и метки разрешения подменяют допуск материала.",
+        "expected_failure": "Нарушено разделение проектного решения и допуска источника."
+      },
+      "oracle": {
+        "success_criteria": [
+          "Понятие имеет определение и границы в concepts.yml по договору версии 2.",
+          "Запись ссылается на существующее решение с SHA-256 и scope.concepts.",
+          "Источник и утверждения из разговора не создаются."
+        ],
+        "failure_indicators": [
+          "Создан источник из сообщений пользователя.",
+          "Пустой defined_by оставлен без проверяемого решения."
+        ]
+      },
+      "application_evidence": [
+        "Понятие имеет определение и границы в concepts.yml по договору версии 2.",
+        "Запись ссылается на существующее решение с SHA-256 и scope.concepts."
+      ],
+      "evaluation_surface": "допуск, границы полномочий и изменение артефакта",
+      "assertions": [
+        "Понятие имеет определение и границы в concepts.yml по договору версии 2.",
+        "Запись ссылается на существующее решение с SHA-256 и scope.concepts.",
+        "Источник и утверждения из разговора не создаются."
+      ],
+      "must_not": [
+        "Создан источник из сообщений пользователя.",
+        "Пустой defined_by оставлен без проверяемого решения."
+      ],
+      "required_corpus_claims": [
+        "KCADMISSION-1"
       ]
     }
   ]

@@ -4,6 +4,10 @@
     {
       "claim_id": "KCPIPELINE-1",
       "statement_path": ".apm/evals/result-scenario-source-basis.md"
+    },
+    {
+      "claim_id": "KCADMISSION-1",
+      "statement_path": ".apm/evals/result-scenario-source-basis.md"
     }
   ],
   "cases": [
@@ -1220,60 +1224,346 @@
     {
       "id": "kc-pipeline-result-adapter-v2-portable-verification",
       "prompt": "Продолжи закрытый источник: адаптер версии 2, локального профиля в этом окружении нет, но снимок с совпадающим хэшем раньше проверен в другом окружении.",
-      "input_files": [{"path": ".apm/skills/kc-pipeline/references/adapter-contract.md", "purpose": "договор probe, fetch, verify и authorize"}],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-pipeline/references/adapter-contract.md",
+          "purpose": "договор probe, fetch, verify и authorize"
+        }
+      ],
       "expected_output": {
-        "report_structure": ["результат probe", "сохранённая проверка снимка", "отложенная операция", "точное внешнее действие"],
-        "findings": [{"severity": "high", "observed_problem": "В текущем окружении нет локального профиля.", "expected_conclusion": "probe возвращает profile-missing, сохранённая проверка не меняется, fetch или verify не запускается, authorize не стартует автоматически.", "acceptable_fix_direction": "Показать только действие по локальному профилю, если новая сверка действительно нужна.", "corpus_claims": ["KCPIPELINE-1"]}]
+        "report_structure": [
+          "результат probe",
+          "сохранённая проверка снимка",
+          "отложенная операция",
+          "точное внешнее действие"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "В текущем окружении нет локального профиля.",
+            "expected_conclusion": "probe возвращает profile-missing, сохранённая проверка не меняется, fetch или verify не запускается, authorize не стартует автоматически.",
+            "acceptable_fix_direction": "Показать только действие по локальному профилю, если новая сверка действительно нужна.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
       },
-      "negative_control": {"description": "Ответ удаляет verification.yml, понижает evidence_strength или автоматически запускает authorize.", "expected_failure": "Нарушаются переносимость и граница интерактивного действия."},
+      "negative_control": {
+        "description": "Ответ удаляет verification.yml, понижает evidence_strength или автоматически запускает authorize.",
+        "expected_failure": "Нарушаются переносимость и граница интерактивного действия."
+      },
       "oracle": {
-        "success_criteria": ["probe не меняет корпус", "сбой не меняет verification.yml", "authorize не запускается автоматически", "версия 1 остаётся рабочей"],
-        "failure_indicators": ["прежняя проверка отменена", "секрет попал в отчёт", "неизвестный адаптер назван успешным"]
+        "success_criteria": [
+          "probe не меняет корпус",
+          "сбой не меняет verification.yml",
+          "authorize не запускается автоматически",
+          "версия 1 остаётся рабочей"
+        ],
+        "failure_indicators": [
+          "прежняя проверка отменена",
+          "секрет попал в отчёт",
+          "неизвестный адаптер назван успешным"
+        ]
       },
-      "application_evidence": ["результат различает локальную доступность и переносимую проверку", "результат называет точный статус probe"],
+      "application_evidence": [
+        "результат различает локальную доступность и переносимую проверку",
+        "результат называет точный статус probe"
+      ],
       "evaluation_surface": "исполняемый договор, ограничение и совместимость",
-      "assertions": ["fetch и verify требуют успешный probe.", "Неуспешная попытка не меняет проверку снимка."],
-      "must_not": ["не передавать секрет через argv или отчёт", "не считать manual без регистрации успешной синхронизацией"],
-      "required_corpus_claims": ["KCPIPELINE-1"]
+      "assertions": [
+        "fetch и verify требуют успешный probe.",
+        "Неуспешная попытка не меняет проверку снимка."
+      ],
+      "must_not": [
+        "не передавать секрет через argv или отчёт",
+        "не считать manual без регистрации успешной синхронизацией"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
     },
     {
       "id": "kc-pipeline-result-index-delta-before-queues",
       "prompt": "В индекс changelog попала новая релевантная единица, рядом изменился только хэш другой страницы, а patch-релиз отмечен как нерелевантный. Выполни ручной полный проход.",
-      "input_files": [{"path": ".apm/skills/kc-pipeline/references/operations-contract.md", "purpose": "порядок index, дельта и очереди"}, {"path": ".apm/skills/kc-impact-audit/references/impact-report.md", "purpose": "проверяемые статусы влияния"}],
-      "expected_output": {"report_structure": ["обновление индекса до очередей", "added/changed/unchanged", "technical_only", "нерелевантный patch без рекомендации"], "findings": [{"severity": "high", "observed_problem": "Индекс обновляется после построения очередей или техническая дельта превращается в рекомендацию.", "expected_conclusion": "Новая единица попадает в следующие стадии, изменение только хэша отмечено техническим, patch-релиз остаётся в технической дельте без необоснованного предложения.", "acceptable_fix_direction": "Сохранить дельту и передать на содержательный отбор только релевантную единицу.", "corpus_claims": ["KCPIPELINE-1"]}]},
-      "negative_control": {"description": "Ответ обрабатывает только ранее известные единицы или рекомендует продуктовую правку по одному хэшу/patch-релизу.", "expected_failure": "Нарушены порядок полного прохода и отбор значимых изменений."},
-      "oracle": {"success_criteria": ["index обновлён до построения очередей", "новая единица обнаружена", "техническое изменение отделено", "patch-релиз не стал рекомендацией без последствия"], "failure_indicators": ["новая единица потеряна", "хэш назван содержательной рекомендацией", "patch-релиз автоматически объявлен значимым"]},
-      "application_evidence": ["отчёт связывает counts с дельтой индекса", "очередь содержит новую единицу", "техническое изменение не проходит в apply_now"],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-pipeline/references/operations-contract.md",
+          "purpose": "порядок index, дельта и очереди"
+        },
+        {
+          "path": ".apm/skills/kc-impact-audit/references/impact-report.md",
+          "purpose": "проверяемые статусы влияния"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "обновление индекса до очередей",
+          "added/changed/unchanged",
+          "technical_only",
+          "нерелевантный patch без рекомендации"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Индекс обновляется после построения очередей или техническая дельта превращается в рекомендацию.",
+            "expected_conclusion": "Новая единица попадает в следующие стадии, изменение только хэша отмечено техническим, patch-релиз остаётся в технической дельте без необоснованного предложения.",
+            "acceptable_fix_direction": "Сохранить дельту и передать на содержательный отбор только релевантную единицу.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ обрабатывает только ранее известные единицы или рекомендует продуктовую правку по одному хэшу/patch-релизу.",
+        "expected_failure": "Нарушены порядок полного прохода и отбор значимых изменений."
+      },
+      "oracle": {
+        "success_criteria": [
+          "index обновлён до построения очередей",
+          "новая единица обнаружена",
+          "техническое изменение отделено",
+          "patch-релиз не стал рекомендацией без последствия"
+        ],
+        "failure_indicators": [
+          "новая единица потеряна",
+          "хэш назван содержательной рекомендацией",
+          "patch-релиз автоматически объявлен значимым"
+        ]
+      },
+      "application_evidence": [
+        "отчёт связывает counts с дельтой индекса",
+        "очередь содержит новую единицу",
+        "техническое изменение не проходит в apply_now"
+      ],
       "evaluation_surface": "сквозное поведение полного прохода",
-      "assertions": ["Сначала обновляется индекс, затем строятся очереди.", "Техническая дельта не равна влиянию на продукт."],
-      "must_not": ["не обрабатывать весь index_only источник", "не зашивать поставщика или суффикс релиза в переносимое правило"],
-      "required_corpus_claims": ["KCPIPELINE-1"]
+      "assertions": [
+        "Сначала обновляется индекс, затем строятся очереди.",
+        "Техническая дельта не равна влиянию на продукт."
+      ],
+      "must_not": [
+        "не обрабатывать весь index_only источник",
+        "не зашивать поставщика или суффикс релиза в переносимое правило"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
     },
     {
       "id": "kc-pipeline-result-propose-only-summary",
       "prompt": "Владелец выбрал режим только предложений. Существенная находка затрагивает требования и пользовательскую документацию. Проведи полный проход и подготовь итог для владельца.",
-      "input_files": [{"path": ".apm/skills/kc-pipeline/references/operations-contract.md", "purpose": "transfer_policy и обязательная сводка"}, {"path": ".apm/skills/kc-impact-audit/references/impact-report.md", "purpose": "поля предложения и вопроса владельца"}],
-      "expected_output": {"report_structure": ["run_id и конечное состояние", "propose_only", "основание/источник/поверхность/ожидаемый результат/правка", "файл продукта не изменён"], "findings": [{"severity": "high", "observed_problem": "Предложение применено к производному файлу в режиме только предложений.", "expected_conclusion": "Корпус, анализ, состояние и локальный отчёт обновлены, предложение проверяемо, файл продукта не менялся, проход имеет корректное конечное состояние.", "acceptable_fix_direction": "Оставить apply_now в impact_report и передать его владельцу.", "corpus_claims": ["KCPIPELINE-1"]}]},
-      "negative_control": {"description": "Ответ меняет docs/src или считает предложение необработанным хвостом.", "expected_failure": "Нарушены граница записи и конечность режима предложений."},
-      "oracle": {"success_criteria": ["режим выбран явно", "продуктовые файлы не изменены", "каждое предложение содержит пять оснований", "owner_decision отделён от apply_now", "completed не скрывает хвост или блокер"], "failure_indicators": ["изменён продукт", "нет основания предложения", "предложение попало в human_decision без причины", "completed при непустом хвосте"]},
-      "application_evidence": ["итоговая сводка показывает число предложений и поверхности", "локальный impact_report остаётся проверяемым"],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-pipeline/references/operations-contract.md",
+          "purpose": "transfer_policy и обязательная сводка"
+        },
+        {
+          "path": ".apm/skills/kc-impact-audit/references/impact-report.md",
+          "purpose": "поля предложения и вопроса владельца"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "run_id и конечное состояние",
+          "propose_only",
+          "основание/источник/поверхность/ожидаемый результат/правка",
+          "файл продукта не изменён"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Предложение применено к производному файлу в режиме только предложений.",
+            "expected_conclusion": "Корпус, анализ, состояние и локальный отчёт обновлены, предложение проверяемо, файл продукта не менялся, проход имеет корректное конечное состояние.",
+            "acceptable_fix_direction": "Оставить apply_now в impact_report и передать его владельцу.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ меняет docs/src или считает предложение необработанным хвостом.",
+        "expected_failure": "Нарушены граница записи и конечность режима предложений."
+      },
+      "oracle": {
+        "success_criteria": [
+          "режим выбран явно",
+          "продуктовые файлы не изменены",
+          "каждое предложение содержит пять оснований",
+          "owner_decision отделён от apply_now",
+          "completed не скрывает хвост или блокер"
+        ],
+        "failure_indicators": [
+          "изменён продукт",
+          "нет основания предложения",
+          "предложение попало в human_decision без причины",
+          "completed при непустом хвосте"
+        ]
+      },
+      "application_evidence": [
+        "итоговая сводка показывает число предложений и поверхности",
+        "локальный impact_report остаётся проверяемым"
+      ],
       "evaluation_surface": "политика переноса и управленческая сводка",
-      "assertions": ["propose_only не запускает apply_changes.", "Предложения не считаются необработанным хвостом."],
-      "must_not": ["не изменять производные файлы продукта", "не вводить новый статус находки вместо политики"],
-      "required_corpus_claims": ["KCPIPELINE-1"]
+      "assertions": [
+        "propose_only не запускает apply_changes.",
+        "Предложения не считаются необработанным хвостом."
+      ],
+      "must_not": [
+        "не изменять производные файлы продукта",
+        "не вводить новый статус находки вместо политики"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
     },
     {
       "id": "kc-pipeline-result-agent-route-compatibility",
       "prompt": "Добавь новый источник, который агент получает сам. Проверь карточку, старую карточку с adapter: manual и результат полного запуска.",
-      "input_files": [{"path": ".apm/skills/kc-inventory/references/manifest-and-registry.md", "purpose": "договор registered adapter, agent и legacy manual"}, {"path": ".apm/skills/kc-inventory/assets/source.yml", "purpose": "шаблон карточки"}],
-      "expected_output": {"report_structure": ["adapter agent и agent_route", "manual compatibility warning", "проверяемое свидетельство index с run_id и хэшами", "точный блокер при отсутствии свидетельства"], "findings": [{"severity": "high", "observed_problem": "Отсутствующий способ получения замаскирован значением manual.", "expected_conclusion": "Новый источник требует зарегистрированный адаптер или валидный agent_route; старый manual диагностируется и не завершает проход без маршрута и свидетельства.", "acceptable_fix_direction": "Мигрировать на adapter: agent и оставить свидетельство обновления индекса.", "corpus_claims": ["KCPIPELINE-1"]}]},
-      "negative_control": {"description": "Ответ объявляет manual настоящим адаптером или считает agent настроенным без agent_route и подтверждения.", "expected_failure": "Нарушены происхождение и воспроизводимость получения."},
-      "oracle": {"success_criteria": ["agent не регистрируется как поставщик", "manual явно предупреждается", "без свидетельства index проход не completed", "agent_route не содержит секретов"], "failure_indicators": ["manual успешно синхронизирован", "нет agent_route", "пропущено свидетельство индекса"]},
-      "application_evidence": ["валидатор отличает предупреждение legacy от новой ошибки маршрута", "состояние содержит manual-required или index_refresh_incomplete"],
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-inventory/references/manifest-and-registry.md",
+          "purpose": "договор registered adapter, agent и legacy manual"
+        },
+        {
+          "path": ".apm/skills/kc-inventory/assets/source.yml",
+          "purpose": "шаблон карточки"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "adapter agent и agent_route",
+          "manual compatibility warning",
+          "проверяемое свидетельство index с run_id и хэшами",
+          "точный блокер при отсутствии свидетельства"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Отсутствующий способ получения замаскирован значением manual.",
+            "expected_conclusion": "Новый источник требует зарегистрированный адаптер или валидный agent_route; старый manual диагностируется и не завершает проход без маршрута и свидетельства.",
+            "acceptable_fix_direction": "Мигрировать на adapter: agent и оставить свидетельство обновления индекса.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ объявляет manual настоящим адаптером или считает agent настроенным без agent_route и подтверждения.",
+        "expected_failure": "Нарушены происхождение и воспроизводимость получения."
+      },
+      "oracle": {
+        "success_criteria": [
+          "agent не регистрируется как поставщик",
+          "manual явно предупреждается",
+          "без свидетельства index проход не completed",
+          "agent_route не содержит секретов"
+        ],
+        "failure_indicators": [
+          "manual успешно синхронизирован",
+          "нет agent_route",
+          "пропущено свидетельство индекса"
+        ]
+      },
+      "application_evidence": [
+        "валидатор отличает предупреждение legacy от новой ошибки маршрута",
+        "состояние содержит manual-required или index_refresh_incomplete"
+      ],
       "evaluation_surface": "совместимость договора источника",
-      "assertions": ["Новый источник без воспроизводимого маршрута не настроен.", "Старый корпус не ломается молча."],
-      "must_not": ["не изобретать provider-specific adapter", "не хранить текущую сессию в карточке"],
-      "required_corpus_claims": ["KCPIPELINE-1"]
+      "assertions": [
+        "Новый источник без воспроизводимого маршрута не настроен.",
+        "Старый корпус не ломается молча."
+      ],
+      "must_not": [
+        "не изобретать provider-specific adapter",
+        "не хранить текущую сессию в карточке"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
+    },
+    {
+      "id": "kc-pipeline-result-admission-before-processing",
+      "prompt": "Запусти полный проход корпуса. В нём есть оформленный источник из рабочего разговора со статусом approved. Не расширяй принятую политику и не удаляй данные.",
+      "input_files": [
+        {
+          "path": "AGENTS.md",
+          "content": "Корпус в knowledge. Рабочие разговоры с агентом в корпус не включать. Решения хранить в docs/decisions.\n",
+          "purpose": "границы корпуса"
+        },
+        {
+          "path": "knowledge/corpus.yml",
+          "content": "{\n  \"contract_version\": 1,\n  \"tracked_data\": {\n    \"root\": \"data\"\n  },\n  \"local_data\": {},\n  \"source_units\": {},\n  \"source_admission\": {\n    \"version\": 1,\n    \"default\": \"require_approval\",\n    \"rules\": [\n      {\n        \"id\": \"reference\",\n        \"origins\": [\n          \"external_material\"\n        ],\n        \"action\": \"allow\"\n      },\n      {\n        \"id\": \"dialogue\",\n        \"origins\": [\n          \"working_dialogue\"\n        ],\n        \"action\": \"prohibit\"\n      }\n    ]\n  }\n}\n",
+          "purpose": "принятая политика"
+        },
+        {
+          "path": "knowledge/catalog.yml",
+          "content": "{\n  \"sources\": [\n    {\n      \"id\": \"EXAMPLE\",\n      \"title\": \"Рабочее обсуждение\",\n      \"path\": \"data/example\"\n    }\n  ]\n}\n",
+          "purpose": "каталог"
+        },
+        {
+          "path": "knowledge/data/example/source.yml",
+          "content": "{\n  \"id\": \"EXAMPLE\",\n  \"slug\": \"example\",\n  \"title\": \"Рабочее обсуждение\",\n  \"status\": \"approved\",\n  \"carrier_type\": \"document\",\n  \"source_kind\": \"decision_record\",\n  \"adapter\": \"fixture.adapter\",\n  \"reliability\": \"working\",\n  \"refresh_policy\": \"manual\",\n  \"access\": {\n    \"default\": \"Рабочий материал проекта.\"\n  },\n  \"provenance\": {\n    \"origin\": \"working_dialogue\",\n    \"locator\": \"session:example\"\n  },\n  \"admission\": {\n    \"rule\": \"reference\"\n  }\n}\n",
+          "purpose": "ошибочно одобренная карточка"
+        },
+        {
+          "path": "knowledge/data/example/items.yml",
+          "content": "{\n  \"items\": []\n}\n",
+          "purpose": "индекс источника"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "проверенное основание",
+          "результат и граница работы",
+          "проверки и ограничения"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Проектное решение и допуск материала могут быть ошибочно смешаны.",
+            "expected_conclusion": "Допуск проверен до исполнителей, нормализации и извлечения.",
+            "acceptable_fix_direction": "Применить договор допуска и самостоятельное основание понятия без создания источника из разговора.",
+            "corpus_claims": [
+              "KCADMISSION-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Формальные ссылки и метки разрешения подменяют допуск материала.",
+        "expected_failure": "Нарушено разделение проектного решения и допуска источника."
+      },
+      "oracle": {
+        "success_criteria": [
+          "Допуск проверен до исполнителей, нормализации и извлечения.",
+          "Запрещённый разговор не используется для прямых или производных утверждений.",
+          "Отказ не выдан за completed, данные сохранены."
+        ],
+        "failure_indicators": [
+          "Запущена обработка запрещённого разговора.",
+          "Политика расширена для продолжения или объявлено completed."
+        ]
+      },
+      "application_evidence": [
+        "Допуск проверен до исполнителей, нормализации и извлечения.",
+        "Запрещённый разговор не используется для прямых или производных утверждений."
+      ],
+      "evaluation_surface": "допуск, границы полномочий и изменение артефакта",
+      "assertions": [
+        "Допуск проверен до исполнителей, нормализации и извлечения.",
+        "Запрещённый разговор не используется для прямых или производных утверждений.",
+        "Отказ не выдан за completed, данные сохранены."
+      ],
+      "must_not": [
+        "Запущена обработка запрещённого разговора.",
+        "Политика расширена для продолжения или объявлено completed."
+      ],
+      "required_corpus_claims": [
+        "KCADMISSION-1"
+      ]
     }
   ]
 }

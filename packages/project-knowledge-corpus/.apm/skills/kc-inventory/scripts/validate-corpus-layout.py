@@ -490,6 +490,9 @@ class Validator:
         strict_verification: bool = False,
         operational: bool = False,
         operational_policy: Path | None = None,
+        strict_admission: bool = False,
+        admission_only: bool = False,
+        project_root: Path | None = None,
     ) -> None:
         self.root = root.resolve()
         self.strict_statements = strict_statements
@@ -497,6 +500,11 @@ class Validator:
         self.strict_verification = strict_verification
         self.operational = operational
         self.operational_policy = operational_policy
+        self.strict_admission = strict_admission or admission_only
+        self.admission_only = admission_only
+        self.project_root = (project_root or self.root.parent).resolve()
+        self.admission_policy: dict[str, Any] | None = None
+        self.admission_rules: dict[str, dict[str, Any]] = {}
         self.contract_path = self.root / "corpus.yml"
         self.catalog_path = self.root / "catalog.yml"
         self.errors: list[str] = []
@@ -526,17 +534,32 @@ class Validator:
 
     def validate(self, *, output: str = "text") -> int:
         try:
+            if not self.root.is_relative_to(self.project_root):
+                self.errors.append("corpus root must be inside --project-root")
             self.validate_contract()
-            self.validate_no_legacy_roots()
             source_dirs = self.source_dirs()
-            for source_dir in source_dirs:
-                self.validate_source(source_dir)
-            self.validate_catalog(source_dirs)
-            self.validate_global_items_index(source_dirs)
-            self.validate_concepts()
-            self.validate_derived_statements()
-            if self.operational:
-                self.validate_operational_safety()
+            if self.admission_only:
+                for source_dir in source_dirs:
+                    source = load_yaml(source_dir / "source.yml")
+                    if not isinstance(source, dict):
+                        self.errors.append(f"{self.rel(source_dir)}: source card must be a mapping")
+                        continue
+                    source_id = source.get("id")
+                    if nonempty_string(source_id):
+                        if source_id in self.source_ids:
+                            self.errors.append(f"{self.rel(source_dir)}: duplicate source id")
+                        self.source_ids.add(source_id)
+                    self.validate_source_admission(source_dir, source)
+            else:
+                self.validate_no_legacy_roots()
+                for source_dir in source_dirs:
+                    self.validate_source(source_dir)
+                self.validate_catalog(source_dirs)
+                self.validate_global_items_index(source_dirs)
+                self.validate_concepts()
+                self.validate_derived_statements()
+                if self.operational:
+                    self.validate_operational_safety()
         except RuntimeError as exc:
             self.errors.append(str(exc))
 
@@ -793,7 +816,193 @@ class Validator:
 
         self.add_value_errors("corpus.yml", contract)
         self.validate_action_policy(contract)
+        self.validate_admission_policy(contract)
         self.validate_contract_legacy_layers(contract)
+
+    def validate_admission_policy(self, contract: dict[str, Any]) -> None:
+        policy = contract.get("source_admission")
+        if "source_admission" not in contract:
+            message = "corpus.yml: source_admission is not configured; source admission is unverified"
+            (self.errors if self.strict_admission else self.contract_warnings).append(message)
+            return
+        if not isinstance(policy, dict) or policy.get("version") != 1:
+            self.errors.append("corpus.yml: source_admission must be a mapping with version 1")
+            return
+        self.admission_policy = policy
+        if policy.get("default") not in ("require_approval", "prohibit"):
+            self.errors.append("corpus.yml: source_admission.default must be require_approval or prohibit")
+        rules = policy.get("rules")
+        if not isinstance(rules, list):
+            self.errors.append("corpus.yml: source_admission.rules must be a list")
+            return
+        seen_origins: set[str] = set()
+        for index, rule in enumerate(rules, start=1):
+            prefix = f"corpus.yml: source_admission rule #{index}"
+            if not isinstance(rule, dict) or not nonempty_string(rule.get("id")):
+                self.errors.append(f"{prefix}: rule must have a non-empty id")
+                continue
+            if rule["id"] in self.admission_rules:
+                self.errors.append(f"{prefix}: duplicate rule id")
+            origins = rule.get("origins")
+            allowed = {"external_material", "project_artifact", "working_dialogue", "unknown"}
+            if not isinstance(origins, list) or not origins or any(
+                not isinstance(origin, str) or origin not in allowed for origin in origins
+            ):
+                self.errors.append(f"{prefix}: origins must list supported provenance origins")
+                continue
+            if seen_origins.intersection(origins):
+                self.errors.append(f"{prefix}: overlapping origins are not allowed")
+            seen_origins.update(origins)
+            if rule.get("action") not in ("allow", "require_approval", "prohibit"):
+                self.errors.append(f"{prefix}: unsupported admission action")
+            if "unknown" in origins and rule.get("action") == "allow":
+                self.errors.append(f"{prefix}: unknown provenance cannot be allowed by a rule")
+            prefixes = rule.get("locator_prefixes")
+            if prefixes is not None and (
+                not isinstance(prefixes, list) or not prefixes
+                or not all(nonempty_string(item) for item in prefixes)
+            ):
+                self.errors.append(f"{prefix}: locator_prefixes must be a non-empty list of texts")
+                continue
+            self.admission_rules[rule["id"]] = rule
+
+    def validate_decision_reference(
+        self, value: Any, prefix: str, scope_key: str, subject_id: Any,
+        origin: str | None = None,
+    ) -> bool:
+        before = len(self.errors)
+        if not isinstance(value, dict) or not nonempty_string(value.get("ref")):
+            self.errors.append(f"{prefix}: decision must contain ref and sha256")
+            return False
+        ref = PurePosixPath(value["ref"])
+        if ref.is_absolute() or ".." in ref.parts or "\\" in value["ref"]:
+            self.errors.append(f"{prefix}: decision.ref must be project-relative without traversal")
+            return False
+        path = (self.project_root / ref).resolve()
+        if not path.is_relative_to(self.project_root) or path.is_relative_to(self.root):
+            self.errors.append(f"{prefix}: decision record must be inside the project and outside the corpus")
+            return False
+        digest = value.get("sha256")
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            self.errors.append(f"{prefix}: decision.sha256 must be a SHA-256 digest")
+            return False
+        if not path.is_file():
+            self.errors.append(f"{prefix}: decision record does not exist")
+            return False
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            self.errors.append(f"{prefix}: decision record cannot be read")
+            return False
+        if hashlib.sha256(raw).hexdigest() != digest:
+            self.errors.append(f"{prefix}: decision record hash mismatch")
+            return False
+        try:
+            text = raw.decode("utf-8-sig").replace("\r\n", "\n")
+            if text.startswith("---\n") and "\n---\n" in text[4:]:
+                text = text[4:].split("\n---\n", 1)[0]
+            record = yaml.safe_load(text)
+        except (UnicodeDecodeError, yaml.YAMLError):
+            self.errors.append(f"{prefix}: decision record must be YAML or Markdown with YAML front matter")
+            return False
+        if not isinstance(record, dict):
+            self.errors.append(f"{prefix}: decision record must be a mapping")
+            return False
+        if record.get("status") != "accepted" or not nonempty_string(record.get("decided_by")):
+            self.errors.append(f"{prefix}: decision must be accepted and name decided_by")
+        if not nonempty_string(record.get("decision")):
+            self.errors.append(f"{prefix}: decision record must describe the accepted decision")
+        try:
+            date.fromisoformat(str(record.get("decided_at")))
+        except ValueError:
+            self.errors.append(f"{prefix}: decision must have an ISO decided_at date")
+        scope = record.get("scope")
+        subjects = scope.get(scope_key) if isinstance(scope, dict) else None
+        if not isinstance(subjects, list) or subject_id not in subjects:
+            self.errors.append(f"{prefix}: decision scope does not cover {scope_key} subject")
+        if origin is not None:
+            origins = scope.get("origins") if isinstance(scope, dict) else None
+            if not isinstance(origins, list) or origin not in origins:
+                self.errors.append(f"{prefix}: decision scope does not cover provenance origin")
+        return len(self.errors) == before
+
+    def validate_admission(
+        self, record: dict[str, Any], prefix: str, subject_id: Any,
+        scope_key: str = "sources",
+    ) -> None:
+        if self.admission_policy is None:
+            return
+        if not nonempty_string(subject_id):
+            self.errors.append(f"{prefix}: admission subject must have a non-empty id")
+            return
+        provenance = record.get("provenance")
+        origins = {"external_material", "project_artifact", "working_dialogue", "unknown"}
+        if (
+            not isinstance(provenance, dict)
+            or not isinstance(provenance.get("origin"), str)
+            or provenance["origin"] not in origins
+        ):
+            self.errors.append(f"{prefix}: provenance.origin must identify the actual material origin")
+            return
+        if not nonempty_string(provenance.get("locator")):
+            self.errors.append(f"{prefix}: provenance.locator is required")
+        origin = provenance["origin"]
+        locator = provenance.get("locator")
+        matching = [
+            (key, rule) for key, rule in self.admission_rules.items()
+            if origin in rule["origins"] and (
+                "locator_prefixes" not in rule or
+                isinstance(locator, str) and any(locator.startswith(value) for value in rule["locator_prefixes"])
+            )
+        ]
+        rule_id, rule = matching[0] if matching else (None, {})
+        action = rule.get("action", self.admission_policy.get("default"))
+        if action == "prohibit":
+            self.errors.append(f"{prefix}: source admission prohibited for provenance origin {origin}")
+            return
+        admission = record.get("admission")
+        if not isinstance(admission, dict) or set(admission) not in ({"rule"}, {"decision"}):
+            self.errors.append(f"{prefix}: admission must reference exactly one rule or decision")
+            return
+        if "rule" in admission:
+            if action != "allow" or admission["rule"] != rule_id:
+                self.errors.append(f"{prefix}: admission.rule does not authorize this provenance origin")
+        else:
+            self.validate_decision_reference(admission["decision"], prefix, scope_key, subject_id, origin)
+
+    def validate_source_admission(self, source_dir: Path, source: dict[str, Any]) -> None:
+        prefix = self.rel(source_dir / "source.yml")
+        self.validate_admission(source, prefix, source.get("id"))
+        if self.admission_policy is None:
+            return
+        cards: list[tuple[str, dict[str, Any]]] = []
+        items_path = source_dir / "items.yml"
+        if items_path.is_file():
+            index = load_yaml(items_path)
+            if isinstance(index, dict) and isinstance(index.get("items"), list):
+                cards.extend(
+                    (f"{self.rel(items_path)}: item #{i}", item)
+                    for i, item in enumerate(index["items"], 1) if isinstance(item, dict)
+                )
+        for path in sorted(source_dir.glob("*/*/item.yml")):
+            item = load_yaml(path)
+            if isinstance(item, dict):
+                cards.append((self.rel(path), item))
+        item_origins: dict[str, Any] = {}
+        for label, item in cards:
+            provenance = item.get("provenance", source.get("provenance"))
+            if isinstance(provenance, dict):
+                item_id, origin = item.get("id"), provenance.get("origin")
+                if isinstance(item_id, str):
+                    if item_id in item_origins and item_origins[item_id] != origin:
+                        self.errors.append(f"{label}: provenance origin differs between item cards")
+                    item_origins[item_id] = origin
+            if "provenance" not in item and "admission" not in item:
+                continue
+            effective = {"provenance": provenance, "admission": item.get("admission")}
+            if "admission" not in item and provenance == source.get("provenance"):
+                continue
+            self.validate_admission(effective, label, item.get("id"), "items")
 
     def validate_action_policy(self, contract: dict[str, Any]) -> None:
         profile = contract.get("project_profile")
@@ -983,8 +1192,9 @@ class Validator:
         if not isinstance(data, dict):
             self.errors.append(f"{rel}: must be a mapping")
             return
-        if data.get("concept_contract_version") != 1:
-            self.errors.append(f"{rel}: concept_contract_version must be 1")
+        version = data.get("concept_contract_version")
+        if version not in (1, 2):
+            self.errors.append(f"{rel}: concept_contract_version must be 1 or 2")
         concepts = data.get("concepts")
         if not isinstance(concepts, list) or not concepts:
             self.errors.append(f"{rel}: concepts must be a non-empty list")
@@ -1042,12 +1252,30 @@ class Validator:
                 self.errors.append(f"{prefix}: authority must contain non-empty type and ref")
 
             defined_by = concept.get("defined_by")
+            decision = concept.get("decision")
+            decision_valid = False
+            if (
+                version == 2 and isinstance(authority, dict)
+                and authority.get("type") == "project_decision" and decision is None
+            ):
+                self.errors.append(f"{prefix}: project_decision authority requires a decision reference in version 2")
+            if decision is not None:
+                if version != 2:
+                    self.errors.append(f"{prefix}: decision provenance requires concept contract version 2")
+                decision_valid = self.validate_decision_reference(decision, prefix, "concepts", concept_id)
+                if (
+                    not isinstance(decision, dict) or not isinstance(authority, dict)
+                    or authority.get("type") != "project_decision"
+                    or authority.get("ref") != decision.get("ref")
+                ):
+                    self.errors.append(f"{prefix}: authority must reference the same project_decision")
             if (
                 not isinstance(defined_by, list)
-                or not defined_by
                 or not all(nonempty_string(item) for item in defined_by)
             ):
                 self.errors.append(f"{prefix}: defined_by must be a non-empty list of statement ids")
+            elif not defined_by and not (version == 2 and decision_valid):
+                self.errors.append(f"{prefix}: empty defined_by requires a verified project decision in version 2")
             elif invalid_ids := sorted(set(defined_by) - self.statement_ids):
                 self.errors.append(
                     f"{prefix}: defined_by references unknown statements: {', '.join(invalid_ids)}"
@@ -1114,6 +1342,7 @@ class Validator:
         self.validate_acquisition_route(source, rel)
         self.validate_change_policy(source.get("change_policy"), rel)
         self.validate_use_policy(source.get("use_policy"), rel)
+        self.validate_source_admission(source_dir, source)
         self.validate_external_corpus_source(source, rel)
         self.add_value_errors(rel, source)
         self.validate_items(source_dir, source_id, source)
@@ -1409,10 +1638,10 @@ class Validator:
             self.errors.append(f"{rel}: files must be a mapping")
             return
 
-        for artifact in files.get("tracked", []):
+        for artifact in files.get("tracked") or []:
             if not (path.parent / artifact).exists():
                 self.errors.append(f"{rel}: tracked file does not exist: {artifact}")
-        for artifact in files.get("local", []):
+        for artifact in files.get("local") or []:
             if ".local." not in artifact and ".tmp." not in artifact:
                 self.errors.append(
                     f"{rel}: local file must use *.local.* or *.tmp.* name: {artifact}"
@@ -2422,12 +2651,29 @@ def parse_args() -> argparse.Namespace:
         help="Optional corpus-relative YAML rules for documented operational suppressions.",
     )
     parser.add_argument(
+        "--strict-admission", action="store_true",
+        help="Require source_admission policy and validate material provenance and admission evidence.",
+    )
+    parser.add_argument(
+        "--admission-only", action="store_true",
+        help="Check source admission before processing; implies --strict-admission without content checks.",
+    )
+    parser.add_argument(
+        "--project-root", type=Path,
+        help="Project root for external decision records; defaults to the corpus parent directory.",
+    )
+    parser.add_argument(
         "--output",
         choices=("text", "json"),
         default="text",
         help="Report format; JSON contains only paths, lines and finding types.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    if args.admission_only and any((args.strict_statements, args.strict_concepts,
+                                   args.strict_verification, args.operational,
+                                   args.operational_policy)):
+        parser.error("--admission-only cannot be combined with content or operational checks")
+    return args
 
 
 def main() -> int:
@@ -2441,6 +2687,9 @@ def main() -> int:
         strict_verification=args.strict_verification,
         operational=args.operational,
         operational_policy=args.operational_policy,
+        strict_admission=args.strict_admission,
+        admission_only=args.admission_only,
+        project_root=args.project_root,
     ).validate(output=args.output)
 
 

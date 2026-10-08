@@ -1,0 +1,14 @@
+id: FIXTURE
+slug: fixture
+title: "Fixture"
+access:
+  default: "Public fixture."
+status: active
+carrier_type: document
+source_kind: reference
+adapter: manual
+reliability: fixture
+refresh_policy: manual
+
+provenance: {origin: external_material, locator: "https://example.org/reference/topic"}
+admission: {rule: reference}

@@ -1,0 +1,28 @@
+{
+  "contract_version": 1,
+  "tracked_data": {
+    "root": "data"
+  },
+  "local_data": {},
+  "source_units": {},
+  "source_admission": {
+    "version": 1,
+    "default": "require_approval",
+    "rules": [
+      {
+        "id": "reference",
+        "origins": [
+          "external_material"
+        ],
+        "action": "allow"
+      },
+      {
+        "id": "dialogue",
+        "origins": [
+          "working_dialogue"
+        ],
+        "action": "prohibit"
+      }
+    ]
+  }
+}
