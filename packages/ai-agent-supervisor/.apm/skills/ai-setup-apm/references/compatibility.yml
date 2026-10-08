@@ -14,7 +14,7 @@ environments:
   - id: hermes_agent
     name: Hermes Agent
     declared_support: true
-    user_summary: Версия 2.6.13 содержит установку и обнаружение локальных навыков. Сценарий правки AGENTS.md в Hermes проверен только на локальном кандидате. Новые инструкции Hermes отдельного модельного испытания не проходили. Остальные возможности и подагенты Hermes не проверены.
+    user_summary: Версия 2.6.13 содержит установку и обнаружение локальных навыков. Сценарий правки AGENTS.md в Hermes проверен только на локальном кандидате. На локальном кандидате проверен один учебный сценарий Hermes → Codex с сохранением записей и родительской приёмкой. Настройка с нуля и экономия не проверены.
 capabilities:
   - id: collection_installation
     name: Установка коллекции
@@ -83,7 +83,7 @@ capabilities:
           - .apm/skills/ai-setup-project/SKILL.md#L151-L158
       hermes_agent:
         status: partial
-        gap: Описаны установка, обнаружение навыков и точечная правка AGENTS.md с учётом защиты записи, но создание проекта целиком, остальные навыки и подагенты не проверены.
+        gap: Описаны установка, обнаружение навыков и точечная правка AGENTS.md с учётом защиты записи, но создание проекта целиком и остальные навыки не проверены. Отдельное испытание Hermes → Codex отражено в возможности настройки и применения подагентов.
         basis:
           - .apm/skills/ai-setup-project/SKILL.md#L19-L28
           - .apm/skills/ai-agents-md-maintenance/references/maintenance-checklist.md#L85-L112
@@ -128,8 +128,12 @@ capabilities:
           - .apm/skills/ai-setup-subagents/references/routing-patterns.md#L188-L195
           - .apm/skills/ai-setup-subagents/references/operation-policy.md#L331-L342
       hermes_agent:
-        status: not_established
-        note: Поставляемые материалы подтверждают только уровень APM, не рабочее применение подагентов.
+        status: partial
+        gap: Описан маршрут Hermes → Codex с отдельными назначениями классов. На локальном кандидате проверена работа одного подготовленного учебного проекта с записью приёмки. Настройка с нуля, остальные маршруты и экономия не проверены.
+        basis:
+          - .apm/skills/ai-setup-subagents/references/hermes-codex-route.md
+          - .apm/skills/ai-setup-subagents/assets/worker-policy-entrypoint.md
+          - .apm/skills/ai-setup-apm/references/compatibility-history.md
   - id: work_analysis_and_result_evaluation
     name: Анализ работы и оценка результатов
     target_environments: [codex_cli, claude_code, hermes_agent]
@@ -227,3 +231,28 @@ checks:
       - evals/compatibility/evidence/hermes-agent-2026-09-29/source-agents.md
       - evals/compatibility/evidence/hermes-agent-2026-09-29/agents.diff
       - evals/compatibility/evidence/hermes-agent-2026-09-29/journal-excerpts.md
+  - id: hermes_codex_acceptance_candidate_2026_10_02
+    date: 2026-10-02
+    collection_version: 2.6.13-local-candidate.20261002
+    environment:
+      id: hermes_agent
+      version: not_recorded
+      participation: participated
+      tooling:
+        platform: Linux/Docker
+        image: sha256:d603a4602771c1b5df4cc428832156cbc9bc81890d320b50a870545de660568a
+        state: disposable Docker volumes
+        hermes_yolo: true
+        child_sandbox: read-only
+    capability: subagent_setup_and_use
+    conditions: Один учебный проект, локальный кандидат поверх 2.6.13, подготовленная политика и оснастка, изолированное состояние агентов
+    method: Hermes получил обычную задачу, вызвал Codex, проверил результат и выполнил команды записи и проверки родительской приёмки
+    verification_subject: agent_runtime
+    result: passed
+    scope: Проверены делегирование одной подзадачи, сохранность записей, приёмка и ответ по трём сервисам с двумя противоречиями. Исходные учебные данные не изменены. Версия Hermes не извлекалась, среда закреплена идентификатором образа. Назначение родителя известно из команды, параметры подагента подтверждены на уровне клиента. Установка и настройка с нуля, остальные задачи, опубликованная версия и экономия не проверялись.
+    evidence:
+      - .apm/skills/ai-setup-apm/references/compatibility-history.md
+      - evals/compatibility/evidence/hermes-codex-2026-10-02/report.json
+      - evals/compatibility/evidence/hermes-codex-2026-10-02/parent-acceptance-evidence.json
+      - evals/compatibility/evidence/hermes-codex-2026-10-02/answer.txt
+      - evals/compatibility/evidence/hermes-codex-2026-10-02/inputs.json

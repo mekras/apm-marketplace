@@ -1,0 +1,41 @@
+{
+  "skill_name": "ai-model-analysis",
+  "cases": [
+    {
+      "id": "ai-model-analysis-first",
+      "prompt": "Проанализируй доступные мне модели для подагентов и сохрани рекомендации.",
+      "should_trigger": true,
+      "rationale": "Нужен переносимый анализ моделей."
+    },
+    {
+      "id": "ai-model-analysis-update",
+      "prompt": "Обнови мой файл рекомендаций по моделям с учётом сохранённых целей.",
+      "should_trigger": true,
+      "rationale": "Повторный анализ пользовательских вариантов."
+    },
+    {
+      "id": "ai-model-analysis-multi",
+      "prompt": "Сравни модели моих подключений Codex и Claude Code для подагентов.",
+      "should_trigger": true,
+      "rationale": "Область задаётся подключениями пользователя."
+    },
+    {
+      "id": "ai-model-analysis-policy",
+      "prompt": "Настрой маршруты подагентов и права записи в этом проекте.",
+      "should_trigger": false,
+      "rationale": "Это настройка политики ai-setup-subagents."
+    },
+    {
+      "id": "ai-model-analysis-history",
+      "prompt": "Проанализируй историю применения ИИ в проекте.",
+      "should_trigger": false,
+      "rationale": "Это ai-usage-analysis."
+    },
+    {
+      "id": "ai-model-analysis-provider",
+      "prompt": "Помоги купить новую подписку поставщика моделей.",
+      "should_trigger": false,
+      "rationale": "Поиск новых подключений вне области навыка."
+    }
+  ]
+}

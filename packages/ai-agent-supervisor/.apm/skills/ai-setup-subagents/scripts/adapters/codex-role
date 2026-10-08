@@ -19,6 +19,35 @@ for _stream in (sys.stdout, sys.stderr):
 if len(sys.argv) != 4:
     raise SystemExit("Использование: codex-role <модель> <усилие> <режим>")
 model, effort, sandbox = sys.argv[1:]
+
+
+def prepare_prompt(payload: str) -> str:
+    """Передать дочернему Codex роль, сохранив все проектные инструкции."""
+
+    try:
+        request = json.loads(payload)
+    except json.JSONDecodeError:
+        return payload
+    assignment = (
+        request.get("role_assignment") if isinstance(request, dict) else None
+    )
+    if not isinstance(assignment, dict) or assignment.get("role") != "child_executor":
+        return payload
+    return (
+        "ROLE_ASSIGNMENT: child_executor\n"
+        "REDELEGATION: forbidden_without_explicit_permission\n"
+        "Вы — дочерний исполнитель уже выбранного родителем класса. "
+        "Загрузите и соблюдайте все доступные проектные инструкции, включая "
+        "AGENTS.md, но выполните только переданную ограниченную подзадачу. "
+        "Не принимайте родительское решение о маршруте, не запускайте этот "
+        "класс повторно и не передавайте задачу другому исполнителю. "
+        "Переделегирование допустимо только при отдельном явном разрешении в "
+        "role_assignment. Сохраняйте контракт класса и режим песочницы.\n\n"
+        "Транспортный пакет задания:\n"
+        + payload
+    )
+
+
 with tempfile.TemporaryDirectory() as directory:
     final = Path(directory) / "final.txt"
     raw_log = os.environ.get("CODEX_ROLE_LOG")
@@ -41,7 +70,7 @@ with tempfile.TemporaryDirectory() as directory:
     assert run.stdin is not None
     assert run.stdout is not None
     assert run.stderr is not None
-    run.stdin.write(sys.stdin.read())
+    run.stdin.write(prepare_prompt(sys.stdin.read()))
     run.stdin.close()
 
     def copy_stream(stream: object, path: Path | None, chunks: list[str]) -> None:

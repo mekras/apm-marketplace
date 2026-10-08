@@ -4,10 +4,15 @@
 from __future__ import annotations
 
 import argparse
+import codecs
+import errno
+import hashlib
+import tempfile
 import json
 import os
 import runpy
 import shlex
+import selectors
 import signal
 import subprocess
 import sys
@@ -27,6 +32,226 @@ for _stream in (sys.stdout, sys.stderr):
 verify_model = runpy.run_path(
     str(Path(__file__).resolve().parent / "lib/model_evidence.py")
 )["verify_model"]
+
+
+PROCESS_GROUP_TERM_TIMEOUT = 1.0
+PROCESS_GROUP_KILL_TIMEOUT = 1.0
+STREAM_DRAIN_TIMEOUT = 1.0
+STREAM_CLOSE_JOIN_TIMEOUT = 0.25
+
+
+def remember_signal_error(errors: list[str] | None, action: str, error: OSError) -> None:
+    if errors is None:
+        return
+    message = f"{action}: {type(error).__name__}: {error}"
+    if message not in errors:
+        errors.append(message)
+
+
+def process_group_exists(
+    process_group_id: int | None, errors: list[str] | None = None
+) -> bool | None:
+    """Проверить наличие POSIX-группы, не затрагивая другие группы."""
+
+    if os.name != "posix" or process_group_id is None:
+        return False
+    try:
+        os.killpg(process_group_id, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except OSError as error:
+        if error.errno == errno.ESRCH:
+            return False
+        remember_signal_error(errors, "проверка группы процессов", error)
+        return None
+    return True
+
+
+def stop_process_group(
+    process: subprocess.Popen[str],
+    process_group_id: int | None,
+    errors: list[str] | None = None,
+) -> bool:
+    """Остановить дочерний процесс и его POSIX-группу с конечными ожиданиями."""
+
+    if os.name != "posix" or process_group_id is None:
+        if process.poll() is None:
+            try:
+                process.terminate()
+            except OSError as error:
+                remember_signal_error(errors, "остановка процесса", error)
+        try:
+            process.wait(timeout=PROCESS_GROUP_TERM_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            try:
+                process.kill()
+            except OSError as error:
+                remember_signal_error(errors, "принудительная остановка процесса", error)
+            try:
+                process.wait(timeout=PROCESS_GROUP_KILL_TIMEOUT)
+            except subprocess.TimeoutExpired:
+                remember_signal_error(
+                    errors,
+                    "ожидание принудительно остановленного процесса",
+                    subprocess.TimeoutExpired(
+                        cmd=process.args, timeout=PROCESS_GROUP_KILL_TIMEOUT
+                    ),
+                )
+        return process.poll() is not None
+
+    group_state = process_group_exists(process_group_id, errors)
+    if group_state is not False:
+        try:
+            os.killpg(process_group_id, signal.SIGTERM)
+        except ProcessLookupError:
+            group_state = False
+        except OSError as error:
+            remember_signal_error(errors, "SIGTERM группе процессов", error)
+        deadline = time.monotonic() + PROCESS_GROUP_TERM_TIMEOUT
+        while group_state is not False and time.monotonic() < deadline:
+            time.sleep(0.02)
+            group_state = process_group_exists(process_group_id, errors)
+
+        if group_state is not False:
+            try:
+                os.killpg(process_group_id, signal.SIGKILL)
+            except ProcessLookupError:
+                group_state = False
+            except OSError as error:
+                remember_signal_error(errors, "SIGKILL группе процессов", error)
+            deadline = time.monotonic() + PROCESS_GROUP_KILL_TIMEOUT
+            while group_state is not False and time.monotonic() < deadline:
+                time.sleep(0.02)
+                group_state = process_group_exists(process_group_id, errors)
+
+    try:
+        process.wait(timeout=STREAM_CLOSE_JOIN_TIMEOUT)
+    except (subprocess.TimeoutExpired, InterruptedError):
+        pass
+    return process_group_exists(process_group_id, errors) is False
+
+
+class SelectorOutput:
+    def __init__(
+        self,
+        process: subprocess.Popen[str],
+        transport: Path,
+        stderr_path: Path,
+        stdout_parts: list[str],
+    ) -> None:
+        self.selector = selectors.DefaultSelector()
+        self.states: dict[int, dict[str, Any]] = {}
+        for stream, path, parts in (
+            (process.stdout, transport, stdout_parts),
+            (process.stderr, stderr_path, None),
+        ):
+            assert stream is not None
+            fd = stream.fileno()
+            os.set_blocking(fd, False)
+            state = {
+                "stream": stream,
+                "destination": path.open("a", encoding="utf-8"),
+                "decoder": codecs.getincrementaldecoder("utf-8")("replace"),
+                "parts": parts,
+            }
+            self.states[fd] = state
+            self.selector.register(fd, selectors.EVENT_READ, state)
+
+    @property
+    def drained(self) -> bool:
+        return not self.states
+
+    def _finish(self, fd: int, state: dict[str, Any]) -> None:
+        tail = state["decoder"].decode(b"", final=True)
+        if tail:
+            state["destination"].write(tail)
+            state["destination"].flush()
+            if state["parts"] is not None:
+                state["parts"].append(tail)
+        state["destination"].close()
+        self.selector.unregister(fd)
+        del self.states[fd]
+        try:
+            state["stream"].close()
+        except (OSError, ValueError):
+            pass
+
+    def _read(self, fd: int, state: dict[str, Any]) -> None:
+        try:
+            data = os.read(fd, 65536)
+        except BlockingIOError:
+            return
+        except OSError:
+            self._finish(fd, state)
+            return
+        if not data:
+            self._finish(fd, state)
+            return
+        text = state["decoder"].decode(data, final=False)
+        if text:
+            state["destination"].write(text)
+            state["destination"].flush()
+            if state["parts"] is not None:
+                state["parts"].append(text)
+
+    def poll(self, timeout: float) -> None:
+        for key, _mask in self.selector.select(max(0.0, timeout)):
+            self._read(key.fd, key.data)
+
+    def drain(self, timeout: float) -> bool:
+        deadline = time.monotonic() + timeout
+        while self.states and time.monotonic() < deadline:
+            self.poll(min(0.05, deadline - time.monotonic()))
+        return self.drained
+
+    def close(self) -> None:
+        for state in self.states.values():
+            try:
+                state["destination"].close()
+            except OSError:
+                pass
+        self.states.clear()
+        self.selector.close()
+
+
+def drain_readers(
+    process: subprocess.Popen[str], readers: list[threading.Thread]
+) -> bool:
+    """Дождаться потоковых читателей без закрытия каналов из главного потока."""
+
+    deadline = time.monotonic() + STREAM_DRAIN_TIMEOUT
+    for reader in readers:
+        remaining = deadline - time.monotonic()
+        if remaining > 0:
+            reader.join(remaining)
+    drained = not any(reader.is_alive() for reader in readers)
+    return drained
+
+
+def wait_for_process(
+    process: subprocess.Popen[str],
+    timeout: float | None,
+    output: SelectorOutput | None,
+) -> int:
+    deadline = time.monotonic() + timeout if timeout is not None else None
+    while process.poll() is None:
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(process.args, timeout)
+            wait_for = min(0.05, remaining)
+        else:
+            wait_for = 0.05
+        if output is not None:
+            output.poll(wait_for)
+        else:
+            try:
+                process.wait(timeout=wait_for)
+            except subprocess.TimeoutExpired:
+                pass
+    return process.returncode
 
 
 def assignment(
@@ -84,7 +309,154 @@ def input_files(values: list[str], parser: argparse.ArgumentParser) -> list[str]
     return result
 
 
+def review_binding(record: dict[str, Any]) -> str:
+    """Связать приёмку с неизменным техническим свидетельством запуска."""
+    execution = {k: v for k, v in record.items()
+                 if k not in {"acceptance", "quality_assessment"}}
+    return hashlib.sha256(json.dumps(execution, sort_keys=True,
+                                    ensure_ascii=False).encode()).hexdigest()
+
+
+def review_result_hash(record: dict[str, Any]) -> str:
+    path = record.get("result_path") or record.get("final")
+    if not isinstance(path, str) or not path.strip():
+        raise ValueError("в записи нет пути к результату")
+    content = Path(path).read_bytes()
+    if not content.strip():
+        raise ValueError("результат пуст")
+    return hashlib.sha256(content).hexdigest()
+
+
+def review_text(value: str) -> str:
+    if not value.strip():
+        raise argparse.ArgumentTypeError("значение не может быть пустым")
+    return value.strip()
+
+
+def review_errors(record: dict[str, Any]) -> list[str]:
+    acceptance = record.get("acceptance")
+    quality = record.get("quality_assessment")
+    if not isinstance(acceptance, dict) or not isinstance(quality, dict):
+        return ["приёмка и оценка качества не записаны"]
+    errors = []
+    status = acceptance.get("status")
+    if status not in {"accepted", "rejected"}:
+        errors.append("неизвестный статус приёмки")
+    for key in ("criteria", "evidence"):
+        items = acceptance.get(key)
+        if not isinstance(items, list) or not items or not all(
+            isinstance(item, str) and item.strip() for item in items
+        ):
+            errors.append(f"приёмка не содержит {key}")
+    if quality.get("status") not in {"passed", "failed"}:
+        errors.append("неизвестный результат оценки качества")
+    for key in ("summary", "scope"):
+        if not isinstance(quality.get(key), str) or not quality[key].strip():
+            errors.append(f"оценка качества не содержит {key}")
+    if acceptance.get("run_id") != record.get("run_id"):
+        errors.append("приёмка относится к другому запуску")
+    if acceptance.get("execution_sha256") != review_binding(record):
+        errors.append("техническая запись изменилась после приёмки")
+    if status == "accepted":
+        if (record.get("status") != "completed" or record.get("returncode") != 0
+                or record.get("stop_reason") is not None
+                or record.get("result_usable") is not True):
+            errors.append("исполнение не завершилось пригодным результатом")
+        if quality.get("status") != "passed":
+            errors.append("принятому результату нужна положительная оценка качества")
+        route = record.get("client_route_status")
+        if route in {"mismatch", "conflict"} or any(
+            record.get(key) is False for key in ("model_matches", "effort_matches")
+        ):
+            errors.append("назначение модели или усилия противоречит свидетельству")
+        elif route != "confirmed" and not (
+            isinstance(acceptance.get("unconfirmed_reason"), str)
+            and acceptance["unconfirmed_reason"].strip()
+        ):
+            errors.append("неподтверждённый маршрут требует основания из локальной политики")
+        try:
+            if acceptance.get("result_sha256") != review_result_hash(record):
+                errors.append("результат изменился после приёмки")
+        except (OSError, ValueError) as error:
+            errors.append(str(error))
+    return errors
+
+
+def review_main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Записать или проверить родительскую приёмку без вызова модели.")
+    action = parser.add_mutually_exclusive_group(required=True)
+    action.add_argument("--record-acceptance", type=Path)
+    action.add_argument("--check-acceptance", type=Path)
+    parser.add_argument("--run-id", required=True, type=review_text)
+    parser.add_argument("--status", choices=("accepted", "rejected"))
+    parser.add_argument("--criterion", action="append", type=review_text, default=[])
+    parser.add_argument("--evidence", action="append", type=review_text, default=[])
+    parser.add_argument("--quality", choices=("passed", "failed"))
+    parser.add_argument("--summary", type=review_text)
+    parser.add_argument("--scope", type=review_text)
+    parser.add_argument("--unconfirmed-reason", type=review_text)
+    args = parser.parse_args(argv)
+    path = args.record_acceptance or args.check_acceptance
+    lock = path.with_name(path.name + ".acceptance.lock")
+    locked = False
+    temporary = None
+    try:
+        if args.record_acceptance:
+            if not all((args.status, args.criterion, args.evidence, args.quality,
+                        args.summary, args.scope)):
+                parser.error("для записи нужны --status, --criterion, --evidence, --quality, --summary и --scope")
+            with lock.open("x", encoding="utf-8"):
+                locked = True
+        record = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(record, dict) or record.get("run_id") != args.run_id:
+            raise ValueError("run_id не совпадает с выбранной записью")
+        if args.record_acceptance:
+            if record.get("acceptance") is not None or record.get("quality_assessment") is not None:
+                raise ValueError("приёмка уже существует: автоматическая перезапись запрещена")
+            if record.get("status") not in {"completed", "failed", "timed_out", "interrupted"}:
+                raise ValueError("исполнение ещё не завершено")
+            record["acceptance"] = {
+                "status": args.status, "run_id": args.run_id,
+                "criteria": args.criterion, "evidence": args.evidence,
+                "recorded_at": time.time(), "execution_sha256": review_binding(record),
+                "result_sha256": review_result_hash(record) if args.status == "accepted" else None,
+                "unconfirmed_reason": args.unconfirmed_reason or "",
+            }
+            record["quality_assessment"] = {
+                "status": args.quality, "summary": args.summary, "scope": args.scope,
+                "criteria": args.criterion, "evidence": args.evidence,
+            }
+        errors = review_errors(record)
+        if errors:
+            raise ValueError(" / ".join(errors))
+        if args.record_acceptance:
+            with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                             prefix=path.name + ".", suffix=".tmp", delete=False) as stream:
+                temporary = Path(stream.name)
+                json.dump(record, stream, ensure_ascii=False, indent=2)
+                stream.write("\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            temporary.replace(path)
+        accepted = record["acceptance"]["status"] == "accepted"
+        print(json.dumps({"run_id": args.run_id, "acceptance_record": "complete",
+                          "status": record["acceptance"]["status"],
+                          "result_accepted": accepted}, ensure_ascii=False))
+        return 0 if args.record_acceptance or accepted else 1
+    except (OSError, ValueError, TypeError) as error:
+        print(json.dumps({"run_id": args.run_id, "acceptance_record": "incomplete",
+                          "error": str(error)}, ensure_ascii=False), file=sys.stderr)
+        return 2
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+        if locked:
+            lock.unlink(missing_ok=True)
+
+
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] in {"--record-acceptance", "--check-acceptance"}:
+        return review_main(sys.argv[1:])
     parser = argparse.ArgumentParser(
         description="Запустить класс исполнения через локальный адаптер оснастки."
     )
@@ -92,7 +464,7 @@ def main() -> int:
     parser.add_argument("--target", required=True)
     parser.add_argument("--config", type=Path, default=Path("subagents.local.toml"))
     parser.add_argument("--input", action="append", default=[])
-    parser.add_argument("--out", type=Path, default=Path(".codex/subagents"))
+    parser.add_argument("--out", type=Path, help="каталог журналов: явный путь, policy_runtime.run_records_dir либо .codex/subagents")
     parser.add_argument(
         "--timeout-seconds",
         type=float,
@@ -108,6 +480,11 @@ def main() -> int:
 
     try:
         data = tomllib.loads(args.config.read_text(encoding="utf-8"))
+        if args.out is None:
+            records_dir = data.get("policy_runtime", {}).get("run_records_dir", ".codex/subagents")
+            if not isinstance(records_dir, str) or not records_dir.strip():
+                raise ValueError("policy_runtime.run_records_dir должен быть непустым путём")
+            args.out = Path(records_dir)
         contract, configured = assignment(data, args.target, args.execution_class)
         model = configured.get("model")
         effort = configured.get("effort")
@@ -124,13 +501,29 @@ def main() -> int:
     task = sys.stdin.read()
     if not task.strip():
         parser.error("задание для класса исполнения пусто: передайте непустой текст через stdin")
+    role_assignment = {
+        "role": "child_executor",
+        "route_decided_by": "parent",
+        "task_scope": "provided_subtask_only",
+        "delegation_permission": "none",
+    }
     request = {
         "execution_class": args.execution_class,
         "contract": contract,
         "inputs": files,
         "task": task,
+        "role_assignment": role_assignment,
     }
-    args.out.mkdir(parents=True, exist_ok=True)
+    try:
+        args.out.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryFile(dir=args.out):
+            pass
+    except OSError as error:
+        parser.error(
+            f"каталог журналов {args.out} недоступен для записи: {error}. "
+            "Выберите разрешённый путь через policy_runtime.run_records_dir или --out. "
+            "Модель не запускалась."
+        )
     started = time.time()
     run_id = str(uuid.uuid4())
     prefix = f"{int(started)}-{args.target}-{args.execution_class}-{run_id}"
@@ -151,6 +544,7 @@ def main() -> int:
 
     initial_record = {
         "run_id": run_id,
+        "record_path": str(record_path),
         "execution_class": args.execution_class,
         "target": args.target,
         "assigned_model": model,
@@ -159,6 +553,7 @@ def main() -> int:
         "sandbox": sandbox,
         "inputs": files,
         "contract": contract,
+        "role_assignment": role_assignment,
         "command": {
             "adapter_executable": Path(adapter[0]).name,
             "adapter_argument_count": len(adapter),
@@ -193,87 +588,206 @@ def main() -> int:
         "CODEX_ROLE_STDERR": str(codex_stderr_path),
     }
     process: subprocess.Popen[str] | None = None
+    process_group_id: int | None = None
+    readers: list[threading.Thread] = []
+    returncode: int | None = None
+    timed_out = False
+    interrupted_signal: signal.Signals | None = None
+    cleanup_in_progress = False
+    finalizing = False
+    group_was_lingering = False
+    group_termination_confirmed = False
+    streams_drained = True
+    launch_error: OSError | None = None
+    signal_errors: list[str] = []
+    output: SelectorOutput | None = None
+    writer: threading.Thread | None = None
+
     def interrupt(signum: int, _frame: object) -> None:
-        write_record(
-            {
-                **initial_record,
-                "status": "interrupted",
-                "signal": signal.Signals(signum).name,
-                "interrupted_at": time.time(),
-                "termination_confirmed": False,
-            }
-        )
+        nonlocal interrupted_signal
+        if cleanup_in_progress or finalizing or interrupted_signal is not None:
+            return
+        if interrupted_signal is None:
+            interrupted_signal = signal.Signals(signum)
         raise KeyboardInterrupt
 
     previous_handlers = {
         signum: signal.signal(signum, interrupt)
         for signum in (signal.SIGINT, signal.SIGTERM)
     }
+
+    def restore_handlers() -> None:
+        for signum, handler in previous_handlers.items():
+            signal.signal(signum, handler)
+
+    def finish(code: int) -> int:
+        restore_handlers()
+        return code
+
     stdout_parts: list[str] = []
 
+    def write_request(stream: Any, payload: str) -> None:
+        try:
+            stream.write(payload)
+            stream.close()
+        except (BrokenPipeError, OSError, ValueError):
+            return
+
     def copy_stream(stream: Any, path: Path, parts: list[str] | None) -> None:
-        with path.open("a", encoding="utf-8") as destination:
-            while chunk := stream.readline():
-                destination.write(chunk)
-                destination.flush()
-                if parts is not None:
-                    parts.append(chunk)
+        try:
+            with path.open("a", encoding="utf-8") as destination:
+                while chunk := stream.readline():
+                    destination.write(chunk)
+                    destination.flush()
+                    if parts is not None:
+                        parts.append(chunk)
+        except (OSError, ValueError):
+            # Родственник вне нашей группы может удерживать канал после
+            # остановки. Главный поток закрывает его по конечному тайм-ауту.
+            return
 
     try:
-        process = subprocess.Popen(
-            [*adapter, model, effort, sandbox],
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            env=environment,
-        )
+        popen_arguments: dict[str, Any] = {
+            "stdin": subprocess.PIPE,
+            "stdout": subprocess.PIPE,
+            "stderr": subprocess.PIPE,
+            "text": True,
+            "encoding": "utf-8",
+            "errors": "replace",
+            "env": environment,
+        }
+        previous_signal_mask: set[signal.Signals] | None = None
+        if os.name == "posix":
+            popen_arguments["start_new_session"] = True
+            def restore_child_signal_mask() -> None:
+                signal.pthread_sigmask(signal.SIG_SETMASK, set())
+
+            popen_arguments["preexec_fn"] = restore_child_signal_mask
+            signal_mask = {signal.SIGINT, signal.SIGTERM}
+            previous_signal_mask = signal.pthread_sigmask(signal.SIG_BLOCK, signal_mask)
+        try:
+            process = subprocess.Popen(
+                [*adapter, model, effort, sandbox], **popen_arguments
+            )
+            process_group_id = process.pid if os.name == "posix" else None
+        finally:
+            if previous_signal_mask is not None:
+                signal.pthread_sigmask(signal.SIG_SETMASK, previous_signal_mask)
         assert process.stdin is not None
         assert process.stdout is not None
         assert process.stderr is not None
-        process.stdin.write(json.dumps(request, ensure_ascii=False))
-        process.stdin.close()
-        readers = [
-            threading.Thread(target=copy_stream, args=(process.stdout, transport, stdout_parts)),
-            threading.Thread(target=copy_stream, args=(process.stderr, stderr_path, None)),
-        ]
-        for reader in readers:
-            reader.start()
+        if os.name == "posix":
+            output = SelectorOutput(process, transport, stderr_path, stdout_parts)
+        else:
+            readers = [
+                threading.Thread(
+                    target=copy_stream,
+                    args=(process.stdout, transport, stdout_parts),
+                    daemon=True,
+                ),
+                threading.Thread(
+                    target=copy_stream,
+                    args=(process.stderr, stderr_path, None),
+                    daemon=True,
+                ),
+            ]
+            for reader in readers:
+                reader.start()
+        writer = threading.Thread(
+            target=write_request,
+            args=(process.stdin, json.dumps(request, ensure_ascii=False)),
+            daemon=True,
+        )
+        writer.start()
         try:
-            returncode = process.wait(timeout=args.timeout_seconds)
-            timed_out = False
+            returncode = wait_for_process(process, args.timeout_seconds, output)
         except subprocess.TimeoutExpired:
             timed_out = True
-            process.terminate()
+            cleanup_in_progress = True
             try:
-                returncode = process.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                process.kill()
-                returncode = process.wait()
-        for reader in readers:
-            reader.join()
+                group_termination_confirmed = stop_process_group(
+                    process, process_group_id, signal_errors
+                )
+            finally:
+                cleanup_in_progress = False
+            returncode = process.poll()
+        if process is not None and not timed_out:
+            if os.name == "posix":
+                group_state = process_group_exists(process_group_id, signal_errors)
+                group_was_lingering = group_state is True
+            else:
+                group_state = False
+            if group_state is not False:
+                cleanup_in_progress = True
+                try:
+                    group_termination_confirmed = stop_process_group(
+                        process, process_group_id, signal_errors
+                    )
+                finally:
+                    cleanup_in_progress = False
+            else:
+                group_termination_confirmed = True
+        cleanup_in_progress = True
+        try:
+            if output is not None:
+                streams_drained = output.drain(STREAM_DRAIN_TIMEOUT)
+            else:
+                streams_drained = drain_readers(process, readers)
+        finally:
+            cleanup_in_progress = False
+        if output is not None:
+            output.close()
     except KeyboardInterrupt:
-        if process is not None and process.poll() is None:
-            process.terminate()
-        raise
+        interrupted_signal = interrupted_signal or signal.SIGINT
+        cleanup_in_progress = True
+        try:
+            if process is not None:
+                group_termination_confirmed = stop_process_group(
+                    process, process_group_id, signal_errors
+                )
+                returncode = process.poll()
+                if output is not None:
+                    streams_drained = output.drain(STREAM_DRAIN_TIMEOUT)
+                else:
+                    streams_drained = drain_readers(process, readers)
+        finally:
+            cleanup_in_progress = False
+        if output is not None:
+            output.close()
     except OSError as error:
-        write_record(
-            {
-                **initial_record,
-                "status": "failed",
-                "stop_reason": "launch_error",
-                "error": str(error),
-                "completed_at": time.time(),
-                "termination_confirmed": True,
-            }
-        )
-        print(json.dumps({**initial_record, "status": "failed", "stop_reason": "launch_error"}, ensure_ascii=False), file=sys.stderr)
-        return 2
+        launch_error = error
+        cleanup_in_progress = True
+        try:
+            if process is not None:
+                group_termination_confirmed = stop_process_group(
+                    process, process_group_id, signal_errors
+                )
+                returncode = process.poll()
+                if output is not None:
+                    streams_drained = output.drain(STREAM_DRAIN_TIMEOUT)
+                else:
+                    streams_drained = drain_readers(process, readers)
+        finally:
+            cleanup_in_progress = False
+        if output is not None:
+            output.close()
     finally:
-        for signum, handler in previous_handlers.items():
-            signal.signal(signum, handler)
+        finalizing = True
+
+    if launch_error is not None:
+        failed_record = {
+            **initial_record,
+            "status": "failed",
+            "stop_reason": "launch_error",
+            "error": str(launch_error),
+            "completed_at": time.time(),
+            "termination_confirmed": group_termination_confirmed,
+            "returncode": returncode,
+            "signal_errors": signal_errors,
+        }
+        write_record(failed_record)
+        print(json.dumps(failed_record, ensure_ascii=False), file=sys.stderr)
+        return finish(2)
 
     completed_stdout = "".join(stdout_parts)
 
@@ -289,8 +803,14 @@ def main() -> int:
     final.write_text(result, encoding="utf-8")
     result_nonempty = bool(result.strip())
     turn_completed = header.get("turn_completed") if isinstance(header, dict) else None
-    if timed_out:
+    if interrupted_signal is not None:
+        stop_reason = "interrupted"
+    elif timed_out:
         stop_reason = "timeout"
+    elif group_was_lingering:
+        stop_reason = "process_group_lingering"
+    elif not streams_drained:
+        stop_reason = "output_stream_not_drained"
     elif returncode:
         stop_reason = "process_exit_nonzero"
     elif turn_completed is False:
@@ -356,27 +876,43 @@ def main() -> int:
         "journal": str(journal),
         "seconds": round(time.time() - started, 3),
         "returncode": returncode,
-        "status": "timed_out" if timed_out else ("failed" if returncode else "completed"),
+        "status": (
+            "interrupted"
+            if interrupted_signal is not None
+            else "timed_out"
+            if timed_out
+            else "failed"
+            if returncode or stop_reason is not None
+            else "completed"
+        ),
         "completed_at": time.time(),
-        "termination_confirmed": True,
+        "termination_confirmed": group_termination_confirmed,
+        "signal_errors": signal_errors,
     }
+    if interrupted_signal is not None:
+        record["signal"] = interrupted_signal.name
+        record["interrupted_at"] = time.time()
     if args.obligation is not None:
         record["obligation_id"] = args.obligation
     write_record(record)
-    if returncode:
+    if interrupted_signal is not None:
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
-        return 2
+        return finish(130)
+    if timed_out or returncode:
+        print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
+        return finish(2)
     if stop_reason is not None:
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
-        return 4
+        return finish(4)
     if (
         record["model_matches"] is not True
         or record["client_route_status"] in {"unconfirmed", "mismatch", "conflict"}
     ):
         print(json.dumps(record, ensure_ascii=False), file=sys.stderr)
-        return 3
+        return finish(3)
     print(json.dumps(record, ensure_ascii=False))
-    return 0
+    print("Результат ожидает родительской приёмки. Используйте --record-acceptance и --check-acceptance для этого run_id.", file=sys.stderr)
+    return finish(0)
 
 
 if __name__ == "__main__":
