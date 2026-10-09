@@ -238,6 +238,53 @@
           "\"contract_errors\": []"
         ]
       }
+    },
+    {
+      "id": "records-verified-acquisition",
+      "script": "scripts/record-snapshot-verification.py",
+      "fixture": "evals/script-fixtures/record-verification",
+      "covers": [
+        "record-verification"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "{fixture}/knowledge/data/fixture/documents/item",
+        "{fixture}/knowledge/data/fixture/documents/item/snapshot.txt",
+        "--acquisition-method",
+        "local_file",
+        "--verification-method",
+        "acquisition_check",
+        "--content-scope",
+        "full_text",
+        "--content-match",
+        "verified",
+        "--scope-completeness",
+        "complete",
+        "--overall-result",
+        "verified",
+        "--checked-by-role",
+        "fixture",
+        "--checked-at",
+        "2026-09-20",
+        "--evidence",
+        "Primary local file checked in full on 2026-09-20."
+      ],
+      "expect": {
+        "stdout_contains": [
+          "verification.yml"
+        ],
+        "files": [
+          {
+            "path": "knowledge/data/fixture/documents/item/verification.yml",
+            "contains": "acquisition_check"
+          },
+          {
+            "path": "knowledge/data/fixture/documents/item/item.yml",
+            "contains": "workflow_stage: indexed"
+          }
+        ]
+      }
     }
   ],
   "unexercised_functions": [

@@ -10,6 +10,7 @@ acquisition:
   method: user_provided
   recorded_at: YYYY-MM-DD
 verification:
+  # acquisition_check: проверка при получении со свидетельством evidence.
   method: no_source_comparison
   checked_at: YYYY-MM-DD
   checked_by:
@@ -26,6 +27,8 @@ verification:
       locator: unverified # verified | unverified | mismatch
       author: unverified
       publication_date: unverified
+  # evidence: ["Запись получения с оригиналом, датой и охватом."]
   limitations:
     - Материал не сопоставлен с первоисточником.
+# Только по потребности применения или принятой политике обновления.
 # next_check_at: YYYY-MM-DD

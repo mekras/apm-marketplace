@@ -834,8 +834,7 @@ def queue_name(
             f"Единица {item.item_id} договора версии 2 должна использовать verification_assessed."
         )
     if stage == "source_checked":
-        if item.item_dir is None or not (item.item_dir / "verification.yml").is_file():
-            return "verification", "внешняя сверка и актуальность снимка не записаны", None
+        # Старый договор не требует миграции только из-за отсутствия verification.yml.
         return None
     if stage in {"rejected", ""}:
         return None

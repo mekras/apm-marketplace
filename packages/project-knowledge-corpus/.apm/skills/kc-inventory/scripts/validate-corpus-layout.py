@@ -141,6 +141,7 @@ VERIFICATION_ACQUISITION_METHODS = {
     "unknown_legacy",
 }
 VERIFICATION_METHODS = {
+    "acquisition_check",
     "direct_reopen",
     "export_comparison",
     "manual_confirmation",
@@ -1661,8 +1662,7 @@ class Validator:
                 self.contract_warnings.append(message)
         elif self.strict_verification:
             self.contract_warnings.append(
-                f"{rel}: legacy item has no verification.yml; external verification and "
-                "freshness are not recorded"
+                f"{rel}: legacy item has no verification.yml; snapshot verification is not recorded"
             )
 
     def validate_item_contract(self, item: dict[str, Any], prefix: str) -> None:
@@ -1796,6 +1796,17 @@ class Validator:
                     self.errors.append(
                         f"{rel}: metadata result for {field} exceeds the declared verification scope"
                     )
+
+        evidence = verification.get("evidence")
+        if evidence is not None and (
+            not isinstance(evidence, list) or not all(nonempty_string(value) for value in evidence)
+        ):
+            self.errors.append(f"{rel}: verification.evidence must be a list of non-empty texts")
+        if method == "acquisition_check":
+            if acquisition_method not in {"adapter_fetch", "provider_export", "local_file"}:
+                self.errors.append(f"{rel}: acquisition_check requires direct acquisition, provider export or primary local file")
+            if not isinstance(evidence, list) or not evidence or not all(nonempty_string(value) for value in evidence):
+                self.errors.append(f"{rel}: acquisition_check requires non-empty verification.evidence")
 
         if method in {"local_integrity_only", "no_source_comparison"} and (
             overall != "unverified" or content_match != "unverified"
@@ -2633,7 +2644,7 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help=(
             "Warn when an item has no verification.yml. For legacy items this means "
-            "external verification and freshness are not recorded; verification_assessed "
+            "snapshot verification is not recorded; verification_assessed "
             "items require a valid hash-bound verification."
         ),
     )

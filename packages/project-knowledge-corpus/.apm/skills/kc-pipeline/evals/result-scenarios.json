@@ -1564,6 +1564,76 @@
       "required_corpus_claims": [
         "KCADMISSION-1"
       ]
+    },
+    {
+      "id": "kc-pipeline-result-legacy-snapshot-no-recheck",
+      "prompt": "Определи ближайший шаг для старой единицы source_checked без verification.yml. Снимок и извлечённые утверждения сохранены. Новые изменения не обнаружены, отдельного запроса на сверку нет. Продолжай готовые задачи прохода.",
+      "input_files": [
+        {
+          "path": "item.yml",
+          "purpose": "старая единица",
+          "content": "id: HISTORICAL\nworkflow_stage: source_checked\n"
+        },
+        {
+          "path": "state.json",
+          "purpose": "состояние прохода",
+          "content": "{\"index_refresh\":\"completed\",\"local_processing\":\"completed\",\"next_stage\":\"impact_audit\"}"
+        },
+        {
+          "path": "capture-record.json",
+          "purpose": "сохранённое свидетельство проверки при получении",
+          "content": "{\"original\": \"https://example.test/guide/2019\", \"acquired_at\": \"2026-10-09\", \"scope\": \"full_text\", \"result\": \"original identified and complete response saved as snapshot.txt\"}"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "основание и область проверки",
+          "результат",
+          "ограничения применения"
+        ],
+        "findings": [
+          {
+            "severity": "medium",
+            "observed_problem": "Повторный доступ может быть ошибочно назначен для уже полученного снимка.",
+            "expected_conclusion": "Старая единица не требует повторного доступа только из-за отсутствия файла.",
+            "acceptable_fix_direction": "Использовать сохранённое основание в его области без новой загрузки.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Агент назначает новую загрузку ради использования исторического материала.",
+        "expected_failure": "Нарушена достаточность проверенного получения."
+      },
+      "oracle": {
+        "success_criteria": [
+          "отсутствие файла не создаёт обязательную очередь verification",
+          "продолжается impact_audit",
+          "полный проход не объявлен завершённым до итоговой проверки"
+        ],
+        "failure_indicators": [
+          "массовая миграция ради файла проверки",
+          "обязательная повторная загрузка",
+          "completed без глобальных стадий"
+        ]
+      },
+      "application_evidence": [
+        "результат указывает сохранённый снимок и область основания"
+      ],
+      "evaluation_surface": "регрессия результата, ограничения и изменения артефакта",
+      "assertions": [
+        "Старая единица не требует повторного доступа только из-за отсутствия файла."
+      ],
+      "must_not": [
+        "массовая миграция ради файла проверки",
+        "обязательная повторная загрузка",
+        "completed без глобальных стадий"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
     }
   ]
 }

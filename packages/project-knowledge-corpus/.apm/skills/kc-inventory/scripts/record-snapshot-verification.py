@@ -26,6 +26,7 @@ ACQUISITION_METHODS = {
     "unknown_legacy",
 }
 VERIFICATION_METHODS = {
+    "acquisition_check",
     "direct_reopen",
     "export_comparison",
     "manual_confirmation",
@@ -94,6 +95,13 @@ def parse_metadata_results(values: list[str], selected: set[str]) -> dict[str, s
 
 
 def validate_semantics(args: argparse.Namespace, metadata_results: dict[str, str]) -> None:
+    if args.evidence and not all(value.strip() for value in args.evidence):
+        raise VerificationError("--evidence должен содержать непустые свидетельства.")
+    if args.verification_method == "acquisition_check":
+        if args.acquisition_method not in {"adapter_fetch", "provider_export", "local_file"}:
+            raise VerificationError("acquisition_check требует прямого получения, экспорта или первичного локального файла.")
+        if not args.evidence or not all(value.strip() for value in args.evidence):
+            raise VerificationError("acquisition_check требует непустое --evidence проверки при получении.")
     if args.content_scope == "fragment" and not args.fragment:
         raise VerificationError("Для области fragment нужен --fragment.")
     if args.content_scope == "none" and args.content_match != "unverified":
@@ -185,6 +193,8 @@ def build_verification(args: argparse.Namespace, artifact: Path, artifact_relati
             "limitations": args.limitation,
         },
     }
+    if args.evidence:
+        verification["verification"]["evidence"] = args.evidence
     if args.next_check_at:
         verification["next_check_at"] = args.next_check_at
     return verification
@@ -220,6 +230,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--checked-at")
     parser.add_argument("--acquired-at")
     parser.add_argument("--next-check-at")
+    parser.add_argument("--evidence", action="append", default=[], help="Сохранённое свидетельство проверки при получении без секретов.")
     parser.add_argument("--limitation", action="append", default=[])
     return parser.parse_args()
 
@@ -231,7 +242,11 @@ def main() -> int:
     item_path = unit / "item.yml"
     item = load_mapping(item_path)
     item["item_contract_version"] = 2
-    item["workflow_stage"] = "verification_assessed"
+    # Проверка получения не завершает последующую нормализацию и извлечение.
+    if args.verification_method != "acquisition_check" or item.get("workflow_stage") in {
+        "statements_extracted", "source_checked", "verification_assessed"
+    }:
+        item["workflow_stage"] = "verification_assessed"
     update_corpus_stage_contract(unit)
     write_yaml_atomically(unit / "verification.yml", verification)
     write_yaml_atomically(item_path, item)

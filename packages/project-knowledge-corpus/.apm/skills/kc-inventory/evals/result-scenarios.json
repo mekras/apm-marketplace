@@ -704,6 +704,82 @@
       "required_corpus_claims": [
         "KCADMISSION-1"
       ]
+    },
+    {
+      "id": "kc-inventory-result-verified-acquisition",
+      "prompt": "Запиши проверку снимка при получении: оригинал установлен, весь ответ сохранён адаптером 2026-10-09, свидетельство приложено. Следующим этапом будет нормализация. Повторно источник не получай.",
+      "input_files": [
+        {
+          "path": "knowledge/corpus.yml",
+          "purpose": "договор корпуса",
+          "content": "contract_version: 1\nworkflow_stages: [indexed, fetched, normalized, statements_extracted, source_checked, verification_assessed]\n"
+        },
+        {
+          "path": "knowledge/data/fixture/documents/item/item.yml",
+          "purpose": "снимок на стадии получения",
+          "content": "id: FIXTURE-ITEM\ntitle: Учебное занятие\naccess: Public fixture\nstatus: active\nworkflow_stage: fetched\n"
+        },
+        {
+          "path": "knowledge/data/fixture/documents/item/snapshot.txt",
+          "purpose": "исторический первичный материал",
+          "content": "Редакция 2019 года. Учебное занятие состоит из вводной части и практики.\n"
+        },
+        {
+          "path": "capture-record.json",
+          "purpose": "сохранённое свидетельство проверки при получении",
+          "content": "{\"original\": \"https://example.test/guide/2019\", \"acquired_at\": \"2026-10-09\", \"scope\": \"full_text\", \"result\": \"original identified and complete response saved as snapshot.txt\"}"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "основание и область проверки",
+          "результат",
+          "ограничения применения"
+        ],
+        "findings": [
+          {
+            "severity": "medium",
+            "observed_problem": "Повторный доступ может быть ошибочно назначен для уже полученного снимка.",
+            "expected_conclusion": "Проверенное получение достаточно для снимка. Основание записано, нормализация остаётся следующим этапом.",
+            "acceptable_fix_direction": "Использовать сохранённое основание в его области без новой загрузки.",
+            "corpus_claims": [
+              "KCINVENTORY-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Агент назначает новую загрузку ради использования исторического материала.",
+        "expected_failure": "Нарушена достаточность проверенного получения."
+      },
+      "oracle": {
+        "success_criteria": [
+          "verification.yml содержит acquisition_check, evidence и хэш снимка",
+          "item.yml сохраняет fetched, обработка не объявлена завершённой",
+          "нет повторного доступа",
+          "непроверенные автор и дата публикации остаются unverified"
+        ],
+        "failure_indicators": [
+          "назначена повторная загрузка",
+          "стадия преждевременно переведена в verification_assessed",
+          "подтверждена современная актуальность"
+        ]
+      },
+      "application_evidence": [
+        "результат указывает сохранённый снимок и область основания"
+      ],
+      "evaluation_surface": "регрессия результата, ограничения и изменения артефакта",
+      "assertions": [
+        "Проверенное получение достаточно для снимка. Основание записано, нормализация остаётся следующим этапом."
+      ],
+      "must_not": [
+        "назначена повторная загрузка",
+        "стадия преждевременно переведена в verification_assessed",
+        "подтверждена современная актуальность"
+      ],
+      "required_corpus_claims": [
+        "KCINVENTORY-1"
+      ]
     }
   ]
 }
