@@ -22,8 +22,8 @@
     {
       "id": "ai-human-communication-plain-fact",
       "prompt": "Сколько будет два плюс два?",
-      "should_trigger": false,
-      "rationale": "Простая справка не требует отдельной процедуры завершения."
+      "should_trigger": true,
+      "rationale": "Простая справка человеку входит в область навыка. Достаточно самого ответа без отчёта о поручении."
     },
     {
       "id": "ai-human-communication-internal",
@@ -34,14 +34,32 @@
     {
       "id": "ai-human-communication-failure-analysis",
       "prompt": "Разбери системную причину нарушения агентом правила.",
-      "should_trigger": false,
-      "rationale": "Предметный разбор принадлежит ai-rule-failure-analysis. Навык общения может использоваться при завершении."
+      "should_trigger": true,
+      "rationale": "Навык общения применяется к изложению ответа человеку. Предметный разбор остаётся за ai-rule-failure-analysis."
     },
     {
       "id": "ai-human-communication-error-followup",
       "prompt": "Ты признал ошибку, но я не понимаю, что произойдёт дальше.",
       "should_trigger": true,
       "rationale": "Исправление ответа требует конкретного состояния и действия."
+    },
+    {
+      "id": "ai-human-communication-progress",
+      "prompt": "Кратко сообщи, как идёт работа, и продолжай разрешённый перенос.",
+      "should_trigger": true,
+      "rationale": "Промежуточное сообщение человеку входит в область навыка."
+    },
+    {
+      "id": "ai-human-communication-explanation",
+      "prompt": "Объясни простыми словами, зачем нужна эта настройка.",
+      "should_trigger": true,
+      "rationale": "Объяснение человеку должно быть понятным и начинаться с главного."
+    },
+    {
+      "id": "ai-human-communication-internal-json",
+      "prompt": "Верни родительскому процессу только объект JSON по внутренней схеме подзадачи.",
+      "should_trigger": false,
+      "rationale": "Внутренний машинный результат не входит в область общения с человеком."
     }
   ]
 }

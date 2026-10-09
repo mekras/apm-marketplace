@@ -5,6 +5,20 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект использует [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.20] - 2026-10-09
+
+- Навык `ai-human-communication` задаёт краткие, понятные ответы во всех
+  сообщениях человеку, включая промежуточные. При проблеме предлагает решение
+  или следующий шаг для его поиска, сохраняя необходимые подробности
+  и запрошенный формат.
+
+### Действия при обновлении
+
+- Если правило применения `ai-human-communication` охватывает только итог,
+  остановку или вопрос о продолжении, замените его: «При общении с человеком
+  применяй `ai-human-communication`, включая промежуточные сообщения».
+  Это изменение также предлагает повторная настройка через `ai-setup-project`.
+
 ## [2.6.19] - 2026-10-09
 
 - Управление сложностью закреплено как главный технический принцип продукта
@@ -1261,7 +1275,8 @@
 
 - Выпущена начальная версия коллекции.
 
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...HEAD
+[2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...HEAD
 [2.6.19]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.18...2.6.19
 [2.6.10]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.9...2.6.10
 [2.6.9]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.8...2.6.9
