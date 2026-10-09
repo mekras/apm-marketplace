@@ -19,6 +19,8 @@ for _stream in (sys.stdout, sys.stderr):
 START = "<!-- ai-setup-subagents:runtime-policy:start -->"
 END = "<!-- ai-setup-subagents:runtime-policy:end -->"
 ASSET = Path(__file__).resolve().parents[1] / "assets" / "worker-policy-entrypoint.md"
+PROCEDURE = Path(__file__).resolve().parents[1] / "references" / "worker-policy-procedure.md"
+ADAPTED = re.compile(r"(?m)^<!-- ai-setup-subagents:runtime-policy:adapted-v2:(.+) -->$")
 SEMANTIC_DEFAULTS = (
     ('direct_execution_scope = "whole_parent_task"', "direct_execution_scope"),
     ('subtask_routing = "match_each_bounded_subtask"', "subtask_routing"),
@@ -108,7 +110,7 @@ def migrate_config(text: str, path: Path) -> str:
     return task_pattern.sub(migrate_task_block, migrated)
 
 
-def replace_entrypoint(text: str, canonical: str) -> str:
+def replace_entrypoint(text: str, canonical: str, path: Path, replace: bool = False) -> str:
     starts = [match.start() for match in re.finditer(re.escape(START), text)]
     ends = [match.start() for match in re.finditer(re.escape(END), text)]
     if len(starts) > 1 or len(ends) > 1:
@@ -127,6 +129,26 @@ def replace_entrypoint(text: str, canonical: str) -> str:
         end += 1
     else:
         end = len(text)
+    fragment = text[start:end]
+    if fragment.strip() == canonical.strip():
+        return text
+    if not replace:
+        adaptations = ADAPTED.findall(fragment)
+        if adaptations:
+            if len(adaptations) != 1:
+                raise ValueError(f"{path}: несколько проектных процедур в одном фрагменте")
+            relative = Path(adaptations[0])
+            if relative.is_absolute() or not (path.parent / relative).is_file():
+                raise ValueError(f"{path}: проектная процедура не найдена по относительному пути")
+            if f"]({relative.as_posix()})" not in fragment:
+                raise ValueError(f"{path}: проектная адаптация не содержит ссылки на процедуру")
+            return text
+        legacy = START + "\n" + PROCEDURE.read_text(encoding="utf-8").strip() + "\n" + END
+        if fragment.strip() != legacy:
+            raise ValueError(
+                f"{path}: конфликт с изменённым входным фрагментом. Сохраните проектную "
+                "адаптацию по процедуре навыка либо явно разрешите замену через --replace-entrypoint."
+            )
     return text[:start] + canonical + text[end:]
 
 
@@ -141,6 +163,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("subagents.local.toml"))
     parser.add_argument("--entrypoint", action="append", default=[])
+    parser.add_argument("--replace-entrypoint", action="store_true",
+                        help="явно разрешить замену изменённого управляемого блока")
     parser.add_argument("--check", action="store_true", help="только проверить, нужна ли миграция")
     args = parser.parse_args()
 
@@ -152,7 +176,7 @@ def main() -> int:
     for raw in args.entrypoint:
         path = entrypoint_path(raw)
         text = path.read_text(encoding="utf-8")
-        entrypoints.append((path, text, replace_entrypoint(text, canonical)))
+        entrypoints.append((path, text, replace_entrypoint(text, canonical, path, args.replace_entrypoint)))
 
     changed = migrated_config != config_text or any(old != new for _, old, new in entrypoints)
     if args.check:

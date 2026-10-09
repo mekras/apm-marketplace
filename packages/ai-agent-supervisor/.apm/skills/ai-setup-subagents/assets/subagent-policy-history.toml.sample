@@ -1,0 +1,41 @@
+# Локальные сведения настройки и проверки. Не добавляйте рабочий файл в Git.
+# Это история и предложение, а не источник действующих условий исполнения.
+# Ссылка на этот файл хранится в policy_runtime.history_path рабочей политики.
+# Читайте его при настройке, пересмотре или разборе соответствующего свидетельства.
+
+# Единое предложение заполните до технической настройки.
+# Запускатель не проверяет смысл этих полей. Сверьте их с итоговым ответом.
+# [policy_design]
+# model_profile_path = "ai-subagent-<оснастка>.local.md"
+# Путь и основания относятся к локальному проекту, профиль целиком не копируется.
+# task_coverage = "unknown"
+# design_status = "provisional"
+# implementation_status = "unchanged"
+# verification_status = "pending"
+# [[policy_design.tasks]]
+# task = "сравнить варианты решения"
+# acceptance = "альтернативы сравнены по заданным критериям"
+# parent_basis = "historical_setup_observation"
+# parent_basis_model = "unknown"
+# parent_basis_effort = "unknown"
+# parent_basis_evidence = "метаданные активной сессии на момент настройки либо явная неизвестность"
+# parent_basis_observed_at = "unknown"
+# delegation_reason = "польза относительно прямого выполнения и расходы всего маршрута"
+# proposed_effort = "unknown"
+# effort_reason = "достаточность для задачи пока не установлена"
+# profile_basis = "раздел профиля, точная пара, задача и результат"
+# applicability = "совпадающие условия и явно обозначенная аналогия"
+# cost_basis = "единица, охват измерения и неизвестная часть полного пути"
+# candidate_comparison = "почему кандидат предпочтительнее подходящих альтернатив"
+# proposed_route = "execution_class:analysis"
+# proposed_candidates = ["candidate-a", "candidate-b"]
+# selection_status = "unresolved" # provisional, unresolved или excluded
+# reason = "нужны сопоставимые проверки качества рекомендаций"
+# current_route = "parent"
+# retention_reason = "новый класс ещё не проверен"
+# retention_effect = "новое предложение пока не исполняется"
+# replacement_condition = "подтверждены исполнение и пригодность нового назначения"
+# verification_status = "blocked"
+# next_step = "получить свидетельство исполнения, затем сравнить кандидатов"
+# Для parent и human список кандидатов пуст, причина относится к самой задаче.
+# Если выбран один предварительный кандидат, укажите только его и основание.

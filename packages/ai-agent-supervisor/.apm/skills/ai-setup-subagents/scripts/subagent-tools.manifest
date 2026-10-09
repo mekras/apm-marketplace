@@ -10,6 +10,7 @@ run-execution-class|tools/run-execution-class|755|portable
 assess-subagent-policy-connection.py|tools/assess-subagent-policy-connection.py|755|portable
 evaluate-model-selection.py|tools/evaluate-model-selection.py|755|portable
 ../assets/subagents.local.toml.sample|tools/subagents.local.toml.sample|644|portable
+../assets/subagent-policy-history.toml.sample|tools/subagent-policy-history.toml.sample|644|portable
 ../assets/model-selection-input.sample.json|tools/model-selection-input.sample.json|644|portable
 codex-model-subagent|tools/codex-model-subagent|755|codex
 codex-usage-report|tools/codex-usage-report|755|codex

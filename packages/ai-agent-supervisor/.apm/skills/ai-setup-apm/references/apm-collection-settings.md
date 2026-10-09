@@ -201,6 +201,10 @@ project/
 `.apm/skills/**`, `includes`, `scripts.tests` и различении между установкой и
 упаковкой.
 
+### Защищённое состояние Python и самоприменение
+
+Прочитай этот раздел до запуска Python, тестов, установки или аудита.
+
 В `scripts.tests` добавь проверку защищённого состояния на `__pycache__`, `.pyc`
 и `.pyo`. Оснастка `tools/run-collection-checks.py` вызывает
 `tools/validate-python-artifacts.py` до и после остальных проверок. Валидатор

@@ -60,21 +60,21 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.18 --target <цель>
+apm install ai-agent-supervisor@mekras#2.6.19 --target <цель>
 ```
 
-`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.18.
+`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.19.
 
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.18 --target codex
+apm install ai-agent-supervisor@mekras#2.6.19 --target codex
 ```
 
 Для Hermes Agent:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.18 --target hermes
+apm install ai-agent-supervisor@mekras#2.6.19 --target hermes
 ```
 
 После установки коллекция будет размещена в проекте для выбранной среды. Установка и обнаружение локальных навыков Hermes проверены отдельно от работы навыков в среде агента. Правка `AGENTS.md` в Codex CLI прошла проверку, а в Hermes Agent — только на локальном кандидате. Маршрут Hermes → Codex с записью приёмки проверен отдельно на одном учебном проекте локального кандидата. Настройка с нуля и экономия не проверены.
@@ -411,6 +411,9 @@ apm update
 ```
 
 ## Разработка
+
+[Концепция проекта](docs/concept.md) описывает проблему, цель, способ её
+достижения и ожидаемый итог.
 
 ### Проектная документация
 

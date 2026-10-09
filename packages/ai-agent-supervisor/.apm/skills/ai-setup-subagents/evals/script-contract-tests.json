@@ -5,13 +5,20 @@
       "id": "assess-policy-connection",
       "script": "scripts/assess-subagent-policy-connection.py",
       "command_prefix": [],
-      "inputs": ["subagents.local.toml", "worker-instructions.md"]
+      "inputs": [
+        "subagents.local.toml",
+        "worker-instructions.md"
+      ]
     },
     {
       "id": "migrate-subagent-policy",
       "script": "scripts/migrate-subagent-policy.py",
       "command_prefix": [],
-      "inputs": ["subagents.local.toml", "worker-instructions.md"]
+      "inputs": [
+        "subagents.local.toml",
+        "worker-instructions.md",
+        "docs/worker-policy.md"
+      ]
     },
     {
       "id": "evaluate-model-selection",
@@ -22,7 +29,10 @@
     {
       "id": "check-subagent-tools-drift-portable",
       "script": "scripts/check-subagent-tools-drift.py",
-      "command_prefix": ["--profile", "portable"],
+      "command_prefix": [
+        "--profile",
+        "portable"
+      ],
       "inputs": []
     }
   ],
@@ -31,51 +41,99 @@
       "id": "assess-connected-policy",
       "script": "scripts/assess-subagent-policy-connection.py",
       "fixture": "evals/script-fixtures/policy-connection",
-      "covers": ["assess-policy-connection"],
+      "covers": [
+        "assess-policy-connection"
+      ],
       "command": [
-        "{python}", "{script}", "--config", "{fixture}/subagents.local.toml",
-        "--entrypoint", "codex={fixture}/worker-instructions.md", "--output", "{fixture}/report.json", "--json"
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/worker-instructions.md",
+        "--output",
+        "{fixture}/report.json",
+        "--json"
       ],
       "expect": {
-        "stdout_contains": ["\"instruction_entrypoints\": \"referenced\"", "\"working_sessions\": \"not_observed\""],
-        "files": [{"path": "report.json", "json": true}]
+        "stdout_contains": [
+          "\"instruction_entrypoints\": \"referenced\"",
+          "\"working_sessions\": \"not_observed\""
+        ],
+        "files": [
+          {
+            "path": "report.json",
+            "json": true
+          }
+        ]
       }
     },
     {
       "id": "assess-client-evidence-boundary",
       "script": "scripts/assess-subagent-policy-connection.py",
       "fixture": "evals/script-fixtures/policy-connection",
-      "covers": ["assess-policy-connection"],
+      "covers": [
+        "assess-policy-connection"
+      ],
       "command": [
-        "{python}", "{script}", "--config", "{fixture}/subagents.local.toml",
-        "--entrypoint", "codex={fixture}/worker-instructions.md",
-        "--run-record", "{fixture}/run.json", "--json"
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/worker-instructions.md",
+        "--run-record",
+        "{fixture}/run.json",
+        "--json"
       ],
       "expect": {
-        "stdout_contains": ["\"model\": \"confirmed\"", "\"effort\": \"confirmed\""]
+        "stdout_contains": [
+          "\"model\": \"confirmed\"",
+          "\"effort\": \"confirmed\""
+        ]
       }
     },
     {
       "id": "migrate-v1-policy-and-entrypoint",
       "script": "scripts/migrate-subagent-policy.py",
       "fixture": "evals/script-fixtures/policy-migration",
-      "covers": ["migrate-subagent-policy"],
+      "covers": [
+        "migrate-subagent-policy"
+      ],
       "command": [
-        "{python}", "{script}",
-        "--config", "{fixture}/subagents.local.toml",
-        "--entrypoint", "codex={fixture}/worker-instructions.md"
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/worker-instructions.md",
+        "--replace-entrypoint"
       ],
       "expect": {
-        "stdout_contains": ["Политика подагентов мигрирована."],
+        "stdout_contains": [
+          "Политика подагентов мигрирована."
+        ],
         "files": [
-          {"path": "subagents.local.toml", "contains": "schema_version = 2"},
-          {"path": "subagents.local.toml", "contains": "parent_basis_model = \"historical assignment\""},
-          {"path": "worker-instructions.md", "contains": "`direct_execution_scope = \"whole_parent_task\"` означает только"},
-          {"path": "worker-instructions.md", "contains": "не отменяет отдельного"},
-          {"path": "worker-instructions.md", "contains": "Это ограничение относится только к этому маршруту"},
-          {"path": "worker-instructions.md", "contains": "Независимо от класса дочерний исполнитель"},
-          {"path": "worker-instructions.md", "contains": "защищённые источники"},
-          {"path": "worker-instructions.md", "contains": "Микрозадачи не"}
+          {
+            "path": "subagents.local.toml",
+            "contains": "schema_version = 2"
+          },
+          {
+            "path": "subagents.local.toml",
+            "contains": "parent_basis_model = \"historical assignment\""
+          },
+          {
+            "path": "worker-instructions.md",
+            "contains": "references/worker-policy-procedure.md"
+          },
+          {
+            "path": "worker-instructions.md",
+            "contains": "policy_applicability"
+          },
+          {
+            "path": "worker-instructions.md",
+            "contains": "защищённые источники"
+          }
         ]
       }
     },
@@ -83,7 +141,9 @@
       "id": "check-installed-portable-tools",
       "script": "scripts/check-subagent-tools-drift.py",
       "fixture": "evals/script-fixtures/tools-drift",
-      "covers": ["check-subagent-tools-drift-portable"],
+      "covers": [
+        "check-subagent-tools-drift-portable"
+      ],
       "prepare": [
         [
           "{python}",
@@ -113,7 +173,9 @@
       "id": "evaluate-complete-model-matrix",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "command": [
         "{python}",
         "{script}",
@@ -123,7 +185,10 @@
         "{fixture}/report.json"
       ],
       "expect": {
-        "stdout_contains": ["confirmed", "candidate-a"],
+        "stdout_contains": [
+          "confirmed",
+          "candidate-a"
+        ],
         "files": [
           {
             "path": "report.json",
@@ -147,14 +212,18 @@
       ],
       "expect": {
         "exit_code": 2,
-        "stderr_contains": ["contract_sha256"]
+        "stderr_contains": [
+          "contract_sha256"
+        ]
       }
     },
     {
       "id": "report-insufficient-without-full-cost",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -172,7 +241,9 @@
         "{fixture}/without-total-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "without-total-report.json",
@@ -186,7 +257,9 @@
       "id": "report-refuted-by-cost",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -204,7 +277,9 @@
         "{fixture}/cost-refuted-report.json"
       ],
       "expect": {
-        "stdout_contains": ["refuted"],
+        "stdout_contains": [
+          "refuted"
+        ],
         "files": [
           {
             "path": "cost-refuted-report.json",
@@ -218,7 +293,9 @@
       "id": "exclude-by-quality-interval",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -236,7 +313,9 @@
         "{fixture}/quality-elimination-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "quality-elimination-report.json",
@@ -250,7 +329,9 @@
       "id": "report-no-sequential-candidate",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -268,7 +349,9 @@
         "{fixture}/no-candidate-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "no-candidate-report.json",
@@ -282,7 +365,9 @@
       "id": "report-no-holdout-baseline",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -300,7 +385,9 @@
         "{fixture}/no-baseline-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "no-baseline-report.json",
@@ -314,7 +401,9 @@
       "id": "report-only-one-eligible-candidate",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -332,7 +421,9 @@
         "{fixture}/one-eligible-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "one-eligible-report.json",
@@ -346,7 +437,9 @@
       "id": "report-critical-defect-refutation",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -364,7 +457,10 @@
         "{fixture}/critical-refuted-report.json"
       ],
       "expect": {
-        "stdout_contains": ["refuted", "candidate-b"],
+        "stdout_contains": [
+          "refuted",
+          "candidate-b"
+        ],
         "files": [
           {
             "path": "critical-refuted-report.json",
@@ -378,7 +474,9 @@
       "id": "report-quality-refutation",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -396,7 +494,9 @@
         "{fixture}/quality-refuted-report.json"
       ],
       "expect": {
-        "stdout_contains": ["refuted"],
+        "stdout_contains": [
+          "refuted"
+        ],
         "files": [
           {
             "path": "quality-refuted-report.json",
@@ -410,7 +510,9 @@
       "id": "report-insufficient-quality-and-review-time",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -428,7 +530,9 @@
         "{fixture}/review-insufficient-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "review-insufficient-report.json",
@@ -452,14 +556,18 @@
       ],
       "expect": {
         "exit_code": 2,
-        "stderr_contains": ["вход и выход должны быть разными файлами"]
+        "stderr_contains": [
+          "вход и выход должны быть разными файлами"
+        ]
       }
     },
     {
       "id": "report-excluded-by-deterministic-failure",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -468,17 +576,34 @@
           "{fixture}"
         ]
       ],
-      "command": ["{python}", "{script}", "--input", "{fixture}/deterministic-failure.json", "--output", "{fixture}/deterministic-failure-report.json"],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/deterministic-failure.json",
+        "--output",
+        "{fixture}/deterministic-failure-report.json"
+      ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
-        "files": [{"path": "deterministic-failure-report.json", "json": true, "contains": "repeated_deterministic_failure"}]
+        "stdout_contains": [
+          "insufficient_data"
+        ],
+        "files": [
+          {
+            "path": "deterministic-failure-report.json",
+            "json": true,
+            "contains": "repeated_deterministic_failure"
+          }
+        ]
       }
     },
     {
       "id": "report-zero-baseline-review-time",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -487,17 +612,34 @@
           "{fixture}"
         ]
       ],
-      "command": ["{python}", "{script}", "--input", "{fixture}/zero-review.json", "--output", "{fixture}/zero-review-report.json"],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/zero-review.json",
+        "--output",
+        "{fixture}/zero-review-report.json"
+      ],
       "expect": {
-        "stdout_contains": ["confirmed"],
-        "files": [{"path": "zero-review-report.json", "json": true, "contains": "\"review_time_regression_percent\": 0.0"}]
+        "stdout_contains": [
+          "confirmed"
+        ],
+        "files": [
+          {
+            "path": "zero-review-report.json",
+            "json": true,
+            "contains": "\"review_time_regression_percent\": 0.0"
+          }
+        ]
       }
     },
     {
       "id": "report-insufficient-holdout-volume",
       "script": "scripts/evaluate-model-selection.py",
       "fixture": "evals/script-fixtures/model-selection",
-      "covers": ["evaluate-model-selection"],
+      "covers": [
+        "evaluate-model-selection"
+      ],
       "prepare": [
         [
           "{python}",
@@ -515,12 +657,88 @@
         "{fixture}/small-holdout-report.json"
       ],
       "expect": {
-        "stdout_contains": ["insufficient_data"],
+        "stdout_contains": [
+          "insufficient_data"
+        ],
         "files": [
           {
             "path": "small-holdout-report.json",
             "json": true,
             "contains": "объём отложенной выборки меньше заданного"
+          }
+        ]
+      }
+    },
+    {
+      "script": "scripts/migrate-subagent-policy.py",
+      "fixture": "evals/script-fixtures/policy-migration",
+      "covers": [
+        "migrate-subagent-policy"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/worker-instructions.md"
+      ],
+      "id": "preserve-adapted-entrypoint",
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path; import sys; p=Path(sys.argv[1]); s=Path(sys.argv[2]); doc=p/'docs/worker-policy.md'; doc.parent.mkdir(exist_ok=True); doc.write_text((s.parent.parent/'references/worker-policy-procedure.md').read_text(encoding='utf-8'), encoding='utf-8'); (p/'worker-instructions.md').write_text('<!-- ai-setup-subagents:runtime-policy:start -->\\n<!-- ai-setup-subagents:runtime-policy:adapted-v2:docs/worker-policy.md -->\\nRead subagents.local.toml.\\n[Project procedure](docs/worker-policy.md)\\nKeep local adaptation.\\n<!-- ai-setup-subagents:runtime-policy:end -->\\n', encoding='utf-8')",
+          "{fixture}",
+          "{script}"
+        ]
+      ],
+      "expect": {
+        "files": [
+          {
+            "path": "worker-instructions.md",
+            "contains": "Keep local adaptation."
+          },
+          {
+            "path": "subagents.local.toml",
+            "contains": "schema_version = 2"
+          }
+        ]
+      }
+    },
+    {
+      "script": "scripts/migrate-subagent-policy.py",
+      "fixture": "evals/script-fixtures/policy-migration",
+      "covers": [
+        "migrate-subagent-policy"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/worker-instructions.md"
+      ],
+      "id": "migrate-legacy-full-entrypoint",
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path; import sys; p=Path(sys.argv[1]); s=Path(sys.argv[2]); body=(s.parent.parent/'references/worker-policy-procedure.md').read_text(encoding='utf-8'); (p/'worker-instructions.md').write_text('<!-- ai-setup-subagents:runtime-policy:start -->\\n'+body+'<!-- ai-setup-subagents:runtime-policy:end -->\\n', encoding='utf-8')",
+          "{fixture}",
+          "{script}"
+        ]
+      ],
+      "expect": {
+        "files": [
+          {
+            "path": "worker-instructions.md",
+            "contains": "references/worker-policy-procedure.md"
+          },
+          {
+            "path": "subagents.local.toml",
+            "contains": "schema_version = 2"
           }
         ]
       }
