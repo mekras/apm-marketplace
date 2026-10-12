@@ -14,8 +14,9 @@ launcher = "tools/run-execution-class"
 # target обозначает исполнителя. Родителем может быть другая оснастка.
 target = "codex"
 # Каталог должен быть доступен родительскому запускателю и исключён из VCS.
-# run_records_dir = "ai-subagent-runs.local"
-# Явный --out имеет приоритет. Без поля сохраняется прежний .codex/subagents.
+# run_records_dir = ".local/subagents"
+# Явный --out имеет приоритет. Без поля используется .local/subagents.
+# Данные временные. Рабочая процедура завершает хранение через --finish-task.
 # direct_execution = ["микрозадача", "контракт и приёмка дороже ожидаемой пользы"]
 # direct_execution_scope = "whole_parent_task"
 # subtask_routing = "match_each_bounded_subtask"

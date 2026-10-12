@@ -32,6 +32,7 @@ for _stream in (sys.stdout, sys.stderr):
 verify_model = runpy.run_path(
     str(Path(__file__).resolve().parent / "lib/model_evidence.py")
 )["verify_model"]
+run_storage = runpy.run_path(str(Path(__file__).resolve().parent / "lib/run_storage.py"))
 
 
 PROCESS_GROUP_TERM_TIMEOUT = 1.0
@@ -454,7 +455,32 @@ def review_main(argv: list[str]) -> int:
             lock.unlink(missing_ok=True)
 
 
+def finish_main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Завершить задачу и удалить временные данные одного запуска без вызова модели.")
+    parser.add_argument("--finish-task", type=Path, required=True)
+    parser.add_argument("--run-id", required=True, type=review_text)
+    parser.add_argument("--release-retained", action="store_true",
+                        help="удалить явно сохранённые данные после завершения согласованного разбора или эксперимента")
+    args = parser.parse_args(argv)
+    try:
+        def validate(record: dict[str, Any]) -> None:
+            if record.get("status") == "completed" or record.get("acceptance") is not None:
+                errors = review_errors(record)
+                if errors:
+                    raise ValueError(" / ".join(errors))
+        result = run_storage["finish_run"](args.finish_task, args.run_id, validate=validate,
+                                           release_retained=args.release_retained)
+        print(json.dumps(result, ensure_ascii=False))
+        return 0
+    except (OSError, ValueError, TypeError) as error:
+        print(json.dumps({"run_id": args.run_id, "storage": "not_removed",
+                          "error": str(error)}, ensure_ascii=False), file=sys.stderr)
+        return 2
+
+
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "--finish-task":
+        return finish_main(sys.argv[1:])
     if len(sys.argv) > 1 and sys.argv[1] in {"--record-acceptance", "--check-acceptance"}:
         return review_main(sys.argv[1:])
     parser = argparse.ArgumentParser(
@@ -464,7 +490,9 @@ def main() -> int:
     parser.add_argument("--target", required=True)
     parser.add_argument("--config", type=Path, default=Path("subagents.local.toml"))
     parser.add_argument("--input", action="append", default=[])
-    parser.add_argument("--out", type=Path, help="каталог журналов: явный путь, policy_runtime.run_records_dir либо .codex/subagents")
+    parser.add_argument("--out", type=Path, help="каталог данных запусков: явный путь, policy_runtime.run_records_dir либо .local/subagents")
+    parser.add_argument("--retain-for", type=review_text,
+                        help="сохранить данные после задачи по явному запросу пользователя, указав причину")
     parser.add_argument(
         "--timeout-seconds",
         type=float,
@@ -481,7 +509,7 @@ def main() -> int:
     try:
         data = tomllib.loads(args.config.read_text(encoding="utf-8"))
         if args.out is None:
-            records_dir = data.get("policy_runtime", {}).get("run_records_dir", ".codex/subagents")
+            records_dir = data.get("policy_runtime", {}).get("run_records_dir", run_storage["DEFAULT_RUNS_DIR"])
             if not isinstance(records_dir, str) or not records_dir.strip():
                 raise ValueError("policy_runtime.run_records_dir должен быть непустым путём")
             args.out = Path(records_dir)
@@ -514,26 +542,24 @@ def main() -> int:
         "task": task,
         "role_assignment": role_assignment,
     }
+    started = time.time()
+    run_id = str(uuid.uuid4())
     try:
-        args.out.mkdir(parents=True, exist_ok=True)
-        with tempfile.TemporaryFile(dir=args.out):
-            pass
+        directory = run_storage["create_run_directory"](args.out, run_id)
     except OSError as error:
         parser.error(
             f"каталог журналов {args.out} недоступен для записи: {error}. "
             "Выберите разрешённый путь через policy_runtime.run_records_dir или --out. "
             "Модель не запускалась."
         )
-    started = time.time()
-    run_id = str(uuid.uuid4())
-    prefix = f"{int(started)}-{args.target}-{args.execution_class}-{run_id}"
-    final = args.out / f"{prefix}.final.txt"
-    transport = args.out / f"{prefix}.transport.txt"
-    transport_header = args.out / f"{prefix}.transport-header.json"
-    record_path = args.out / f"{prefix}.json"
-    stderr_path = args.out / f"{prefix}.stderr.txt"
-    journal = args.out / f"{prefix}.jsonl"
-    codex_stderr_path = args.out / f"{prefix}.codex.stderr.txt"
+    paths = run_storage["artifact_paths"](directory)
+    final = paths["final"]
+    transport = paths["transport_path"]
+    transport_header = paths["transport_header_path"]
+    record_path = paths["record_path"]
+    stderr_path = paths["stderr"]
+    journal = paths["journal"]
+    codex_stderr_path = paths["codex_stderr"]
 
     def write_record(data: dict[str, Any]) -> None:
         temporary = record_path.with_suffix(record_path.suffix + ".tmp")
@@ -544,6 +570,7 @@ def main() -> int:
 
     initial_record = {
         "run_id": run_id,
+        "storage": {"schema_version": 1, "retain_reason": args.retain_for or ""},
         "record_path": str(record_path),
         "execution_class": args.execution_class,
         "target": args.target,
@@ -781,7 +808,7 @@ def main() -> int:
             "stop_reason": "launch_error",
             "error": str(launch_error),
             "completed_at": time.time(),
-            "termination_confirmed": group_termination_confirmed,
+            "termination_confirmed": process is None or group_termination_confirmed,
             "returncode": returncode,
             "signal_errors": signal_errors,
         }
@@ -912,6 +939,7 @@ def main() -> int:
         return finish(3)
     print(json.dumps(record, ensure_ascii=False))
     print("Результат ожидает родительской приёмки. Используйте --record-acceptance и --check-acceptance для этого run_id.", file=sys.stderr)
+    print("После завершения всей задачи вызовите --finish-task для удаления временных данных этого запуска.", file=sys.stderr)
     return finish(0)
 
 

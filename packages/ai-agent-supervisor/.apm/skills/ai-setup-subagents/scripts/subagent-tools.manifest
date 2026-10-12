@@ -2,6 +2,7 @@
 # Профиль portable ставится всегда; codex и claude добавляют средства оснастки.
 # Этот манифест читают установщики и check-subagent-tools-drift.py.
 lib/model_evidence.py|tools/lib/model_evidence.py|644|portable
+lib/run_storage.py|tools/lib/run_storage.py|644|portable
 check-subagent-models|tools/check-subagent-models|755|portable
 discover-subagent-models|tools/discover-subagent-models|755|portable
 analyze-subagent-sessions|tools/analyze-subagent-sessions|755|portable

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import sys
 import tomllib
@@ -20,6 +21,8 @@ START = "<!-- ai-setup-subagents:runtime-policy:start -->"
 END = "<!-- ai-setup-subagents:runtime-policy:end -->"
 ASSET = Path(__file__).resolve().parents[1] / "assets" / "worker-policy-entrypoint.md"
 PROCEDURE = Path(__file__).resolve().parents[1] / "references" / "worker-policy-procedure.md"
+# Известный штатный полный фрагмент до введения временного хранения.
+LEGACY_FULL_SHA256 = '9a518b1ac0606f526c31cca70c5ff20e860e0f2de2ce69729118a929c6087f92'
 ADAPTED = re.compile(r"(?m)^<!-- ai-setup-subagents:runtime-policy:adapted-v2:(.+) -->$")
 SEMANTIC_DEFAULTS = (
     ('direct_execution_scope = "whole_parent_task"', "direct_execution_scope"),
@@ -144,7 +147,8 @@ def replace_entrypoint(text: str, canonical: str, path: Path, replace: bool = Fa
                 raise ValueError(f"{path}: проектная адаптация не содержит ссылки на процедуру")
             return text
         legacy = START + "\n" + PROCEDURE.read_text(encoding="utf-8").strip() + "\n" + END
-        if fragment.strip() != legacy:
+        if (fragment.strip() != legacy
+                and hashlib.sha256(fragment.strip().encode()).hexdigest() != LEGACY_FULL_SHA256):
             raise ValueError(
                 f"{path}: конфликт с изменённым входным фрагментом. Сохраните проектную "
                 "адаптацию по процедуре навыка либо явно разрешите замену через --replace-entrypoint."
