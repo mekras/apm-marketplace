@@ -7,6 +7,10 @@
 
 ## [Невыпущено]
 
+## [2.6.22] - 2026-10-12
+
+- Обновлена версия коллекции; поведение навыков не изменилось.
+
 ## [2.6.21] - 2026-10-12
 
 - Новые данные запусков подагентов исключены из Git и удаляются при завершении
@@ -1293,8 +1297,10 @@
 
 - Выпущена начальная версия коллекции.
 
+[2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
+[2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.22...HEAD
 [2.6.19]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.18...2.6.19
 [2.6.10]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.9...2.6.10
 [2.6.9]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.8...2.6.9
