@@ -220,7 +220,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def bootstrap_config(repo_root: Path, config_path: Path) -> None:
-    """Создать локальные настройки из образца и скрыть их от Git."""
+    """Создать настройки только в явно разрешённом защищённом месте."""
     sample = repo_root / SAMPLE_NAME
     if not sample.exists():
         print(
@@ -229,19 +229,66 @@ def bootstrap_config(repo_root: Path, config_path: Path) -> None:
             file=sys.stderr,
         )
         return
+    verified = os.environ.get("APM_EVAL_STORAGE_VERIFIED") == "1"
+    if not verified and os.environ.get("APM_EVAL_BOOTSTRAP") != "git":
+        print("Настройки отсутствуют. Сначала проверьте VCS и политику проекта. "
+              "Для разрешённой подготовки исключений Git задайте APM_EVAL_BOOTSTRAP=git. "
+              "После проверки защиты настроек и отчётов средствами другой VCS или "
+              "проверки отсутствия VCS задайте APM_EVAL_STORAGE_VERIFIED=1. "
+              "Файлы не созданы, модельные evals пропущены.")
+        return
+    protection = "Предварительная проверка защиты выполнена вызывающим агентом."
+    if not verified:
+        try:
+            git_root = subprocess.run(
+                ["git", "-C", str(repo_root), "rev-parse", "--show-toplevel"],
+                text=True, encoding="utf-8", errors="replace", capture_output=True, check=False,
+            )
+            if git_root.returncode:
+                raise RuntimeError("Git не обнаружен")
+            root = Path(git_root.stdout.strip()).resolve()
+            paths = [config_path.resolve(), repo_root.resolve() / "eval-results"]
+            if any(not path.is_relative_to(root) for path in paths):
+                raise RuntimeError("настройки или отчёты находятся вне проверенной области Git")
+            for path in paths:
+                tracked = subprocess.run(["git", "-C", str(root), "ls-files", "--", str(path)],
+                                         capture_output=True, check=False)
+                if tracked.returncode or tracked.stdout:
+                    raise RuntimeError("локальный путь уже отслеживается или его состояние неизвестно")
+            found = subprocess.run(
+                ["git", "-C", str(root), "rev-parse", "--git-path", "info/exclude"],
+                text=True, encoding="utf-8", errors="replace", capture_output=True, check=False,
+            )
+            if found.returncode:
+                raise RuntimeError("локальный файл исключений Git недоступен")
+            exclude = Path(found.stdout.strip())
+            if not exclude.is_absolute():
+                exclude = root / exclude
+            lines = exclude.read_text(encoding="utf-8").splitlines() if exclude.exists() else []
+            # Используем точные пути и экранируем метасимволы формата исключений Git.
+            rules = []
+            for path in paths:
+                relative = path.relative_to(root).as_posix()
+                escaped = "".join("\\" + c if c in "\\*?[] !#" else c for c in relative)
+                rules.append("/" + escaped + ("/" if path == paths[1] else ""))
+            missing = [rule for rule in rules if rule not in lines]
+            if missing:
+                with exclude.open("a", encoding="utf-8") as handle:
+                    handle.write("\n" + "\n".join(missing) + "\n")
+            for path in [paths[0], paths[1] / "report.json"]:
+                result = subprocess.run(["git", "-C", str(root), "check-ignore", "-q", str(path)],
+                                        capture_output=True, check=False)
+                if result.returncode:
+                    raise RuntimeError("исключение локальных данных из Git не подтверждено")
+            protection = "Исключение настроек и каталога eval-results подтверждено средствами Git."
+        except (OSError, RuntimeError) as error:
+            print(f"Настройки не созданы: {error}. Проверьте фактическую VCS и место хранения. "
+                  "Модельные evals пропущены.", file=sys.stderr)
+            return
     config_path.write_text(sample.read_text(encoding="utf-8"), encoding="utf-8")
-    exclude = repo_root / ".git" / "info" / "exclude"
     rel = config_path.name
-    local_paths = {rel, "eval-results/"}
-    if exclude.parent.is_dir():
-        lines = exclude.read_text(encoding="utf-8").splitlines() if exclude.exists() else []
-        missing = local_paths - {line.strip() for line in lines}
-        if missing:
-            with exclude.open("a", encoding="utf-8") as handle:
-                handle.writelines(f"{item}\n" for item in sorted(missing))
     print(
-        f"Созданы локальные настройки {rel} из образца и добавлены в "
-        ".git/info/exclude (включая каталог отчётов eval-results).\n"
+        f"Созданы локальные настройки {rel} из образца. {protection}\n"
         f"Заполните в нём adapters и models, затем повторите `apm run evals`.\n"
         "Модельные evals пока пропущены.",
         flush=True,
@@ -726,6 +773,7 @@ def make_model_call(adapter: list[str], model: str, timeout: int, workspace: Pat
         environment["PYTHONIOENCODING"] = "utf-8"
         if workspace:
             environment["APM_EVAL_WORKSPACE"] = str(workspace)
+            environment["GIT_CEILING_DIRECTORIES"] = str(workspace.parent)
         if read_only:
             environment["APM_EVAL_SANDBOX"] = "read-only"
         try:
@@ -1189,7 +1237,8 @@ def run_result_evals(
                 # со своим текущим каталогом, а он всегда разыменован.
                 root = Path(temp).resolve()
                 workspace, before = root / "workspace", root / "before"
-                packages = prepare_trial(workspace, skill_dirs, input_files=case.get("input_files", []))
+                packages = prepare_trial(workspace, skill_dirs, input_files=case.get("input_files", []),
+                                         vcs=case.get("workspace_vcs", "git"))
                 shutil.copytree(workspace, before)
                 call = call_factory(workspace, read_only=case.get("read_only", False))
                 call.context = {"role": "candidate", "phase": "result", "case_id": case["id"]}
@@ -1371,7 +1420,9 @@ def trial_skill_manifest(workspace: Path) -> dict[str, str]:
 
 
 def prepare_trial(workspace: Path, skill_dirs: list[Path], fixture: Path | None = None,
-                  input_files: list[dict[str, Any]] | None = None) -> dict[str, str]:
+                  input_files: list[dict[str, Any]] | None = None, *, vcs: str = "git") -> dict[str, str]:
+    if not isinstance(vcs, str) or vcs not in {"git", "none"}:
+        raise RuntimeError("workspace_vcs должен быть git или none")
     if fixture:
         check_input_tree(fixture)
         if any((fixture / mount).exists() for mount in SKILL_MOUNTS):
@@ -1389,12 +1440,23 @@ def prepare_trial(workspace: Path, skill_dirs: list[Path], fixture: Path | None 
                 target = workspace / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(item["content"], encoding="utf-8")
-    # Отдельный корень Git не даёт командам git обнаружить родительский проект.
-    initialized = subprocess.run(["git", "init", "--quiet", str(workspace)],
-                                 text=True, encoding="utf-8", errors="replace", capture_output=True, check=False)
-    if initialized.returncode:
-        raise RuntimeError(f"Не удалось создать корень тестового проекта: {initialized.stderr}")
+    if vcs == "git":
+        initialized = subprocess.run(["git", "init", "--quiet", str(workspace)],
+                                     text=True, encoding="utf-8", errors="replace", capture_output=True, check=False)
+        if initialized.returncode:
+            raise RuntimeError(f"Не удалось создать корень тестового проекта: {initialized.stderr}")
     return install_trial_skills(workspace, skill_dirs)
+
+
+def git_index_snapshot(workspace: Path) -> str | None:
+    """Свидетельство индекса только для явно подготовленной среды Git."""
+    if not (workspace / ".git").exists():
+        return None
+    result = subprocess.run(["git", "-C", str(workspace), "ls-files", "--stage"],
+                            text=True, encoding="utf-8", errors="replace", capture_output=True, check=False)
+    if result.returncode:
+        raise RuntimeError("Не удалось прочитать индекс тестового проекта")
+    return result.stdout
 
 
 def collect_trial_evidence(before: Path, workspace: Path, executions: list[dict[str, Any]],
@@ -1411,6 +1473,8 @@ def collect_trial_evidence(before: Path, workspace: Path, executions: list[dict[
         "final_files": final_files,
         "changed_paths": [path for path in sorted(set(initial) | set(final)) if initial.get(path) != final.get(path)],
         "execution": executions,
+        "git_index_before": git_index_snapshot(before),
+        "git_index_after": git_index_snapshot(workspace),
         "trace_available": any(item.get("trace") for item in executions),
         "package_changes": package_changes,
         "isolation": "fresh_project_copy_not_os_sandbox",
@@ -1890,7 +1954,10 @@ def sha256_file(path: Path) -> str:
 
 
 def git_revision(repo_root: Path) -> str | None:
-    completed = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_root, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    try:
+        completed = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo_root, text=True, encoding="utf-8", errors="replace", stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    except OSError:
+        return None
     return completed.stdout.strip() if completed.returncode == 0 else None
 
 
@@ -2128,6 +2195,33 @@ def run_comparison(repo_root: Path, args: argparse.Namespace, config: dict[str, 
     return 1 if errors else 0
 
 
+def verify_evaluation_storage(repo_root: Path, config_path: Path, output: Path) -> None:
+    """Проверить реальные пути до вызовов модели, включая переопределённый вывод."""
+    if os.environ.get("APM_EVAL_STORAGE_VERIFIED") == "1":
+        return
+    if os.environ.get("APM_EVAL_BOOTSTRAP") != "git":
+        raise RuntimeError("Защита настроек и отчётов от фактической VCS не подтверждена. "
+                           "После проверки путей задайте APM_EVAL_STORAGE_VERIFIED=1 "
+                           "либо выберите проверку Git через APM_EVAL_BOOTSTRAP=git. Модели не запускались.")
+    result = subprocess.run(["git", "-C", str(repo_root), "rev-parse", "--show-toplevel"],
+                            text=True, encoding="utf-8", errors="replace", capture_output=True, check=False)
+    if result.returncode:
+        raise RuntimeError("Git не обнаружен, защита фактической VCS не проверена")
+    root = Path(result.stdout.strip()).resolve()
+    for path in (config_path.resolve(), output.resolve()):
+        if not path.is_relative_to(root):
+            raise RuntimeError("Путь локальных данных вне проверенной области Git")
+        tracked = subprocess.run(["git", "-C", str(root), "ls-files", "--", str(path)],
+                                 capture_output=True, check=False)
+        if tracked.returncode or tracked.stdout:
+            raise RuntimeError("Локальные данные уже отслеживаются или их состояние неизвестно")
+        probe = path if path == config_path.resolve() or path.suffix == ".json" else path / "report.json"
+        ignored = subprocess.run(["git", "-C", str(root), "check-ignore", "-q", str(probe)],
+                                 capture_output=True, check=False)
+        if ignored.returncode:
+            raise RuntimeError("Исключение фактического пути настроек или отчётов из Git не подтверждено")
+
+
 def main() -> int:
     args = parse_args()
     roots = args.paths or [Path.cwd()]
@@ -2142,6 +2236,12 @@ def main() -> int:
         # Bootstrap или нехватка настроек уже сообщены. Это не дефект контроля
         # качества: модельные evals опциональны, поэтому выходим без ошибки.
         return 0
+
+    try:
+        verify_evaluation_storage(repo_root, args.config, args.output or Path(config["results_dir"]))
+    except (RuntimeError, OSError) as error:
+        print(str(error), file=sys.stderr)
+        return 1
 
     if args.comparison_plan:
         try:

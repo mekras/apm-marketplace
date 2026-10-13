@@ -33,7 +33,10 @@
         "stdout_contains": [
           "Отслеживаемых Git проекций зависимостей APM не найдено."
         ]
-      }
+      },
+      "requires": [
+        "git"
+      ]
     },
     {
       "id": "reject-missing-project",
@@ -55,16 +58,39 @@
       "id": "reject-tracked-apm-dependency",
       "script": "scripts/validate-apm-git-boundary.py",
       "fixture": "evals/script-fixtures/empty-project",
-      "covers": ["validate-git-boundary"],
-      "requires": ["apm"],
-      "prepare": [
-        ["git", "init", "--quiet", "{fixture}"],
-        ["git", "-C", "{fixture}", "add", ".agents/skills/dependency/README.md"]
+      "covers": [
+        "validate-git-boundary"
       ],
-      "command": ["{python}", "{script}", "{fixture}"],
+      "requires": [
+        "apm",
+        "git"
+      ],
+      "prepare": [
+        [
+          "git",
+          "init",
+          "--quiet",
+          "{fixture}"
+        ],
+        [
+          "git",
+          "-C",
+          "{fixture}",
+          "add",
+          ".agents/skills/dependency/README.md"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "{fixture}"
+      ],
       "expect": {
         "exit_code": 1,
-        "stderr_contains": [".agents/skills/dependency/README.md", "example/dependency"]
+        "stderr_contains": [
+          ".agents/skills/dependency/README.md",
+          "example/dependency"
+        ]
       }
     }
   ]

@@ -60,21 +60,21 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.22 --target <цель>
+apm install ai-agent-supervisor@mekras#2.6.23 --target <цель>
 ```
 
-`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.22.
+`<цель>` — это `claude`, `codex` или `hermes` для версии 2.6.23.
 
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.22 --target codex
+apm install ai-agent-supervisor@mekras#2.6.23 --target codex
 ```
 
 Для Hermes Agent:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.6.22 --target hermes
+apm install ai-agent-supervisor@mekras#2.6.23 --target hermes
 ```
 
 После установки коллекция будет размещена в проекте для выбранной среды. Установка и обнаружение локальных навыков Hermes проверены отдельно от работы навыков в среде агента. Правка `AGENTS.md` в Codex CLI прошла проверку, а в Hermes Agent — только на локальном кандидате. Маршрут Hermes → Codex с записью приёмки проверен отдельно на одном учебном проекте локального кандидата. Настройка с нуля и экономия не проверены.
@@ -163,29 +163,18 @@ apm update
 Оптимизируй AGENTS.md.
 ```
 
-#### ai-audit-agents-md
+#### ai-audit-agent-rules
 
-Проверяет `AGENTS.md` и связанные инструкции для агентов.
+Проверяет правила работы агента в одном источнике, связанном наборе или всей
+системе: применимость, конфликты, выполнимость и стоимость контекста.
 
-[README навыка](.apm/skills/ai-audit-agents-md/README.md)
+[README навыка](.apm/skills/ai-audit-agent-rules/README.md)
 
 Примеры запросов:
-
-```
-Проверь AGENTS.md.
-```
 
 ```
 Проверь AGENTS.md и связанные с ним инструкции.
 ```
-
-#### ai-audit-project
-
-Проверяет правила проекта для агентов.
-
-[README навыка](.apm/skills/ai-audit-project/README.md)
-
-Примеры запросов:
 
 ```
 Проверь правила агентов в проекте.
@@ -195,16 +184,17 @@ apm update
 Проведи аудит инструкций и навыков проекта.
 ```
 
-#### ai-data-collection
+#### ai-evidence-collection
 
-Собирает недостающие данные перед изменением проекта.
+Собирает и проверяет недостающие основания перед изменением правил, навыков
+и других источников истины по запросу пользователя или сигналу `ai-work-control`.
 
-[README навыка](.apm/skills/ai-data-collection/README.md)
+[README навыка](.apm/skills/ai-evidence-collection/README.md)
 
 Примеры запросов:
 
 ```
-Собери данные перед изменением правил доступа.
+Собери основания перед изменением правил работы агента.
 ```
 
 ```
@@ -258,7 +248,8 @@ apm update
 
 #### ai-setup-apm
 
-Настраивает и проверяет APM в проекте.
+Настраивает и проверяет пакет APM, проекции, установку и выпуск.
+Назначение, содержание, границы и качество навыка проверяет `ai-skill-development`.
 
 [README навыка](.apm/skills/ai-setup-apm/README.md)
 
@@ -272,20 +263,20 @@ apm update
 Проверь настройки APM в проекте.
 ```
 
-#### ai-setup-execution-policy
+#### ai-session-handoff
 
-Настраивает общую политику работы с агентами.
+Готовит и проверяет передачу работы в новую сессию.
 
-[README навыка](.apm/skills/ai-setup-execution-policy/README.md)
+[README навыка](.apm/skills/ai-session-handoff/README.md)
 
 Примеры запросов:
 
 ```
-Настрой общую политику работы с агентами.
+Подготовь передачу работы в следующую сессию.
 ```
 
 ```
-Подготовь передачу работы в следующую сессию.
+Проверь пакет продолжения задачи в новом диалоге.
 ```
 
 #### ai-setup-hooks
@@ -322,7 +313,7 @@ apm update
 
 #### ai-setup-subagents
 
-Настраивает подагентов для проекта.
+Настраивает политику подагентов, включая общие пользовательские настройки и проектные уточнения.
 
 [README навыка](.apm/skills/ai-setup-subagents/README.md)
 
@@ -344,6 +335,11 @@ apm update
 не требуется менять программу, среду или способ запуска агента.
 
 [README навыка](.apm/skills/ai-skill-development/README.md)
+
+Для подготовки навыка к публикации начинайте с `ai-skill-development`.
+Для пакета, проекций, установки и выпуска через APM подключайте `ai-setup-apm`.
+`ai-audit-agent-rules` нужен при конкретном риске взаимодействия навыка с
+другими правилами. Обязательные проверки APM сохраняются.
 
 Примеры запросов:
 

@@ -1,0 +1,101 @@
+{
+  "skill_name": "ai-evidence-collection",
+  "cases": [
+    {
+      "id": "ai-evidence-collection-positive-change-rule",
+      "prompt": "Перед созданием нового правила нужно проверить, подтверждается ли проблема повторяемыми случаями и какими данными.",
+      "should_trigger": true,
+      "rationale": "Для проектирования правила требуется обоснованный материал."
+    },
+    {
+      "id": "ai-evidence-collection-positive-new-skill-design",
+      "prompt": "Я хочу проектировать новый навык, но не уверен в повторяемости сценария, собери подтверждения.",
+      "should_trigger": true,
+      "rationale": "Навык нельзя проектировать без проверки контекста и потребности."
+    },
+    {
+      "id": "ai-evidence-collection-positive-ambiguous-source",
+      "prompt": "Есть неполные данные из репозитория, нужно отделить факты и допущения до проектирования.",
+      "should_trigger": true,
+      "rationale": "Сначала нужно убрать неоднозначность и зафиксировать пробелы."
+    },
+    {
+      "id": "ai-evidence-collection-positive-source-of-truth-change",
+      "prompt": "Перед изменением навыка не хватает проверяемых свидетельств о риске, который оно должно закрыть. Собери основания из репозитория.",
+      "should_trigger": true,
+      "rationale": "Полный контроль обнаружил недостаточные основания для изменения источника истины."
+    },
+    {
+      "id": "ai-evidence-collection-positive-local-rule-boundary",
+      "prompt": "Проверь, достаточно ли локального правила проекта или нужен новый переносимый навык, и собери основания для решения.",
+      "should_trigger": true,
+      "rationale": "Нужно собрать данные и отделить проектное решение от переносимого навыка."
+    },
+    {
+      "id": "ai-evidence-collection-positive-artifact-consumers",
+      "prompt": "Внутри репозитория никто не читает сгенерированные файлы настроек внешнего инструмента. Собери основания, прежде чем решать, можно ли перестать хранить их в Git.",
+      "should_trigger": true,
+      "rationale": "Вывод зависит от непроверенного поведения внешнего потребителя, поэтому нужны основания до решения."
+    },
+    {
+      "id": "ai-evidence-collection-negative-small-edit",
+      "prompt": "Заменить слово в тексте на более точное и сохранить смысл.",
+      "should_trigger": false,
+      "rationale": "Локальная редактура не требует отдельного этапа сбора данных."
+    },
+    {
+      "id": "ai-evidence-collection-negative-report-review",
+      "prompt": "Просмотри уже готовый отчёт и исправь структуру секций.",
+      "should_trigger": false,
+      "rationale": "Правка формы готового отчёта не является сбором данных под проектирование."
+    },
+    {
+      "id": "ai-evidence-collection-negative-status-check",
+      "prompt": "Кратко перечисли, на каком шаге сейчас задача.",
+      "should_trigger": false,
+      "rationale": "Запрос статуса не связан с этапом сбора данных перед новым решением."
+    },
+    {
+      "id": "ai-evidence-collection-negative-direct-doc-fix",
+      "prompt": "Исправь список команд в README без изменения архитектуры или правил проекта.",
+      "should_trigger": false,
+      "rationale": "Локальная редактура готового документа не требует отдельного этапа сбора данных."
+    },
+    {
+      "id": "ai-evidence-collection-negative-style-check",
+      "prompt": "Проверь, хорошо ли написан последний абзац отчёта и поправь формулировки.",
+      "should_trigger": false,
+      "rationale": "Языковая правка отчёта не требует этапа сбора данных под проектирование."
+    },
+    {
+      "id": "ai-evidence-collection-negative-approved-implementation",
+      "prompt": "Контекст уже собран и решение подтверждено, внеси согласованное изменение в SKILL.md.",
+      "should_trigger": false,
+      "rationale": "Когда данные уже собраны и решение принято, нужен исполнительный навык сопровождения, а не новый этап сбора."
+    },
+    {
+      "id": "ai-evidence-collection-negative-full-control-sufficient-basis",
+      "prompt": "Полный контроль уже зафиксировал проверяемые основания, область изменения и ограничения. Внеси согласованную правку правила.",
+      "should_trigger": false,
+      "rationale": "Достаточные основания после полного контроля не требуют повторного сбора данных."
+    },
+    {
+      "id": "ai-evidence-collection-negative-internal-only-module",
+      "prompt": "Модуль импортирует только один соседний файл проекта, внешнего назначения у него нет. Перенеси его содержимое в этот файл.",
+      "should_trigger": false,
+      "rationale": "Все потребители найдены в репозитории, отдельный сбор оснований не нужен."
+    },
+    {
+      "id": "ai-evidence-collection-positive-control-signal",
+      "prompt": "ai-work-control обнаружил противоречивые основания перед изменением навыка. Собери и проверь недостающие свидетельства.",
+      "should_trigger": true,
+      "rationale": "Есть явный сигнал полного контроля о пробеле перед изменением источника истины."
+    },
+    {
+      "id": "ai-evidence-collection-negative-general-data",
+      "prompt": "Собери показатели продаж за месяц и подготовь таблицу.",
+      "should_trigger": false,
+      "rationale": "Обычный сбор данных не связан с основаниями для изменения правил или других источников истины."
+    }
+  ]
+}

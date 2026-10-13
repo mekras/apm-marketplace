@@ -1,0 +1,281 @@
+{
+  "skill_name": "ai-audit-agent-rules",
+  "cases": [
+    {
+      "id": "ai-audit-agent-rules-positive-agents-md",
+      "prompt": "Проверь AGENTS.md: найди дубли, противоречия, неоднозначности и правила, которые зря раздувают контекст.",
+      "should_trigger": true,
+      "rationale": "Нужен аудит правил проекта для агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-all-agent-rules",
+      "prompt": "Собери все инструкции для ИИ в репозитории и предложи, как их упорядочить.",
+      "should_trigger": true,
+      "rationale": "Нужно найти и системно проверить несколько источников правил агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-conflicts",
+      "prompt": "У нас есть AGENTS.md, CLAUDE.md и .cursor/rules. Проверь, не конфликтуют ли они между собой.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка согласованности правил в разных файлах."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-optimize",
+      "prompt": "Оптимизируй правила проекта для Codex: они слишком длинные, часто повторяются и, кажется, мешают работе.",
+      "should_trigger": true,
+      "rationale": "Нужна консолидация и сокращение правил проекта для агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-self-check",
+      "prompt": "Сделай глубокую самопроверку проектных инструкций агента перед релизом.",
+      "should_trigger": true,
+      "rationale": "Формулировка описывает самопроверку правил проекта."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-fix-rules",
+      "prompt": "Найди проблемы в правилах для ассистента и сразу поправь их так, чтобы убрать причину проблемы.",
+      "should_trigger": true,
+      "rationale": "Нужно диагностировать и исправить правила для агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-stepwise-review",
+      "prompt": "Проверь правила агента, но давай разбирать проблемы по одной: сначала опиши одну проблему и варианты решения, потом жди моего решения, а после моего ответа сразу переходи к следующей проблеме.",
+      "should_trigger": true,
+      "rationale": "Нужен аудит правил проекта с пошаговым согласованием найденных проблем."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-default-stepwise-review",
+      "prompt": "Проверь все правила агента в проекте.",
+      "should_trigger": true,
+      "rationale": "Короткий запрос на аудит правил проекта должен запускать навык; сам навык по умолчанию разбирает проблемы по одной."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-agent-project-rules",
+      "prompt": "Проверь агентские правила проекта.",
+      "should_trigger": true,
+      "rationale": "Короткая русская формулировка про агентские правила проекта должна запускать аудит правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-local-global-skill-duplicates",
+      "prompt": "В проекте есть локальные навыки, глобальные навыки и символическая ссылка на общий набор. Найди локальные дубли правил и убери лишнее.",
+      "should_trigger": true,
+      "rationale": "Нужен аудит и чистка дублей между несколькими источниками правил агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-source-of-truth-rules",
+      "prompt": "Проверь источники истины для агентов в проекте и найди, где правила расходятся между собой.",
+      "should_trigger": true,
+      "rationale": "Запрос требует аудита нескольких источников правил, влияющих на работу агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-apm-skill-collection",
+      "prompt": "Это коллекция навыков для публикации через APM. Проверь все .apm/skills/** как источники правил проекта и найди противоречия.",
+      "should_trigger": true,
+      "rationale": "В APM-коллекции публикуемые навыки являются частью источников правил проекта, поэтому нужен аудит всего набора правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-create-skill",
+      "prompt": "Создай новый навык для проверки русскоязычных юридических текстов.",
+      "should_trigger": false,
+      "rationale": "Это создание навыка, а не аудит правил проекта."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-code-review",
+      "prompt": "Проверь pull request и найди возможные регрессии в обработке платежей.",
+      "should_trigger": false,
+      "rationale": "Это обзор кода, не проверка правил агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-readme-edit",
+      "prompt": "Сократи README библиотеки и сделай описание понятнее пользователю.",
+      "should_trigger": false,
+      "rationale": "Обычная редактура пользовательской документации не является аудитом правил агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-run-tests",
+      "prompt": "Запусти тесты проекта и кратко перескажи результат.",
+      "should_trigger": false,
+      "rationale": "Нужно выполнить проверку проекта, а не проверять правила для агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-general-prompt",
+      "prompt": "Помоги написать системный промпт для ассистента поддержки.",
+      "should_trigger": false,
+      "rationale": "Запрос про создание промпта, но не про аудит набора правил в проекте."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-skill-review",
+      "prompt": "Проверь SKILL.md и agents/openai.yaml на качество описания навыка.",
+      "should_trigger": false,
+      "rationale": "Это проверка навыка агента, а не аудит правил проекта."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-project-skills-review",
+      "prompt": "Проверь один SKILL.md и agents/openai.yaml на качество описания навыка.",
+      "should_trigger": false,
+      "rationale": "Локальная проверка качества одного навыка относится к разработке навыка, а не к аудиту правил проекта."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-rule-system",
+      "prompt": "Проверь совместимость инструкций, навыков и подключённых коллекций, полноту правил работы агента и стоимость их контекста.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка взаимодействия всей системы правил агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-architecture-audit",
+      "prompt": "Проведи аудит архитектуры сервиса: границ компонентов и зависимостей.",
+      "should_trigger": false,
+      "rationale": "Аудит архитектуры не относится к системе правил работы агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-requirements-audit",
+      "prompt": "Проверь требования продукта на полноту и непротиворечивость.",
+      "should_trigger": false,
+      "rationale": "Проверка требований продукта не является аудитом правил работы агента."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-single-file-check",
+      "prompt": "Проверь AGENTS.md в этом репозитории на минимальность, конфликтность и машинную пригодность.",
+      "should_trigger": true,
+      "rationale": "Запрос прямо просит проверку AGENTS.md по критериям, которые покрывает навык."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-nested-instructions",
+      "prompt": "Нужно оценить корневой AGENTS.md и вложенные инструкции, понять иерархию и найти конфликты.",
+      "should_trigger": true,
+      "rationale": "Навык предназначен для проверки цепочки AGENTS.md и соседних инструкций."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-before-edit",
+      "prompt": "Перед тем как переписывать AGENTS.md, подготовь замечания по структуре, детерминизму и перегрузке.",
+      "should_trigger": true,
+      "rationale": "Навык применяется для замечаний перед изменением AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-machine-entry-vs-readme",
+      "prompt": "Проверь, не смешивает ли AGENTS.md машинные инструкции с README: много обзора проекта, истории и вводного текста для человека.",
+      "should_trigger": true,
+      "rationale": "Проверяется граница между машинными правилами и контекстом для человека."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-codex-scope-order",
+      "prompt": "В проекте несколько AGENTS.md. Восстанови порядок применения от корня к текущему каталогу и найди конфликтующие override-правила.",
+      "should_trigger": true,
+      "rationale": "Запрос требует восстановить иерархию и порядок применения нескольких файлов инструкций."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-context-cost",
+      "prompt": "Оцени AGENTS.md на раздувание контекста: длинные обзоры дерева, повторы и правила, которые не меняют поведение агента.",
+      "should_trigger": true,
+      "rationale": "Навык проверяет минимальную достаточность и стоимость контекста AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-readme-review",
+      "prompt": "Проверь README.md на понятность для человека и предложи улучшения структуры.",
+      "should_trigger": false,
+      "rationale": "Запрос сосредоточен на README.md, а не на машинных инструкциях AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-general-doc-audit",
+      "prompt": "Сделай общий аудит всей документации проекта и предложи план улучшений.",
+      "should_trigger": false,
+      "rationale": "Это более широкая задача по документации, не специализированная проверка AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-code-change",
+      "prompt": "Исправь тесты и обнови Python-скрипт в tools.",
+      "should_trigger": false,
+      "rationale": "Запрос относится к коду и не требует навыка проверки AGENTS.md."
+    },
+    {
+      "id": "ai-audit-agent-rules-negative-maintenance-edit",
+      "prompt": "Перепиши AGENTS.md: сократи общие разделы, вынеси правила по каталогам и сразу внеси изменения.",
+      "should_trigger": false,
+      "rationale": "Запрос требует изменения AGENTS.md; сначала нужен ai-agents-md-maintenance, а аудит может быть независимым контролем результата."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-other-instruction-files",
+      "prompt": "Проверь .github/copilot-instructions.md и .cursor/rules на дубли и противоречия.",
+      "should_trigger": true,
+      "rationale": "Проверка правил не зависит от имени или формата контейнера."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-single-rule-container",
+      "prompt": "Проверь только rules/release.txt: можно ли выполнить эти правила и нет ли противоречий.",
+      "should_trigger": true,
+      "rationale": "Предмет — правила работы агента в заданном охвате, независимо от контейнера."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-single-skill-rules",
+      "prompt": "Проверь порядок применения правил в одном SKILL.md. Описание навыка и пакет не проверяй.",
+      "should_trigger": true,
+      "rationale": "Предмет — правила работы агента в заданном охвате, независимо от контейнера."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-limited-with-link",
+      "prompt": "Проверь только AGENTS.md на конфликты. Ссылки на навыки не означают аудит всей коллекции.",
+      "should_trigger": true,
+      "rationale": "Предмет — правила работы агента в заданном охвате, независимо от контейнера."
+    },
+    {
+      "id": "ai-audit-agent-rules-positive-other-container-scope",
+      "prompt": "Проверь только CLAUDE.md на выполнимость правил, без аудита других навыков.",
+      "should_trigger": true,
+      "rationale": "Предмет — правила работы агента в заданном охвате, независимо от контейнера."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-compare-models",
+      "prompt": "Сравни модели для подагентов.",
+      "should_trigger": false,
+      "rationale": "Основной маршрут — ai-model-analysis. Подготовка навыка сама по себе не требует APM или дополнительного аудита взаимодействия правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-setup-subagents",
+      "prompt": "Настрой подагентов в проекте.",
+      "should_trigger": false,
+      "rationale": "Основной маршрут — ai-setup-subagents. Подготовка навыка сама по себе не требует APM или дополнительного аудита взаимодействия правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-review-agents-md",
+      "prompt": "Проверь AGENTS.md.",
+      "should_trigger": true,
+      "rationale": "Основной маршрут — ai-audit-agent-rules. Подготовка навыка сама по себе не требует APM или дополнительного аудита взаимодействия правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-review-rule-system",
+      "prompt": "Проверь систему правил агента.",
+      "should_trigger": true,
+      "rationale": "Основной маршрут — ai-audit-agent-rules. Подготовка навыка сама по себе не требует APM или дополнительного аудита взаимодействия правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-collect-evidence",
+      "prompt": "Собери основания для изменения правил.",
+      "should_trigger": false,
+      "rationale": "Основной маршрут — ai-evidence-collection. Подготовка навыка сама по себе не требует APM или дополнительного аудита взаимодействия правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-prepare-skill",
+      "prompt": "Подготовь навык к публикации.",
+      "should_trigger": false,
+      "rationale": "Основной маршрут — ai-skill-development. Подготовка навыка сама по себе не требует APM или дополнительного аудита взаимодействия правил."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-apm-skill",
+      "prompt": "Подготовь навык из .apm/skills/example к публикации через APM: проверь содержание и пакет.",
+      "should_trigger": false,
+      "rationale": "Содержание навыка, пакет APM и риск взаимодействия правил проверяются по явно заданному предмету задачи."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-rule-conflict",
+      "prompt": "Подготовь навык к публикации и проверь конфликт его правил с AGENTS.md.",
+      "should_trigger": true,
+      "rationale": "Содержание навыка, пакет APM и риск взаимодействия правил проверяются по явно заданному предмету задачи."
+    },
+    {
+      "id": "ai-audit-agent-rules-publication-route-package-only",
+      "prompt": "Проверь только пакет APM, проекции, установку и выпуск. Содержание навыков уже проверено и не меняется.",
+      "should_trigger": false,
+      "rationale": "Содержание навыка, пакет APM и риск взаимодействия правил проверяются по явно заданному предмету задачи."
+    }
+  ]
+}

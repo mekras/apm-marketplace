@@ -1,0 +1,41 @@
+{
+  "skill_name": "ai-session-handoff",
+  "cases": [
+    {
+      "id": "ai-session-handoff-positive-prepare",
+      "prompt": "Подготовь передачу этой задачи в новую сессию без полной стенограммы.",
+      "should_trigger": true,
+      "rationale": "Нужен пакет продолжения работы."
+    },
+    {
+      "id": "ai-session-handoff-positive-verify",
+      "prompt": "Проверь, достаточно ли этого пакета для продолжения задачи в новом диалоге.",
+      "should_trigger": true,
+      "rationale": "Нужна проверка пакета передачи."
+    },
+    {
+      "id": "ai-session-handoff-positive-without-tools",
+      "prompt": "Сохрани сведения для новой сессии. Python и POSIX здесь нет, установку не запускай.",
+      "should_trigger": true,
+      "rationale": "Достаточна ручная процедура передачи."
+    },
+    {
+      "id": "ai-session-handoff-negative-subagents",
+      "prompt": "Настрой роли, лимиты и приёмку подагентов проекта.",
+      "should_trigger": false,
+      "rationale": "Это ai-setup-subagents."
+    },
+    {
+      "id": "ai-session-handoff-negative-current-summary",
+      "prompt": "Кратко перескажи текущий диалог. Продолжим в нём, новую сессию не создаём.",
+      "should_trigger": false,
+      "rationale": "Обычная сводка не является передачей между сессиями."
+    },
+    {
+      "id": "ai-session-handoff-negative-model-policy",
+      "prompt": "Настрой общую политику моделей и маршрутов для подагентов двух проектов.",
+      "should_trigger": false,
+      "rationale": "Настройка политики относится к ai-setup-subagents."
+    }
+  ]
+}

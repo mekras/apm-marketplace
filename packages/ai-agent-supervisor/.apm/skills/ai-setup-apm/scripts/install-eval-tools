@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Установщик оснастки модельных прогонов по общим правилам установщиков навыка:
 #   install-* [project-root]
-#   - без аргумента берёт корень текущего репозитория Git;
+#   - без аргумента использует текущий каталог;
 #   - копирует переносимый набор в <project-root> по манифесту;
 #   - печатает строку installed=<project-root>.
 #
@@ -18,7 +18,7 @@ Usage:
 
 Копирует оснастку модельных прогонов (средство запуска, валидаторы, адаптеры, образец настроек)
 из этого навыка в <project-root> по eval-tools/manifest.txt.
-Без аргумента берёт корень текущего репозитория Git.
+Без аргумента использует текущий каталог.
 EOF
 }
 
@@ -30,7 +30,7 @@ fi
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 src_dir="$script_dir/eval-tools"
 manifest="$src_dir/manifest.txt"
-project_root="${1:-$(git rev-parse --show-toplevel)}"
+project_root="${1:-$PWD}"
 
 if [[ ! -f "$manifest" ]]; then
   echo "Манифест не найден: $manifest" >&2

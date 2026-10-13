@@ -220,6 +220,9 @@ def validate_case(
             errors.append(f"{label}: duplicate prompt")
         seen_prompts.add(prompt)
 
+    vcs = case.get("workspace_vcs", "git")
+    if not isinstance(vcs, str) or vcs not in {"git", "none"}:
+        errors.append(f"{label}: workspace_vcs must be git or none")
     validate_input_files(case.get("input_files"), label, errors)
 
     validate_expected_output(case.get("expected_output"), label, errors)

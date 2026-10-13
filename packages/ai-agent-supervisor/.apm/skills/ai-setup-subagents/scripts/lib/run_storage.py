@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import uuid
 from pathlib import Path
 
@@ -18,13 +19,42 @@ ARTIFACTS = {
 }
 
 
-def create_run_directory(out: Path, run_id: str) -> Path:
-    """Каждый запуск получает собственный каталог, исключённый из Git."""
+def create_run_directory(out: Path, run_id: str, *, storage_verified: bool = False, git_storage: bool = False) -> Path:
+    """Изолировать запуск в месте с подтверждённой защитой от VCS."""
     directory = out.resolve() / str(uuid.UUID(run_id))
+    # Флаг — свидетельство предварительной проверки родителя, а не проверка VCS.
+    # Без него автоматизация подтверждает только явно обнаруженный Git.
+    if not storage_verified:
+        if not git_storage:
+            raise ValueError("VCS не проверена. Для разрешённой защиты Git передайте --git-storage, иначе после проверки места --storage-verified")
+        ancestor = directory.parent
+        while not ancestor.exists():
+            ancestor = ancestor.parent
+        try:
+            result = subprocess.run(
+                ["git", "-C", str(ancestor), "rev-parse", "--show-toplevel"],
+                text=True, encoding="utf-8", errors="replace", capture_output=True,
+                check=False,
+            )
+        except OSError as error:
+            raise ValueError("VCS не проверена. Подтвердите защиту места и передайте --storage-verified") from error
+        if result.returncode:
+            raise ValueError("Git не обнаружен. Проверьте фактическую VCS или её отсутствие и передайте --storage-verified")
+        root = Path(result.stdout.strip()).resolve()
+        if not directory.is_relative_to(root):
+            raise ValueError("место хранения находится вне проверенной области Git")
     directory.mkdir(parents=True, mode=0o700)
     try:
-        (directory / ".gitignore").write_text("*\n", encoding="utf-8")
-    except OSError:
+        if not storage_verified:
+            (directory / ".gitignore").write_text("*\n", encoding="utf-8")
+            result = subprocess.run(
+                ["git", "-C", str(root), "check-ignore", "-q", str(directory / "run.json")],
+                capture_output=True, check=False,
+            )
+            if result.returncode:
+                raise ValueError("исключение данных запуска из Git не подтверждено")
+    except (OSError, ValueError):
+        (directory / ".gitignore").unlink(missing_ok=True)
         directory.rmdir()
         raise
     return directory
@@ -62,7 +92,7 @@ def finish_run(path: Path, run_id: str, *, validate, release_retained: bool = Fa
         if any(entry.name not in expected or entry.is_symlink() or not entry.is_file()
                for entry in entries):
             raise ValueError("каталог содержит посторонние файлы или ссылки: очистка остановлена")
-        if (directory / ".gitignore").read_text(encoding="utf-8") != "*\n":
+        if (directory / ".gitignore").exists() and (directory / ".gitignore").read_text(encoding="utf-8") != "*\n":
             raise ValueError("исключение каталога запуска из Git изменено")
         for key, name in ARTIFACTS.items():
             value = record.get(key)
@@ -76,12 +106,12 @@ def finish_run(path: Path, run_id: str, *, validate, release_retained: bool = Fa
             raise ValueError("причина длительного хранения имеет неправильный тип")
         if reason and not release_retained:
             return {"run_id": run_id, "storage": "retained", "reason": reason}
-        # Запись и исключение Git остаются до удаления содержательных данных.
+        # Запись и возможное исключение остаются до удаления содержательных данных.
         for entry in entries:
             if entry.name not in {lock.name, path.name, ".gitignore"}:
                 entry.unlink()
         path.unlink()
-        (directory / ".gitignore").unlink()
+        (directory / ".gitignore").unlink(missing_ok=True)
         lock.unlink()
         locked = False
         directory.rmdir()

@@ -29,7 +29,7 @@
       "id": "ai-setup-project-negative-execution-policy",
       "prompt": "Настрой только общую политику выполнения пользователя и проектное уточнение.",
       "should_trigger": false,
-      "rationale": "Узкая настройка общей политики принадлежит ai-setup-execution-policy, а не корневому маршруту."
+      "rationale": "Узкая настройка политики подагентов принадлежит ai-setup-subagents, а не корневому маршруту."
     },
     {
       "id": "ai-setup-project-negative-subagents",

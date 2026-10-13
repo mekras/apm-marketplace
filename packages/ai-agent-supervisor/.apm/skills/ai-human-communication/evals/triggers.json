@@ -60,6 +60,18 @@
       "prompt": "Верни родительскому процессу только объект JSON по внутренней схеме подзадачи.",
       "should_trigger": false,
       "rationale": "Внутренний машинный результат не входит в область общения с человеком."
+    },
+    {
+      "id": "ai-human-communication-output-form",
+      "prompt": "Заверши приёмку правки навыка и подведи итог проверки.",
+      "should_trigger": true,
+      "rationale": "Выбор формы результата и итог для человека входят в область навыка."
+    },
+    {
+      "id": "ai-human-communication-explicit-report-file",
+      "prompt": "Сохрани отчёт приёмки в output/acceptance.md.",
+      "should_trigger": true,
+      "rationale": "При подготовке результата для человека учитывается явно заданная форма файла."
     }
   ]
 }

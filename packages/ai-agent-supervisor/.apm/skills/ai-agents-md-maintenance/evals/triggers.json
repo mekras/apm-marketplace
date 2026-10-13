@@ -29,7 +29,7 @@
       "id": "ai-agents-md-maintenance-negative-review-only",
       "prompt": "Проверь AGENTS.md на конфликтность и перегрузку, но ничего пока не меняй.",
       "should_trigger": false,
-      "rationale": "Чистую проверку без редактирования должен покрывать ai-audit-agents-md."
+      "rationale": "Чистую проверку без редактирования должен покрывать ai-audit-agent-rules."
     },
     {
       "id": "ai-agents-md-maintenance-negative-readme-only",

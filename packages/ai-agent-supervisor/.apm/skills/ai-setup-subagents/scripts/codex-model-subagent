@@ -15,7 +15,9 @@ reports completed_with_process_error and still succeeds; inspect stderr before
 accepting a result for a high-risk task.
 
 Environment:
+  CODEX_SUBAGENT_PROJECT_ROOT  Project directory, default current directory
   CODEX_SUBAGENT_OUT_DIR     Output directory, default /tmp/<repo-name>-subagents
+  CODEX_SUBAGENT_STORAGE_VERIFIED  Must be 1 after verifying output protection from the actual VCS
   CODEX_SUBAGENT_SANDBOX     read-only or workspace-write, default read-only
   CODEX_SUBAGENT_USAGE_LINE  Print one-line usage summary, default 1
 EOF
@@ -62,7 +64,7 @@ case "$name" in
     ;;
 esac
 
-repo_root="$(git rev-parse --show-toplevel)"
+repo_root="${CODEX_SUBAGENT_PROJECT_ROOT:-$PWD}"
 repo_name="$(basename "$repo_root")"
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 out_dir="${CODEX_SUBAGENT_OUT_DIR:-/tmp/${repo_name}-subagents}"
@@ -75,6 +77,10 @@ case "$sandbox" in
     exit 2
     ;;
 esac
+if [[ "${CODEX_SUBAGENT_STORAGE_VERIFIED:-0}" != "1" ]]; then
+  echo "Output protection from the actual VCS is unverified. Check the output directory and set CODEX_SUBAGENT_STORAGE_VERIFIED=1." >&2
+  exit 2
+fi
 mkdir -p "$out_dir"
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -88,6 +94,7 @@ codex exec \
   --json \
   --color never \
   -C "$repo_root" \
+  --skip-git-repo-check \
   -m "$model" \
   -s "$sandbox" \
   -o "$final" \

@@ -491,6 +491,10 @@ def main() -> int:
     parser.add_argument("--config", type=Path, default=Path("subagents.local.toml"))
     parser.add_argument("--input", action="append", default=[])
     parser.add_argument("--out", type=Path, help="каталог данных запусков: явный путь, policy_runtime.run_records_dir либо .local/subagents")
+    parser.add_argument("--git-storage", action="store_true",
+                        help="фактическая VCS — Git и проект разрешает автоматическую защиту каталога")
+    parser.add_argument("--storage-verified", action="store_true",
+                        help="родитель проверил исключение каталога из фактической VCS или размещение вне её области")
     parser.add_argument("--retain-for", type=review_text,
                         help="сохранить данные после задачи по явному запросу пользователя, указав причину")
     parser.add_argument(
@@ -545,8 +549,8 @@ def main() -> int:
     started = time.time()
     run_id = str(uuid.uuid4())
     try:
-        directory = run_storage["create_run_directory"](args.out, run_id)
-    except OSError as error:
+        directory = run_storage["create_run_directory"](args.out, run_id, storage_verified=args.storage_verified, git_storage=args.git_storage)
+    except (OSError, ValueError) as error:
         parser.error(
             f"каталог журналов {args.out} недоступен для записи: {error}. "
             "Выберите разрешённый путь через policy_runtime.run_records_dir или --out. "

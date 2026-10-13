@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+  printf '%s\n' 'Usage: install-session-handoff-tools [project-root]'
+  exit 0
+fi
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+project_root="${1:-$PWD}"
+target_dir="$project_root/tools"
+mkdir -p "$target_dir"
+install -m 0755 "$script_dir/session-handoff" "$target_dir/session-handoff"
+install -m 0644 "$script_dir/../assets/handoff.md.template" "$target_dir/handoff.md.template"
+printf 'installed=%s\n' "$target_dir"

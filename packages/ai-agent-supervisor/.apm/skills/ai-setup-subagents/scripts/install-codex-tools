@@ -12,7 +12,7 @@ Usage:
 
 Copies Codex-specific subagent tools plus the portable model-check tool into
 <project-root>/tools.
-If project-root is omitted, uses the current Git repository root.
+If project-root is omitted, uses the current directory.
 EOF
 }
 
@@ -22,7 +22,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-project_root="${1:-$(git rev-parse --show-toplevel)}"
+project_root="${1:-$PWD}"
 "$script_dir/install-subagent-tools" "$project_root"
 target_dir="$project_root/tools"
 

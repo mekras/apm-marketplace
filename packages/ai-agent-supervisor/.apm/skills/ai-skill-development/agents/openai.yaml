@@ -1,4 +1,4 @@
 interface:
   display_name: "ai-skill-development"
-  short_description: "Создание и сопровождение навыков агента"
+  short_description: "Создание и проверка качества навыка перед публикацией"
   default_prompt: "Используй $ai-skill-development для улучшения навыков, в том числе по опыту работы, с проверкой результата и стоимости контекста."
