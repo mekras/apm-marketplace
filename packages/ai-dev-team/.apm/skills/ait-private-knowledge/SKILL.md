@@ -1,6 +1,6 @@
 ---
 name: ait-private-knowledge
-role: project-manager
+role: source-inventory
 description: Настройка приватных локальных знаний и правил проекта.
 ---
 

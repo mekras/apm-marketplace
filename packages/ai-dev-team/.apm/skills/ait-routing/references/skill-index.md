@@ -17,12 +17,11 @@
 
 - `ai-agents-md-maintenance` — роль: `technical-writer` — сопровождение
   `AGENTS.md`. Источник: `github.com/mekras/ai-agent-supervisor`.
-- `ai-audit-agents-md` — роль: `technical-writer` — проверка качества
-  `AGENTS.md`. Источник: `github.com/mekras/ai-agent-supervisor`.
-- `ai-audit-project` — роль: `cross-role` — проверка правил и агентских
-  инструкций проекта. Источник: `github.com/mekras/ai-agent-supervisor`.
-- `ai-data-collection` — роль: `analyst` — сбор данных перед изменением правил,
-  ролей, навыков, шаблонов или источников истины. Источник:
+- `ai-audit-agent-rules` — роль: `cross-role` — проверка правил агента в
+  отдельном источнике, связанном наборе или всей системе. Источник:
+  `github.com/mekras/ai-agent-supervisor`.
+- `ai-evidence-collection` — роль: `analyst` — сбор данных перед изменением
+  правил, ролей, навыков, шаблонов или источников истины. Источник:
   `github.com/mekras/ai-agent-supervisor`.
 - `ai-rule-failure-analysis` — роль: `analyst` — разбор нарушений правил или
   маршрутизации агентом. Источник: `github.com/mekras/ai-agent-supervisor`.
