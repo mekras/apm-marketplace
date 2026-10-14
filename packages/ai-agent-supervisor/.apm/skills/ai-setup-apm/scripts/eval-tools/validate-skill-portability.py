@@ -5,10 +5,11 @@ from __future__ import annotations
 
 import argparse
 import ast
+import json
 import re
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 # Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
 for _stream in (sys.stdout, sys.stderr):
@@ -137,19 +138,39 @@ def switches_output_to_utf8(tree: ast.AST) -> bool:
     return False
 
 
-def text_child_without_encoding(tree: ast.AST) -> int | None:
-    """Найти чтение вывода дочернего процесса без заданной кодировки."""
+def child_encoding_errors(tree: ast.AST) -> list[tuple[int, str]]:
+    """Различить двоичный, текстовый и статически неизвестный режимы."""
+    errors: list[tuple[int, str]] = []
     for node in ast.walk(tree):
         if not isinstance(node, ast.Call):
             continue
         if called_name(node.func) not in {"run", "Popen", "check_output"}:
             continue
-        keywords = {keyword.arg for keyword in node.keywords}
-        if not keywords & {"text", "universal_newlines"}:
+        keywords = {keyword.arg: keyword.value for keyword in node.keywords}
+        values: dict[str, bool | None] = {}
+        for name in ("text", "universal_newlines", "encoding", "errors"):
+            expression = keywords.get(name)
+            if expression is None:
+                values[name] = False
+            else:
+                try:
+                    values[name] = bool(ast.literal_eval(expression))
+                except (ValueError, TypeError):
+                    values[name] = None
+        # subprocess включает текстовый режим и через encoding или errors.
+        if not any(value is True for value in values.values()):
+            if any(value is None for value in values.values()):
+                errors.append((node.lineno, "не удалось определить режим дочернего процесса статически"))
             continue
-        if "encoding" not in keywords:
-            return node.lineno
-    return None
+        if values["encoding"] is None:
+            errors.append((node.lineno, "не удалось проверить encoding дочернего процесса статически"))
+        elif not values["encoding"]:
+            errors.append((
+                node.lineno,
+                "вывод дочернего процесса читается в текстовом режиме без encoding; "
+                "кодовая страница системы не разберёт сообщения вне ASCII",
+            ))
+    return errors
 
 
 # Модули, чей open не работает с текстом через параметр encoding.
@@ -225,14 +246,148 @@ def python_tree(path: Path) -> ast.AST:
     return ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
 
 
-def python_imports(tree: ast.AST) -> set[str]:
+def contained_file(root: Path, relative: object) -> Path | None:
+    """Найти поставляемый файл, исключив абсолютные пути и выход через ссылки."""
+    if not isinstance(relative, str) or not relative.strip():
+        return None
+    path = PurePosixPath(relative)
+    if (
+        path.is_absolute() or PureWindowsPath(relative).drive
+        or "\\" in relative or ".." in path.parts
+    ):
+        return None
+    candidate = root / path
+    try:
+        if candidate.resolve().is_relative_to(root.resolve()) and candidate.is_file():
+            return candidate
+    except (OSError, RuntimeError, ValueError):
+        # Неправильный путь или цикл ссылок является ошибкой декларации.
+        return None
+    return None
+
+
+def local_module(skill: Path, script: Path, module: str, level: int = 0) -> bool:
+    """Разрешить импорт по файлам навыка, без импорта кода и поиска в окружении."""
+    scripts = (skill / "scripts").resolve()
+    if level:
+        base = script.parent
+        for _ in range(level - 1):
+            base = base.parent
+        bases = [base]
+    else:
+        # Каталог команды и корень пакетов, загружаемых этой командой.
+        bases = [script.parent, skill / "scripts"]
+    for base in bases:
+        candidate = base.joinpath(*module.split(".")) if module else base
+        if not candidate.resolve().is_relative_to(scripts):
+            continue
+        if module and contained_file(skill, candidate.with_suffix(".py").relative_to(skill).as_posix()):
+            return True
+        if candidate.is_dir():
+            if any(path.resolve().is_relative_to(scripts) for path in candidate.rglob("*.py") if path.is_file()):
+                return True
+    return False
+
+
+def python_imports(tree: ast.AST, skill: Path, script: Path) -> set[str]:
+    """Найти внешние импорты, сохранив квалифицированные и относительные пути."""
     imports: set[str] = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
-            imports.update(alias.name.split(".", 1)[0] for alias in node.names)
-        elif isinstance(node, ast.ImportFrom) and node.module:
-            imports.add(node.module.split(".", 1)[0])
+            imports.update(
+                alias.name.split(".", 1)[0] for alias in node.names
+                if not local_module(skill, script, alias.name)
+            )
+        elif isinstance(node, ast.ImportFrom):
+            module = node.module or ""
+            if not local_module(skill, script, module, node.level):
+                imports.add("." * node.level + module if node.level else module.split(".", 1)[0])
     return imports
+
+
+def dependency_exceptions(skill: Path) -> tuple[set[tuple[str, str]], list[str]]:
+    """Проверить полноту исключений. Подлинность решения проверяет владелец."""
+    relative = "references/dependency-exceptions.json"
+    manifest = skill / relative
+    allowed: set[tuple[str, str]] = set()
+    errors: list[str] = []
+    if not manifest.exists():
+        return allowed, errors
+    if contained_file(skill, relative) is None:
+        return allowed, [f"{manifest}: файл исключений должен находиться внутри навыка"]
+    try:
+        data = json.loads(manifest.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as error:
+        return allowed, [f"{manifest}: не удалось прочитать JSON: {error}"]
+    if not isinstance(data, dict) or type(data.get("schema_version")) is not int or data["schema_version"] != 1:
+        return allowed, [f"{manifest}: требуется schema_version: 1"]
+    dependencies = data.get("dependencies")
+    if not isinstance(dependencies, list):
+        return allowed, [f"{manifest}: dependencies должен быть массивом"]
+    for index, record in enumerate(dependencies):
+        label = f"{manifest}: dependencies[{index}]"
+        if not isinstance(record, dict):
+            errors.append(f"{label}: требуется объект исключения")
+            continue
+        problems: list[str] = []
+
+        def require_text(obj: dict, key: str, prefix: str = "") -> str:
+            value = obj.get(key)
+            if not isinstance(value, str) or not value.strip():
+                problems.append(f"{prefix}{key}: требуется непустая строка")
+                return ""
+            return value
+
+        for key in ("package", "version", "justification", "source", "license", "absence_behavior", "basic_route"):
+            require_text(record, key)
+        if type(record.get("network")) is not bool:
+            problems.append("network: требуется true или false")
+        modules = record.get("imports")
+        if not isinstance(modules, list) or not modules or not all(
+            isinstance(name, str) and name.isidentifier() for name in modules
+        ):
+            problems.append("imports: требуется непустой массив имён корневых модулей")
+        scripts = record.get("scripts")
+        if not isinstance(scripts, list) or not scripts or not all(
+            isinstance(path, str) and path.startswith("scripts/")
+            and contained_file(skill, path) is not None for path in scripts
+        ):
+            problems.append("scripts: требуются существующие файлы внутри scripts/")
+        approval = record.get("approval")
+        if not isinstance(approval, dict):
+            problems.append("approval: требуются owner и decision")
+        else:
+            if approval.get("status") != "approved":
+                problems.append("approval.status: требуется approved после решения владельца")
+            require_text(approval, "owner", "approval.")
+            decision = require_text(approval, "decision", "approval.")
+            evidence = contained_file(skill, decision)
+            if evidence is None:
+                problems.append("approval.decision: требуется файл решения внутри навыка")
+            else:
+                try:
+                    if not evidence.read_text(encoding="utf-8").strip():
+                        problems.append("approval.decision: файл решения пуст")
+                except (OSError, UnicodeError):
+                    problems.append("approval.decision: решение должно читаться как UTF-8")
+        installation = record.get("installation")
+        if not isinstance(installation, dict):
+            problems.append("installation: требуются command и integrity")
+        else:
+            require_text(installation, "command", "installation.")
+            integrity = require_text(installation, "integrity", "installation.")
+            if not re.fullmatch(r"sha256:[0-9a-fA-F]{64}", integrity):
+                problems.append("installation.integrity: требуется sha256:<64 шестнадцатеричных символа>")
+        if problems:
+            errors.extend(f"{label}: {problem}" for problem in problems)
+            continue
+        for path in scripts:
+            for module in modules:
+                pair = (contained_file(skill, path).relative_to(skill).as_posix(), module)
+                if pair in allowed:
+                    errors.append(f"{label}: повторное исключение для {path} и {module}")
+                allowed.add(pair)
+    return allowed, errors
 
 
 def validate_skill(skill: Path) -> list[str]:
@@ -242,6 +397,8 @@ def validate_skill(skill: Path) -> list[str]:
     scripts = script_files(skill)
     if not scripts:
         return errors
+    allowed_imports, exception_errors = dependency_exceptions(skill)
+    errors.extend(exception_errors)
 
     compatibility = frontmatter_value(text, "compatibility")
     if not compatibility:
@@ -276,24 +433,23 @@ def validate_skill(skill: Path) -> list[str]:
                     "encoding; кодовая страница системы исказит содержимое "
                     "вне ASCII",
                 )
-            line = text_child_without_encoding(tree)
-            if line is not None:
-                errors.append(
-                    f"{script}:{line}: вывод дочернего процесса читается в "
-                    "текстовом режиме без encoding; кодовая страница системы "
-                    "не разберёт сообщения вне ASCII",
-                )
+            for line, message in child_encoding_errors(tree):
+                errors.append(f"{script}:{line}: {message}")
             if prints_non_ascii(tree) and not switches_output_to_utf8(tree):
                 errors.append(
                     f"{script}: печатает текст вне ASCII, но не переключает "
                     "стандартные потоки в UTF-8; на консоли с однобайтовой "
                     "кодировкой команда завершится ошибкой кодирования",
                 )
-            imports = python_imports(tree)
-            external = sorted(imports - set(sys.stdlib_module_names) - {"__future__"})
+            imports = python_imports(tree, skill, script)
+            external = sorted(
+                module for module in imports - set(sys.stdlib_module_names) - {"__future__"}
+                if (script.relative_to(skill).as_posix(), module) not in allowed_imports
+            )
             if external:
                 errors.append(
-                    f"{script}: сторонние импорты запрещены: {', '.join(external)}"
+                    f"{script}: сторонние импорты запрещены без полного согласованного "
+                    f"исключения: {', '.join(external)}"
                 )
 
     if uses_python and "Python" not in compatibility:

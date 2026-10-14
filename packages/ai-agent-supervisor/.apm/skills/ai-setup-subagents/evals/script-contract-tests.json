@@ -17,7 +17,9 @@
       "inputs": [
         "subagents.local.toml",
         "worker-instructions.md",
-        "docs/worker-policy.md"
+        "docs/worker-policy.md",
+        "legacy-brief-entrypoint.md",
+        "legacy-storage-entrypoint.md"
       ]
     },
     {
@@ -739,6 +741,76 @@
           {
             "path": "subagents.local.toml",
             "contains": "schema_version = 2"
+          }
+        ]
+      }
+    },
+    {
+      "id": "migrate-previous-brief-without-exception",
+      "script": "scripts/migrate-subagent-policy.py",
+      "fixture": "evals/script-fixtures/policy-migration",
+      "covers": [
+        "migrate-subagent-policy"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/legacy-brief-entrypoint.md"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "Политика подагентов мигрирована."
+        ],
+        "files": [
+          {
+            "path": "legacy-brief-entrypoint.md",
+            "contains": "продолжайте профильную"
+          },
+          {
+            "path": "legacy-brief-entrypoint.md",
+            "contains": "Обозначайте самопроверку явно"
+          },
+          {
+            "path": "subagents.local.toml",
+            "contains": "unavailable_route = \"keep parent route\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "migrate-previous-storage-without-exception",
+      "script": "scripts/migrate-subagent-policy.py",
+      "fixture": "evals/script-fixtures/policy-migration",
+      "covers": [
+        "migrate-subagent-policy"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/legacy-storage-entrypoint.md"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "Политика подагентов мигрирована."
+        ],
+        "files": [
+          {
+            "path": "legacy-storage-entrypoint.md",
+            "contains": "продолжайте профильную"
+          },
+          {
+            "path": "legacy-storage-entrypoint.md",
+            "contains": "Обозначайте самопроверку явно"
+          },
+          {
+            "path": "subagents.local.toml",
+            "contains": "unavailable_route = \"keep parent route\""
           }
         ]
       }

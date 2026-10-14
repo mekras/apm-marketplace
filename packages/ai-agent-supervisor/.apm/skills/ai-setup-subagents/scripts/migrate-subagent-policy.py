@@ -21,8 +21,12 @@ START = "<!-- ai-setup-subagents:runtime-policy:start -->"
 END = "<!-- ai-setup-subagents:runtime-policy:end -->"
 ASSET = Path(__file__).resolve().parents[1] / "assets" / "worker-policy-entrypoint.md"
 PROCEDURE = Path(__file__).resolve().parents[1] / "references" / "worker-policy-procedure.md"
-# Известный штатный полный фрагмент до введения временного хранения.
-LEGACY_FULL_SHA256 = '9a518b1ac0606f526c31cca70c5ff20e860e0f2de2ce69729118a929c6087f92'
+# Точные штатные фрагменты до временного хранения и самостоятельной проверки.
+LEGACY_SHA256 = frozenset({
+    '9a518b1ac0606f526c31cca70c5ff20e860e0f2de2ce69729118a929c6087f92',
+    '86d0f0283934a880dd90c8bd9e212c326b5be450efccd2414f20b9dd90f3f531',
+    '3dd42d49110411687a9f3d2d6c20182f534f86ffa1cc447f9398aa99a3a2611a',
+})
 ADAPTED = re.compile(r"(?m)^<!-- ai-setup-subagents:runtime-policy:adapted-v2:(.+) -->$")
 SEMANTIC_DEFAULTS = (
     ('direct_execution_scope = "whole_parent_task"', "direct_execution_scope"),
@@ -148,7 +152,7 @@ def replace_entrypoint(text: str, canonical: str, path: Path, replace: bool = Fa
             return text
         legacy = START + "\n" + PROCEDURE.read_text(encoding="utf-8").strip() + "\n" + END
         if (fragment.strip() != legacy
-                and hashlib.sha256(fragment.strip().encode()).hexdigest() != LEGACY_FULL_SHA256):
+                and hashlib.sha256(fragment.strip().encode()).hexdigest() not in LEGACY_SHA256):
             raise ValueError(
                 f"{path}: конфликт с изменённым входным фрагментом. Сохраните проектную "
                 "адаптацию по процедуре навыка либо явно разрешите замену через --replace-entrypoint."
