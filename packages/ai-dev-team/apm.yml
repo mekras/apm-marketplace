@@ -1,5 +1,5 @@
 name: ai-dev-team
-version: 0.29.3
+version: 0.29.4
 description: Команда агентной разработки ПО
 author: mekras
 license: MIT
@@ -11,8 +11,8 @@ type: hybrid
 includes: auto
 dependencies:
   apm:
-    - mekras/apm-marketplace/packages/ai-russian-language#ai-russian-language--v2.1.5
-    - mekras/apm-marketplace/packages/ai-agent-supervisor#ai-agent-supervisor--v2.6.24
+    - mekras/apm-marketplace/packages/ai-russian-language#ai-russian-language--v2.1.6
+    - mekras/apm-marketplace/packages/ai-agent-supervisor#ai-agent-supervisor--v2.6.25
     - mekras/apm-marketplace/packages/project-knowledge-corpus#project-knowledge-corpus--v0.22.2
 scripts:
   tests: >-
