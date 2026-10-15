@@ -13,6 +13,13 @@ from pathlib import Path
 from evaluation_suite import dump_yaml, source_text_sha256
 
 
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
+
 HEADING_PATTERN = re.compile(r"^(#{1,6})\s+(.+?)\s*$")
 SAFE_ID_PATTERN = re.compile(r"[^a-z0-9]+")
 

@@ -4,12 +4,20 @@
 from __future__ import annotations
 
 import argparse
+import sys
 import hashlib
 import os
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+
+
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
 
 try:
     import yaml

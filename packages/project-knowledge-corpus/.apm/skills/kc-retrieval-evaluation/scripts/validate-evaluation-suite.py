@@ -10,6 +10,13 @@ from pathlib import Path
 from evaluation_suite import load_yaml, validate_suite
 
 
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Проверить структуру и опорные фрагменты набора оценки.",

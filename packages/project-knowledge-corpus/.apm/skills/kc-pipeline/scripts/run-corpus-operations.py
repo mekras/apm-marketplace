@@ -27,6 +27,13 @@ from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable
 
+
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 try:
     import yaml
 except ImportError:  # pragma: no cover - depends on the target project environment.
@@ -2009,7 +2016,7 @@ def source_quality_result(root: Path, operations: dict[str, Any]) -> dict[str, A
     command = [sys.executable, str(checker), "--policy", str(paths["policy"]), "--sources", str(paths["sources"]), "--events", str(paths["events"])]
     if isinstance(config.get("today"), str):
         command.extend(["--today", config["today"]])
-    completed = subprocess.run(command, cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    completed = subprocess.run(command, cwd=root, text=True, encoding="utf-8", stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
     try:
         result = json.loads(completed.stdout)
     except json.JSONDecodeError:
@@ -2418,7 +2425,7 @@ def run_commands(
                     cwd=command_cwd,
                     stdout=stdout_stream,
                     stderr=stderr_stream,
-                    text=True,
+                    text=True, encoding="utf-8",
                 )
             except OSError as exc:
                 if activity_callback is not None:
@@ -2625,7 +2632,7 @@ def run_adapter_operation(
             format_adapter_argv(argv, source, root),
             cwd=command_cwd,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
         )
     except OSError as exc:
         raise OperationsError(
@@ -3045,7 +3052,7 @@ def run_operational_check(
     argv = [sys.executable, str(validator), str(corpus_root), "--operational", "--output", "json"]
     if policy is not None:
         argv.extend(["--operational-policy", repo_relative(corpus_root, policy)])
-    process = subprocess.run(argv, cwd=root, capture_output=True, text=True)
+    process = subprocess.run(argv, cwd=root, capture_output=True, text=True, encoding="utf-8")
     try:
         data = json.loads(process.stdout)
     except json.JSONDecodeError as exc:

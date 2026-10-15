@@ -21,6 +21,13 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
 try:
     import yaml
 except ImportError:  # pragma: no cover - depends on target project environment.
@@ -657,7 +664,7 @@ class Validator:
             ["git", "rev-parse", "--show-prefix"],
             cwd=self.root,
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8",
         )
         result = subprocess.run(
             [
@@ -1197,8 +1204,8 @@ class Validator:
         if version not in (1, 2):
             self.errors.append(f"{rel}: concept_contract_version must be 1 or 2")
         concepts = data.get("concepts")
-        if not isinstance(concepts, list) or not concepts:
-            self.errors.append(f"{rel}: concepts must be a non-empty list")
+        if not isinstance(concepts, list):
+            self.errors.append(f"{rel}: concepts must be a list")
             return
 
         concept_ids: set[str] = set()

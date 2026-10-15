@@ -9,6 +9,13 @@ import sys
 from pathlib import Path, PurePosixPath
 
 
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
+
 class TranscriptionError(RuntimeError):
     """The transcription result is not safe to use or clean up after."""
 

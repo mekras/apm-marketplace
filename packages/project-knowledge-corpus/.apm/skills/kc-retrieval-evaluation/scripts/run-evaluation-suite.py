@@ -26,6 +26,13 @@ from evaluation_suite import (
 )
 
 
+# Сообщения и результаты сохраняют UTF-8 независимо от кодировки консоли.
+for _stream in (sys.stdout, sys.stderr):
+    _reconfigure = getattr(_stream, "reconfigure", None)
+    if _reconfigure is not None:
+        _reconfigure(encoding="utf-8", errors="replace")
+
+
 VERDICTS = {"pass", "partial", "fail"}
 REPRESENTATION_VERDICTS = {"present", "partial", "absent"}
 LINE_LOCATOR_PATTERN = re.compile(r"^lines:(\d+)-(\d+)$")
@@ -175,7 +182,7 @@ def call_model(
     result = subprocess.run(
         command,
         input=prompt,
-        text=True,
+        text=True, encoding="utf-8",
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=cwd,
