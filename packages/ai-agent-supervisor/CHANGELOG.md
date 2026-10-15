@@ -7,6 +7,11 @@
 
 ## [Невыпущено]
 
+## [2.6.26] - 2026-10-15
+
+- Запускатель классов исполнения до запуска адаптера отклоняет контракт без
+  булева `writes` и назначение `read-only` для класса с `writes = true`.
+
 ## [2.6.25] - 2026-10-15
 
 - Образец границы проектной работы защищает другие проекты и исходники
@@ -1401,7 +1406,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.25...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.26...HEAD
+[2.6.26]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.25...2.6.26
 [2.6.25]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.24...2.6.25
 [2.6.24]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.23...2.6.24
 [2.6.23]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.22...2.6.23

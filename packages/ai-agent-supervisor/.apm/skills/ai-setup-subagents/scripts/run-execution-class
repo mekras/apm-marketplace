@@ -526,6 +526,11 @@ def main() -> int:
             isinstance(value, str) and value for value in (model, effort, sandbox)
         ):
             raise ValueError("у назначения обязательны model, effort и sandbox")
+        writes = contract.get("writes")
+        if not isinstance(writes, bool):
+            raise ValueError("контракт класса должен содержать writes типа bool")
+        if writes and sandbox == "read-only":
+            raise ValueError("writes класса не соответствует sandbox назначения")
     except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
         parser.error(f"ошибка настройки: {error}")
 
