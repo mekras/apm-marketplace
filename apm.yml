@@ -16,7 +16,7 @@ marketplace:
     - name: ai-russian-language
       description: "Переносимые навыки русского языка для агентов ИИ"
       source: ./packages/ai-russian-language
-      version: "2.1.5"
+      version: "2.1.6"
       tag_pattern: "{name}--v{version}"
       category: Productivity
     - name: ai-agent-supervisor

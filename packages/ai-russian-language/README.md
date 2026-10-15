@@ -106,6 +106,21 @@ APM_EVAL_PATH=.apm/skills/ru-lang APM_EVAL_CASE_ID=<id> apm run evals
 3. Добавьте или обновите `evals/triggers.json`.
 4. При заметных изменениях обновите [CHANGELOG.md](./CHANGELOG.md).
 
+## Выпуск
+
+Перед выпуском обновите `version` в `apm.yml` и перенесите изменения из раздела
+«Не выпущено» в раздел этой версии в `CHANGELOG.md`. Номер тега исходного
+репозитория должен в точности совпадать с `version`, например `2.1.6`.
+
+После отправки такого тега GitHub Actions проверяет коллекцию, переносит её
+публичный состав в `mekras/apm-marketplace`, пересобирает описания реестра и
+создаёт тег пакета `ai-russian-language--v<версия>`.
+
+Для первого автоматического выпуска добавьте в настройках репозитория
+`mekras/ai-russian-language` секрет Actions `APM_MARKETPLACE_TOKEN`. Это должен
+быть тонко настроенный personal access token с правом **Contents: Read and
+write** только для репозитория `mekras/apm-marketplace`.
+
 ## Лицензия
 
 Проект распространяется по лицензии MIT. Текст лицензии находится в
