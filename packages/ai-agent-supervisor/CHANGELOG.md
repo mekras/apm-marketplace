@@ -7,6 +7,12 @@
 
 ## [Невыпущено]
 
+## [2.6.27] - 2026-10-16
+
+- В правилах общения уточнено требование писать кратко и по существу:
+  пояснять только недостающий контекст, а при выборе объяснять различия
+  вариантов и последствия для задачи человека.
+
 ## [2.6.26] - 2026-10-15
 
 - Запускатель классов исполнения до запуска адаптера отклоняет контракт без
@@ -1406,7 +1412,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.26...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.27...HEAD
+[2.6.27]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.26...2.6.27
 [2.6.26]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.25...2.6.26
 [2.6.25]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.24...2.6.25
 [2.6.24]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.23...2.6.24
