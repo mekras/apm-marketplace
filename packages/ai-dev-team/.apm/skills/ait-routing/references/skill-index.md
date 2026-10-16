@@ -15,6 +15,9 @@
 
 ## Навыки
 
+- `ai-human-communication` — роль: `cross-role` — общение с человеком, форма
+  результата и продолжение поручений. Обязателен до первого сообщения во всех
+  режимах маршрутизации. Источник: `github.com/mekras/ai-agent-supervisor`.
 - `ai-agents-md-maintenance` — роль: `technical-writer` — сопровождение
   `AGENTS.md`. Источник: `github.com/mekras/ai-agent-supervisor`.
 - `ai-audit-agent-rules` — роль: `cross-role` — проверка правил агента в
