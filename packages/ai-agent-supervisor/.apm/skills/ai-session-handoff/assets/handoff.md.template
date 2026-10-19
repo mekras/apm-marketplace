@@ -17,16 +17,3 @@
 ## Открытые вопросы и риски
 
 ## Следующий шаг
-
-## Результат продолжения
-
-status: <pending|continued|failed>
-full_transcript_required: <true|false>
-rework_required: <true|false>
-
-## Оценка экономии
-
-scope: whole_task
-confirmed: <true|false>
-basis: <заполнить>
-evidence: <путь к свидетельству JSON, обязателен при confirmed: true>

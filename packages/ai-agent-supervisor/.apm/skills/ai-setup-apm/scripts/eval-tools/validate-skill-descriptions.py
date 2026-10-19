@@ -17,8 +17,6 @@ for _stream in (sys.stdout, sys.stderr):
 
 
 SPEC_MAX_DESCRIPTION_CHARS = 1024
-DEFAULT_MAX_DESCRIPTION_CHARS = 180
-DEFAULT_MAX_TOTAL_CHARS = 2200
 
 
 def parse_args() -> argparse.Namespace:
@@ -34,30 +32,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--max-description-chars",
         type=int,
-        default=int(
-            os.environ.get(
-                "APM_SKILL_DESCRIPTION_MAX_CHARS",
-                DEFAULT_MAX_DESCRIPTION_CHARS,
-            )
-        ),
+        default=os.environ.get("APM_SKILL_DESCRIPTION_MAX_CHARS"),
         help=(
             "Максимальная длина одного description. По умолчанию берётся из "
-            "APM_SKILL_DESCRIPTION_MAX_CHARS или равна 180."
+            "APM_SKILL_DESCRIPTION_MAX_CHARS, иначе бюджет не задан."
         ),
     )
     parser.add_argument(
         "--max-total-chars",
         type=int,
-        default=int(
-            os.environ.get(
-                "APM_SKILL_DESCRIPTION_TOTAL_MAX_CHARS",
-                DEFAULT_MAX_TOTAL_CHARS,
-            )
-        ),
+        default=os.environ.get("APM_SKILL_DESCRIPTION_TOTAL_MAX_CHARS"),
         help=(
             "Максимальная суммарная длина description в выбранном наборе. По "
             "умолчанию берётся из APM_SKILL_DESCRIPTION_TOTAL_MAX_CHARS или "
-            "равна 2200."
+            "не ограничена, если бюджет не задан."
         ),
     )
     return parser.parse_args()
@@ -130,10 +118,10 @@ def parse_frontmatter(skill_path: Path) -> dict[str, str]:
 
 def main() -> int:
     args = parse_args()
-    if args.max_description_chars <= 0:
+    if args.max_description_chars is not None and args.max_description_chars <= 0:
         print("--max-description-chars must be positive", file=sys.stderr)
         return 1
-    if args.max_total_chars <= 0:
+    if args.max_total_chars is not None and args.max_total_chars <= 0:
         print("--max-total-chars must be positive", file=sys.stderr)
         return 1
 
@@ -165,7 +153,7 @@ def main() -> int:
                 f"{skill_path}: description length {description_len} exceeds "
                 f"spec limit {SPEC_MAX_DESCRIPTION_CHARS}",
             )
-        if description_len > args.max_description_chars:
+        if args.max_description_chars is not None and description_len > args.max_description_chars:
             errors.append(
                 f"{skill_path}: description length {description_len} exceeds "
                 f"project budget {args.max_description_chars}",
@@ -176,7 +164,7 @@ def main() -> int:
                 "start with internal narration",
             )
 
-    if total_chars > args.max_total_chars:
+    if args.max_total_chars is not None and total_chars > args.max_total_chars:
         errors.append(
             "total description length "
             f"{total_chars} exceeds project budget {args.max_total_chars}",
@@ -191,6 +179,7 @@ def main() -> int:
         "Проверено описаний навыков: "
         f"{checked}. Суммарная длина: {total_chars} символов.",
     )
+    print("Длина не подтверждает качество или минимальность описаний.")
     return 0
 
 

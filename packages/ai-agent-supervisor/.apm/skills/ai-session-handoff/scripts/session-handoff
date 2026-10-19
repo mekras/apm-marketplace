@@ -26,6 +26,8 @@ HANDOFF_SECTIONS = (
     "Выполненные проверки",
     "Открытые вопросы и риски",
     "Следующий шаг",
+)
+EVALUATION_SECTIONS = (
     "Результат продолжения",
     "Оценка экономии",
 )
@@ -58,11 +60,12 @@ def check_handoff(args: argparse.Namespace) -> int:
         return 2
     missing: list[str] = []
     sections: dict[str, str] = {}
-    for section in HANDOFF_SECTIONS:
+    for section in HANDOFF_SECTIONS + EVALUATION_SECTIONS:
         heading = f"## {section}"
         start = content.find(heading)
         if start < 0:
-            missing.append(section)
+            if section in HANDOFF_SECTIONS:
+                missing.append(section)
             continue
         start += len(heading)
         end = content.find("\n## ", start)
@@ -75,7 +78,7 @@ def check_handoff(args: argparse.Namespace) -> int:
         return 1
 
     def metadata(section: str, key: str) -> str | None:
-        match = re.search(rf"(?m)^{re.escape(key)}:[ \t]*([^\r\n]+?)[ \t]*$", sections[section])
+        match = re.search(rf"(?m)^{re.escape(key)}:[ \t]*([^\r\n]+?)[ \t]*$", sections.get(section, ""))
         return match.group(1).strip() if match else None
 
     continuation_status = metadata("Результат продолжения", "status")
@@ -87,17 +90,19 @@ def check_handoff(args: argparse.Namespace) -> int:
     economy_evidence = metadata("Оценка экономии", "evidence")
     economy_digest = None
     errors: list[str] = []
-    if continuation_status not in {"pending", "continued", "failed"}:
+    has_continuation = "Результат продолжения" in sections
+    has_economy = "Оценка экономии" in sections
+    if has_continuation and continuation_status not in {"pending", "continued", "failed"}:
         errors.append("раздел «Результат продолжения» должен содержать status: pending, continued или failed")
-    if full_transcript not in {"true", "false"}:
+    if has_continuation and full_transcript not in {"true", "false"}:
         errors.append("раздел «Результат продолжения» должен содержать full_transcript_required: true или false")
-    if rework not in {"true", "false"}:
+    if has_continuation and rework not in {"true", "false"}:
         errors.append("раздел «Результат продолжения» должен содержать rework_required: true или false")
-    if economy_confirmed not in {"true", "false"}:
+    if has_economy and economy_confirmed not in {"true", "false"}:
         errors.append("раздел «Оценка экономии» должен содержать confirmed: true или false")
-    if not economy_basis:
+    if has_economy and not economy_basis:
         errors.append("раздел «Оценка экономии» должен содержать непустое basis")
-    if economy_scope != "whole_task":
+    if has_economy and economy_scope != "whole_task":
         errors.append("оценка экономии должна явно задавать scope: whole_task")
     if continuation_status == "pending" and economy_confirmed == "true":
         errors.append("незавершённая передача не может подтверждать экономию")
@@ -133,9 +138,12 @@ def check_handoff(args: argparse.Namespace) -> int:
         return 1
     print(
         f"handoff_status=ready\ninput={args.input}\nhandoff_bytes={len(content.encode('utf-8'))}"
-        f"\nhandoff_continuation_status={continuation_status}\nhandoff_economy_confirmed={economy_confirmed}"
-        f"\neconomy_scope={economy_scope}\nevidence_check=structure_only"
+        "\nevidence_check=structure_only"
     )
+    if has_continuation:
+        print(f"handoff_continuation_status={continuation_status}")
+    if has_economy:
+        print(f"handoff_economy_confirmed={economy_confirmed}\neconomy_scope={economy_scope}")
     if economy_digest:
         print(f"economy_evidence_sha256={economy_digest}")
     return 0
