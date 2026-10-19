@@ -9,7 +9,7 @@
     {
       "name": "ai-russian-language",
       "description": "Переносимые навыки русского языка для агентов ИИ",
-      "version": "2.1.6",
+      "version": "2.1.7",
       "category": "Productivity",
       "source": "./packages/ai-russian-language"
     },
