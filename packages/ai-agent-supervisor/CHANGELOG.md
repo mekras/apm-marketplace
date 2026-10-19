@@ -5,6 +5,10 @@
 Формат основан на [Keep a Changelog](https://keepachangelog.com/ru/1.1.0/),
 проект использует [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.29] - 2026-10-19
+
+- Исправлено оформление названий источников знаний в README.
+
 ## [2.6.28] - 2026-10-19
 
 - Контрактные проверки позволяют явно описать отсутствие файла или каталога
@@ -1468,7 +1472,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.27...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.29...HEAD
+[2.6.29]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.28...2.6.29
 [2.6.27]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.26...2.6.27
 [2.6.26]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.25...2.6.26
 [2.6.25]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.24...2.6.25
