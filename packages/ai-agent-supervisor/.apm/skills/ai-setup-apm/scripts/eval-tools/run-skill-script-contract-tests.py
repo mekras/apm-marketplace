@@ -29,7 +29,9 @@
 каждого публичного скрипта выполнили сценарии. Функция скрипта, ни одна строка
 которой не выполнена ни одним сценарием, считается непроверенной: это ошибка,
 если функция не перечислена в ``unexercised_functions`` контракта с указанием
-скрипта, полного имени и причины. Запись о фактически выполненной функции
+скрипта, полного имени и причины. Созданный компилятором код аннотаций
+не считается отдельной функцией. Пользовательская функция с тем же именем
+проверяется по строкам её собственного тела. Запись о фактически выполненной функции
 устаревает и тоже считается ошибкой. Отчёт о прочих невыполненных строках не
 меняет код возврата, но является обязательной очередью проверки для аудита
 поставляемой автоматизации.
@@ -38,6 +40,7 @@
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 import shutil
@@ -728,11 +731,25 @@ def script_functions(script: Path) -> dict[str, set[int]]:
     """Собрать функции скрипта и номера строк, исполняемых только их телом.
 
     Строка ``def`` исполняется объемлющим кодом при определении функции,
-    поэтому строки объемлющего кода исключаются: остаются строки, которые
-    выполняются только при фактическом вызове функции.
+    поэтому строки объемлющего кода исключаются. Определения и границы тел
+    берутся из исходника: код аннотаций Python 3.14 не является отдельной
+    пользовательской функцией, даже если его имя совпадает с её именем.
     """
     source = script.read_text(encoding="utf-8")
     code = compile(source, str(script), "exec")
+    source_lines = source.splitlines()
+    definitions: dict[tuple[str, int], set[int]] = {}
+    for node in ast.walk(ast.parse(source, filename=str(script))):
+        # Сохраняем прежний учёт тел классов вместе с функциями и методами.
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            first_line = min([node.lineno, *(item.lineno for item in node.decorator_list)])
+            first_body_line = node.body[0].lineno
+            # Общая строка сигнатуры и тела не различает их выполнение.
+            if source_lines[first_body_line - 1][:node.body[0].col_offset].strip():
+                first_body_line += 1
+            definitions[(node.name, first_line)] = set(
+                range(first_body_line, node.end_lineno + 1)
+            )
     functions: dict[str, set[int]] = {}
     stack: list[tuple[types.CodeType, set[int]]] = [(code, set())]
     while stack:
@@ -740,9 +757,10 @@ def script_functions(script: Path) -> dict[str, set[int]]:
         own = {
             line for _, _, line in current.co_lines() if line is not None and line > 0
         }
-        if current.co_name != "<module>" and not current.co_name.startswith("<"):
+        body = definitions.get((current.co_name, current.co_firstlineno), set())
+        if body:
             name = getattr(current, "co_qualname", current.co_name)
-            body_lines = own - enclosing
+            body_lines = (own - enclosing) & body
             if body_lines:
                 functions.setdefault(name, set()).update(body_lines)
         stack.extend(
