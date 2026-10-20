@@ -72,6 +72,36 @@
       "prompt": "Сохрани отчёт приёмки в output/acceptance.md.",
       "should_trigger": true,
       "rationale": "При подготовке результата для человека учитывается явно заданная форма файла."
+    },
+    {
+      "id": "ai-human-communication-human-document",
+      "prompt": "Подготовь понятную инструкцию для читателя в docs/guide.md.",
+      "should_trigger": true,
+      "rationale": "Создаваемый документ для человека входит в область навыка."
+    },
+    {
+      "id": "ai-human-communication-human-requirement",
+      "prompt": "Сформулируй требование и критерии приёмки для чтения человеком.",
+      "should_trigger": true,
+      "rationale": "Требования для человека входят в область навыка."
+    },
+    {
+      "id": "ai-human-communication-human-decision",
+      "prompt": "Запиши проектное решение с понятной ссылкой на нужный фрагмент источника.",
+      "should_trigger": true,
+      "rationale": "Запись решения для человека входит в область навыка."
+    },
+    {
+      "id": "ai-human-communication-exact-trace",
+      "prompt": "Покажи мне точные команды и машинный вывод без пояснения внутренних кодов.",
+      "should_trigger": true,
+      "rationale": "Точный след для человека входит в область с исключением из обязательности пояснений."
+    },
+    {
+      "id": "ai-human-communication-internal-config",
+      "prompt": "Передай внутреннему процессу только конфигурацию по машинному контракту, без сообщения человеку.",
+      "should_trigger": false,
+      "rationale": "Получатель и назначение определяют охват, внутренний машинный результат исключён."
     }
   ]
 }
