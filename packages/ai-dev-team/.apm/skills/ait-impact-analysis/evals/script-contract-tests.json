@@ -1,17 +1,5 @@
 {
   "version": 2,
-  "unexercised_functions": [
-    {
-      "script": "scripts/impact_graph.py",
-      "function": "require_bool",
-      "reason": "В успешных сценариях значение basis всегда корректно. Неверный тип проверяется ветвью отказа и не может быть активирован успешным сценарием."
-    },
-    {
-      "script": "scripts/impact_graph.py",
-      "function": "find_basis_cycle.<locals>.visit",
-      "reason": "Успешные сценарии содержат ациклический граф. Цикл основания должен завершать валидацию ошибкой и не может быть активирован успешным сценарием."
-    }
-  ],
   "operations": [
     {
       "id": "impact-graph-validate",
@@ -65,6 +53,38 @@
       "covers": ["impact-graph-validate"],
       "expect": {
         "stdout_contains": ["\"status\": \"ok\""]
+      }
+    },
+    {
+      "id": "validate-acyclic-basis-impact-graph",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/minimal-project",
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json; from pathlib import Path; path = Path('.ai-dev-team/project-impact.json'); graph = json.loads(path.read_text(encoding='utf-8')); graph['edges'][0]['basis'] = True; path.write_text(json.dumps(graph), encoding='utf-8')"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "validate",
+        "--graph",
+        "{fixture}/.ai-dev-team/project-impact.json"
+      ],
+      "covers": ["impact-graph-validate"],
+      "expect": {
+        "exit_code": 0,
+        "stdout_contains": [
+          "\"graph\": \"minimal-project\"",
+          "\"nodes\": 2",
+          "\"edges\": 1",
+          "\"schema_version\": 2",
+          "\"status\": \"ok\"",
+          "\"semantic_model\": true",
+          "\"problems\": []"
+        ]
       }
     },
     {

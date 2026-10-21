@@ -3,11 +3,6 @@
   "unexercised_functions": [
     {
       "script": "scripts/project_review.py",
-      "function": "linked_markdown_subjects",
-      "reason": "Вспомогательная ветвь раскрывает Markdown-ссылки только для возможности с index_patterns. Поставляемая классификация использует явные предметы и шаблоны файлов."
-    },
-    {
-      "script": "scripts/project_review.py",
       "function": "record_check",
       "reason": "Защитный отказ для удалённой команды. Публичный маршрут использует start-application и finish-application."
     },
@@ -1576,6 +1571,64 @@
       "covers": ["project-review-start-application"],
       "expect": {
         "stdout_contains": ["\"status\": \"running\""]
+      }
+    },
+    {
+      "id": "discover-complete-subject-index-scope",
+      "script": "scripts/project_review.py",
+      "fixture": "evals/script-fixtures/knowledge-workflow-project",
+      "requires": [
+        "git"
+      ],
+      "prepare": [
+        [
+          "{python}",
+          "prepare-subject-index.py",
+          "{script}",
+          "{fixture}"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "start-application",
+        "--repo",
+        "{fixture}",
+        "--id",
+        "subject-index-check",
+        "--stage",
+        "requirements",
+        "--capability",
+        "skill:ait-req-revalidation",
+        "--method",
+        "review",
+        "--surface",
+        "docs/requirements.md",
+        "--action",
+        "Проверить требования",
+        "--priority-rationale",
+        "Оглавление задаёт полный состав требований",
+        "--subject-index",
+        "docs/requirements.md"
+      ],
+      "covers": [
+        "project-review-start-application"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"status\": \"running\""
+        ],
+        "files": [
+          {
+            "path": ".git/ai-dev-team/project-review-state.json",
+            "json": true,
+            "contains": "      \"subject_scope\": [\n        {\n          \"reference\": \"docs/concept.md\",\n          \"sha256\": \"c81ca6b7d58d710b9a56eab635f8855f7ecfd45bcb8b7623c88fa93743066828\"\n        },\n        {\n          \"reference\": \"docs/requirements.md\",\n          \"sha256\": \"88855d2d684a952563fd1d2378dade602a0d459e950f68ecfcd562d7da5199a2\"\n        },\n        {\n          \"reference\": \"docs/requirements/second.md\",\n          \"sha256\": \"0592b365f9edf3437922eb0a98d033c9bceb568a983a9c45305a2cf3a7b5b1a0\"\n        }\n      ]"
+          },
+          {
+            "path": ".git/ai-dev-team/project-review-state.json",
+            "contains": "      \"subject_discovery\": {\n        \"explicit\": [],\n        \"index_links\": {\n          \"docs/requirements.md\": [\n            \"docs/concept.md\",\n            \"docs/requirements/second.md\"\n          ]\n        },\n        \"indexes\": [\n          \"docs/requirements.md\"\n        ],\n        \"patterns\": {}\n      }"
+          }
+        ]
       }
     },
     {

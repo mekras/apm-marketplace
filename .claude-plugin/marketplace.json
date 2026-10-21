@@ -30,7 +30,7 @@
     {
       "name": "ai-dev-team",
       "description": "Команда агентной разработки ПО",
-      "version": "0.29.7",
+      "version": "0.29.8",
       "category": "Productivity",
       "source": "./packages/ai-dev-team"
     }

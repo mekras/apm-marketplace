@@ -21,10 +21,22 @@ P0: найди граф по корневым инструкциям проек�
 даёт основной результат без запуска поставляемого кода, сети или оболочки.
 
 P1: сценарии из каталога `scripts/` проверяют граф и ускоряют расчёт. Перед
-запуском установи, доступен ли Python 3.10 или новее, и перейди в каталог
-навыка. Используй имя команды Python, найденное в этой среде. Если Python
-недоступен или его версия не подходит, выполни P0 и отметь, что автоматическая
-проверка не выполнена. Не устанавливай интерпретатор или пакеты.
+запуском установи, доступен ли Python 3.10 или новее. Все команды выполняй из
+корня целевого проекта. Используй имя команды Python, найденное в этой среде.
+Если Python недоступен или его версия не подходит, выполни P0 и отметь, что
+автоматическая проверка не выполнена. Не устанавливай интерпретатор или пакеты.
+
+В примерах ниже подставь значения переменных средствами доступной оболочки
+либо передай соответствующие пути непосредственно аргументами команды:
+
+- `impact_skill_dir` — каталог установленного навыка, содержащий открытый
+  `SKILL.md`. Определи его по фактическому расположению этого файла.
+- `impact_graph_path` — путь к графу, найденный на шаге 1.
+- `verification_config_path` — путь к объявлению выборочных проверок,
+  закреплённый целевым проектом. Нужен только при использовании этих проверок.
+
+Относительные пути к каталогу навыка и проектным данным отсчитывай от корня
+целевого проекта. В аргументе `--repo .` точка также обозначает этот корень.
 
 ## Когда применять
 
@@ -44,14 +56,17 @@ P1: сценарии из каталога `scripts/` проверяют гра�
 ## Обязательный порядок
 
 1. Найди путь к графу в корневых инструкциях агента или в поле
-   `setup.impact_graph.path` файла `.ai-dev-team/state.yml`. Если граф не
-   настроен, останови изменение и направь проект в `ait-setup`.
+   `setup.impact_graph.path` файла `.ai-dev-team/state.yml`. Если оба указателя
+   заданы, проверь, что они ведут к одному файлу. При расхождении остановись и
+   сообщи о противоречии. `.ai-dev-team/project-impact.json` — путь по
+   умолчанию при настройке, он не заменяет путь, закреплённый проектом. Если
+   граф не настроен, останови изменение и направь проект в `ait-setup`.
 2. Прочитай [договор графа](references/impact-graph-contract.md). При доступном
    P1 проверь граф:
 
    ```shell
-   <команда Python 3> scripts/impact_graph.py \
-     validate --graph .ai-dev-team/project-impact.json
+   <команда Python 3> "$impact_skill_dir/scripts/impact_graph.py" \
+     validate --graph "$impact_graph_path"
    ```
 
 3. Установи изменённые пути или вершины и аспект изменения. Не считай любое
@@ -64,8 +79,8 @@ P1: сценарии из каталога `scripts/` проверяют гра�
    запускает обязательные проверки либо берёт успешный результат из кеша.
 
    ```shell
-   <команда Python 3> scripts/selective_verification.py \
-     run --repo . --config .ai-dev-team/project-verification.json --base origin/main
+   <команда Python 3> "$impact_skill_dir/scripts/selective_verification.py" \
+     run --repo . --config "$verification_config_path" --base origin/main
    ```
 
    Передай модели только отчёт сценария, указанные в нём области и ограниченный
@@ -75,8 +90,8 @@ P1: сценарии из каталога `scripts/` проверяют гра�
 5. Получи полное транзитивное влияние:
 
    ```shell
-   <команда Python 3> scripts/impact_graph.py \
-     trace --graph .ai-dev-team/project-impact.json \
+   <команда Python 3> "$impact_skill_dir/scripts/impact_graph.py" \
+     trace --graph "$impact_graph_path" \
      --changed-path docs/concept.md \
      --facet semantic
    ```
@@ -93,8 +108,8 @@ P1: сценарии из каталога `scripts/` проверяют гра�
 8. Проверь завершённость тем же набором входов:
 
    ```shell
-   <команда Python 3> scripts/impact_graph.py \
-     assess --graph .ai-dev-team/project-impact.json \
+   <команда Python 3> "$impact_skill_dir/scripts/impact_graph.py" \
+     assess --graph "$impact_graph_path" \
      --changed-path docs/concept.md \
      --facet semantic \
      --status requirements=updated \
@@ -119,8 +134,8 @@ P1: сценарии из каталога `scripts/` проверяют гра�
 обоснование. Затем выполни структурную проверку и проверку покрытия:
 
 ```shell
-<команда Python 3> scripts/impact_graph.py \
-  coverage --graph .ai-dev-team/project-impact.json --repo .
+<команда Python 3> "$impact_skill_dir/scripts/impact_graph.py" \
+  coverage --graph "$impact_graph_path" --repo .
 ```
 
 Граф хранит смысловые артефакты, их файловые представления, маршруты влияния и
@@ -148,8 +163,8 @@ P1: сценарии из каталога `scripts/` проверяют гра�
 4. Проверь объявление до первого запуска:
 
    ```shell
-   <команда Python 3> scripts/selective_verification.py \
-     validate --repo . --config .ai-dev-team/project-verification.json
+   <команда Python 3> "$impact_skill_dir/scripts/selective_verification.py" \
+     validate --repo . --config "$verification_config_path"
    ```
 
 Кеш хранится в каталоге Git целевого проекта и содержит только успешные
