@@ -1,5 +1,5 @@
 name: ai-russian-language
-version: 2.1.7
+version: 2.1.8
 description: "Коллекция переносимых навыков для русского языка в агентной разработке"
 author: "mekras"
 license: "MIT"
@@ -8,6 +8,7 @@ target:
   - agent-skills
   - claude
   - codex
+  - hermes
 includes: auto
 dependencies:
   apm:

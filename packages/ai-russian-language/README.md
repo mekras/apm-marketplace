@@ -39,6 +39,12 @@ apm install ai-russian-language@mekras --target codex
 apm install ai-russian-language@mekras --target claude
 ```
 
+Установить коллекцию из реестра для Hermes Agent:
+
+```bash
+apm install ai-russian-language@mekras --target hermes
+```
+
 Обновить уже установленную коллекцию:
 
 ```bash
@@ -131,7 +137,7 @@ APM_EVAL_PATH=.apm/skills/ru-lang APM_EVAL_CASE_ID=<id> apm run evals
 
 Перед выпуском обновите `version` в `apm.yml` и перенесите изменения из раздела
 «Не выпущено» в раздел этой версии в `CHANGELOG.md`. Номер тега исходного
-репозитория должен в точности совпадать с `version`, например `2.1.7`.
+репозитория должен в точности совпадать с `version`, например `2.1.8`.
 
 После отправки такого тега GitHub Actions проверяет коллекцию, переносит её
 публичный состав в `mekras/apm-marketplace`, пересобирает описания реестра и
