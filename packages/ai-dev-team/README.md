@@ -37,14 +37,14 @@
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#0.31.0 --dev --target claude
+apm install ai-dev-team@mekras#0.31.1 --dev --target claude
 ```
 
 Для Codex:
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#0.31.0 --dev --target codex
+apm install ai-dev-team@mekras#0.31.1 --dev --target codex
 ```
 
 После установки откройте выбранный инструмент для общения с агентами в корне
