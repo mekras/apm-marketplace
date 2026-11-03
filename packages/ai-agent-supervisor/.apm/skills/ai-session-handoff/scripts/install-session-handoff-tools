@@ -1,15 +1,38 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  printf '%s\n' 'Usage: install-session-handoff-tools [project-root]'
-  exit 0
-fi
+case "${1:-}" in
+  -h|--help)
+    printf '%s\n' 'Usage: install-session-handoff-tools [project-root]'
+    exit 0
+    ;;
+esac
 
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+copy_file() {
+  if [ -d "$2" ]; then
+    printf 'Назначение — каталог: %s\n' "$2" >&2
+    return 1
+  fi
+  if [ -L "$2" ]; then
+    rm -f "$2"
+  fi
+  cp -f "$1" "$2"
+  chmod "$3" "$2"
+}
+
+script_path=$0
+case "$script_path" in
+  /*) ;;
+  *) script_path="$PWD/$script_path" ;;
+esac
+script_dir="$(CDPATH= cd -P "$(dirname "$script_path")" && pwd)"
 project_root="${1:-$PWD}"
 target_dir="$project_root/tools"
-mkdir -p "$target_dir"
-install -m 0755 "$script_dir/session-handoff" "$target_dir/session-handoff"
-install -m 0644 "$script_dir/../assets/handoff.md.template" "$target_dir/handoff.md.template"
+case "$target_dir" in
+  /*) copy_dir=$target_dir ;;
+  *) copy_dir="$PWD/$target_dir" ;;
+esac
+mkdir -p "$copy_dir"
+copy_file "$script_dir/session-handoff" "$copy_dir/session-handoff" 0755
+copy_file "$script_dir/../assets/handoff.md.template" "$copy_dir/handoff.md.template" 0644
 printf 'installed=%s\n' "$target_dir"

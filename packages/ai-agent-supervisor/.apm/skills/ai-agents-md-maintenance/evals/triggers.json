@@ -42,6 +42,12 @@
       "prompt": "Исправь ошибку в CLI и добавь unit-тест на новый аргумент.",
       "should_trigger": false,
       "rationale": "Запрос относится к изменению кода и тестов, а не к сопровождению AGENTS.md."
+    },
+    {
+      "id": "ai-agents-md-maintenance-positive-hermes-personal-profile",
+      "prompt": "Измени согласованное правило общения в SOUL.md моего активного профиля Hermes.",
+      "should_trigger": true,
+      "rationale": "Узкое сопровождение инструкций профиля без настройки всего помощника."
     }
   ]
 }
