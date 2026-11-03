@@ -30,20 +30,21 @@
 Для подключения необходим
 [Agent Package Manager](https://github.com/microsoft/apm).
 
-Выберите клиент и выполните команду в корне целевого проекта.
+Устанавливайте продукт как зависимость для разработки. Выберите клиент и
+выполните команду в корне целевого проекта.
 
 Для Claude:
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#0.29.8 --target claude
+apm install ai-dev-team@mekras#0.30.0 --dev --target claude
 ```
 
 Для Codex:
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#0.29.8 --target codex
+apm install ai-dev-team@mekras#0.30.0 --dev --target codex
 ```
 
 После установки откройте выбранный инструмент для общения с агентами в корне

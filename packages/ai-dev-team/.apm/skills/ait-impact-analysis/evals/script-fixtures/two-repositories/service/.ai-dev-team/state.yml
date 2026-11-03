@@ -1,0 +1,19 @@
+setup:
+  sdd:
+    status: adopted
+    level: aligned
+    scope: [product-behavior, external-contracts]
+    specification_paths: [api.md]
+    derived_paths: [src/**]
+    approval: before-implementation
+    exception_policy:
+      path_pattern: .ai-dev-team/exceptions/<id>.md
+      required_fields:
+        - reason
+        - owner
+        - scope
+        - expires_at
+        - reconciliation_condition
+    review_condition: specification-cost-exceeds-benefit
+  impact_graph:
+    path: .ai-dev-team/project-impact.json

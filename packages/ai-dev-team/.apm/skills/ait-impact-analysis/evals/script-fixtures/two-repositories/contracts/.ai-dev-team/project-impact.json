@@ -1,0 +1,41 @@
+{
+  "schema_version": 2,
+  "graph": {
+    "name": "contracts",
+    "description": "Два связанных репозитория.",
+    "default_facet": "semantic",
+    "unmapped_paths": "block",
+    "ignore": [
+      ".git/**"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "api",
+      "title": "api",
+      "kind": "requirements",
+      "semantic_type": "api",
+      "authority": "canonical",
+      "paths": [
+        "api.json"
+      ],
+      "checks": [
+        "local-requirements-check"
+      ]
+    },
+    {
+      "id": "rules",
+      "title": "rules",
+      "kind": "process",
+      "semantic_type": "rules",
+      "authority": "canonical",
+      "paths": [
+        "rules.md"
+      ],
+      "checks": [
+        "local-process-check"
+      ]
+    }
+  ],
+  "edges": []
+}

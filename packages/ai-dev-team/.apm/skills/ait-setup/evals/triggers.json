@@ -126,6 +126,18 @@
       "prompt": "Проверь APM-коллекцию навыков: apm.yml, .apm/skills, scripts.tests и упаковку.",
       "should_trigger": false,
       "rationale": "Это узкая задача ai-setup-apm по коллекции APM, а не настройка проекта под ai-dev-team."
+    },
+    {
+      "id": "ait-setup-workspace-trigger-1",
+      "prompt": "Настрой рабочее место с двумя репозиториями и существующим реестром ресурсов.",
+      "should_trigger": true,
+      "rationale": "Нужна настройка границ и источников рабочего места."
+    },
+    {
+      "id": "ait-setup-workspace-trigger-2",
+      "prompt": "Выполни обычную правку внутри одного настроенного репозитория без внешних зависимостей.",
+      "should_trigger": false,
+      "rationale": "Общая настройка для этой задачи не требуется."
     }
   ]
 }

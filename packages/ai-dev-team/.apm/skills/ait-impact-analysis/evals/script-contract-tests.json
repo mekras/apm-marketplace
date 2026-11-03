@@ -4,38 +4,89 @@
     {
       "id": "impact-graph-validate",
       "script": "scripts/impact_graph.py",
-      "command_prefix": ["validate"],
+      "command_prefix": [
+        "validate"
+      ],
       "inputs": []
     },
     {
       "id": "impact-graph-trace",
       "script": "scripts/impact_graph.py",
-      "command_prefix": ["trace"],
+      "command_prefix": [
+        "trace"
+      ],
       "inputs": []
     },
     {
       "id": "impact-graph-assess",
       "script": "scripts/impact_graph.py",
-      "command_prefix": ["assess"],
+      "command_prefix": [
+        "assess"
+      ],
       "inputs": []
     },
     {
       "id": "impact-graph-coverage",
       "script": "scripts/impact_graph.py",
-      "command_prefix": ["coverage"],
+      "command_prefix": [
+        "coverage"
+      ],
       "inputs": []
     },
     {
       "id": "selective-verification-validate",
       "script": "scripts/selective_verification.py",
-      "command_prefix": ["validate"],
+      "command_prefix": [
+        "validate"
+      ],
       "inputs": []
     },
     {
       "id": "selective-verification-run",
       "script": "scripts/selective_verification.py",
-      "command_prefix": ["run"],
+      "command_prefix": [
+        "run"
+      ],
       "inputs": []
+    },
+    {
+      "id": "workspace-validate",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": [
+        "validate",
+        "--workspace"
+      ],
+      "inputs": [
+        "workspace-impact.json",
+        "contracts/.ai-dev-team/project-impact.json",
+        "service/.ai-dev-team/project-impact.json"
+      ]
+    },
+    {
+      "id": "workspace-trace",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": [
+        "trace",
+        "--workspace"
+      ],
+      "inputs": [
+        "workspace-impact.json",
+        "contracts/.ai-dev-team/project-impact.json",
+        "service/.ai-dev-team/project-impact.json"
+      ]
+    },
+    {
+      "id": "workspace-assess",
+      "script": "scripts/impact_graph.py",
+      "command_prefix": [
+        "assess",
+        "--workspace"
+      ],
+      "inputs": [
+        "workspace-impact.json",
+        "contracts/.ai-dev-team/project-impact.json",
+        "service/.ai-dev-team/project-impact.json"
+      ]
     }
   ],
   "cases": [
@@ -50,9 +101,13 @@
         "--graph",
         "{fixture}/.ai-dev-team/project-impact.json"
       ],
-      "covers": ["impact-graph-validate"],
+      "covers": [
+        "impact-graph-validate"
+      ],
       "expect": {
-        "stdout_contains": ["\"status\": \"ok\""]
+        "stdout_contains": [
+          "\"status\": \"ok\""
+        ]
       }
     },
     {
@@ -73,7 +128,9 @@
         "--graph",
         "{fixture}/.ai-dev-team/project-impact.json"
       ],
-      "covers": ["impact-graph-validate"],
+      "covers": [
+        "impact-graph-validate"
+      ],
       "expect": {
         "exit_code": 0,
         "stdout_contains": [
@@ -102,9 +159,13 @@
         "--facet",
         "quality"
       ],
-      "covers": ["impact-graph-trace"],
+      "covers": [
+        "impact-graph-trace"
+      ],
       "expect": {
-        "stdout_contains": ["\"id\": \"tests\""]
+        "stdout_contains": [
+          "\"id\": \"tests\""
+        ]
       }
     },
     {
@@ -120,9 +181,13 @@
         "--changed-node",
         "implementation:quality"
       ],
-      "covers": ["impact-graph-trace"],
+      "covers": [
+        "impact-graph-trace"
+      ],
       "expect": {
-        "stdout_contains": ["\"id\": \"tests\""]
+        "stdout_contains": [
+          "\"id\": \"tests\""
+        ]
       }
     },
     {
@@ -142,9 +207,13 @@
         "--status",
         "tests=verified_no_impact"
       ],
-      "covers": ["impact-graph-assess"],
+      "covers": [
+        "impact-graph-assess"
+      ],
       "expect": {
-        "stdout_contains": ["\"complete\": true"]
+        "stdout_contains": [
+          "\"complete\": true"
+        ]
       }
     },
     {
@@ -160,9 +229,13 @@
         "--repo",
         "{fixture}"
       ],
-      "covers": ["impact-graph-coverage"],
+      "covers": [
+        "impact-graph-coverage"
+      ],
       "expect": {
-        "stdout_contains": ["\"complete\": true"]
+        "stdout_contains": [
+          "\"complete\": true"
+        ]
       }
     },
     {
@@ -178,9 +251,13 @@
         "--config",
         "{fixture}/.ai-dev-team/project-verification.json"
       ],
-      "covers": ["selective-verification-validate"],
+      "covers": [
+        "selective-verification-validate"
+      ],
       "expect": {
-        "stdout_contains": ["\"status\": \"passed\""]
+        "stdout_contains": [
+          "\"status\": \"passed\""
+        ]
       }
     },
     {
@@ -188,8 +265,18 @@
       "script": "scripts/selective_verification.py",
       "fixture": "evals/script-fixtures/minimal-project",
       "prepare": [
-        ["git", "init", "{fixture}"],
-        ["git", "-C", "{fixture}", "add", "."],
+        [
+          "git",
+          "init",
+          "{fixture}"
+        ],
+        [
+          "git",
+          "-C",
+          "{fixture}",
+          "add",
+          "."
+        ],
         [
           "git",
           "-C",
@@ -219,11 +306,197 @@
         "--base",
         "HEAD"
       ],
-      "covers": ["selective-verification-run"],
+      "covers": [
+        "selective-verification-run"
+      ],
       "expect": {
         "stdout_contains": [
           "\"status\": \"passed\"",
           "\"status\": \"executed\""
+        ]
+      }
+    },
+    {
+      "id": "workspace-validate-two-repositories",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/two-repositories",
+      "command": [
+        "{python}",
+        "{script}",
+        "validate",
+        "--workspace",
+        "{fixture}/workspace-impact.json"
+      ],
+      "covers": [
+        "workspace-validate"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"scope\": \"declared-repositories\"",
+          "\"repositories\": [",
+          "\"status\": \"ok\"",
+          "\"nodes\": 6"
+        ]
+      }
+    },
+    {
+      "id": "workspace-trace-two-repositories",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/two-repositories",
+      "command": [
+        "{python}",
+        "{script}",
+        "trace",
+        "--workspace",
+        "{fixture}/workspace-impact.json",
+        "--changed-node",
+        "contracts/api",
+        "--facet",
+        "interface"
+      ],
+      "covers": [
+        "workspace-trace"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"scope\": \"declared-repositories\"",
+          "\"repositories\": [",
+          "\"id\": \"service/implementation\"",
+          "\"id\": \"service/tests\"",
+          "\"repository\": \"service\""
+        ]
+      }
+    },
+    {
+      "id": "workspace-assess-two-repositories",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/two-repositories",
+      "command": [
+        "{python}",
+        "{script}",
+        "assess",
+        "--workspace",
+        "{fixture}/workspace-impact.json",
+        "--changed-node",
+        "contracts/api",
+        "--facet",
+        "interface",
+        "--status",
+        "service/implementation=updated",
+        "--status",
+        "service/tests=verified_no_impact"
+      ],
+      "covers": [
+        "workspace-assess"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"scope\": \"declared-repositories\"",
+          "\"repositories\": [",
+          "\"id\": \"service/implementation\"",
+          "\"id\": \"service/tests\"",
+          "\"repository\": \"service\"",
+          "\"complete\": true",
+          "\"missing_statuses\": []",
+          "\"blocking_statuses\": []"
+        ]
+      }
+    },
+    {
+      "id": "workspace-package-source-and-installed-version",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/two-repositories",
+      "command": [
+        "{python}",
+        "{script}",
+        "trace",
+        "--workspace",
+        "{fixture}/workspace-impact.json",
+        "--changed-node",
+        "contracts/rules",
+        "--facet",
+        "quality"
+      ],
+      "covers": [
+        "workspace-trace"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"id\": \"service/installed-rules\"",
+          "\"id\": \"service/implementation\"",
+          "\"id\": \"service/tests\""
+        ],
+        "files": [
+          {
+            "path": "service/dependencies.json",
+            "json": true,
+            "contains": "\"rules_version\": \"1\""
+          },
+          {
+            "path": "service/packages/rules.md",
+            "contains": "Версия: 1."
+          }
+        ]
+      }
+    },
+    {
+      "id": "workspace-missing-foreign-status",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/two-repositories",
+      "command": [
+        "{python}",
+        "{script}",
+        "assess",
+        "--workspace",
+        "{fixture}/workspace-impact.json",
+        "--changed-node",
+        "contracts/api",
+        "--facet",
+        "interface",
+        "--status",
+        "service/implementation=updated"
+      ],
+      "covers": [
+        "workspace-assess"
+      ],
+      "expect": {
+        "exit_code": 3,
+        "stdout_contains": [
+          "\"complete\": false",
+          "\"missing_statuses\": [",
+          "\"service/tests\""
+        ]
+      }
+    },
+    {
+      "id": "workspace-missing-local-graph",
+      "script": "scripts/impact_graph.py",
+      "fixture": "evals/script-fixtures/two-repositories",
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "from pathlib import Path; Path(\"service/.ai-dev-team/project-impact.json\").unlink()"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "trace",
+        "--workspace",
+        "{fixture}/workspace-impact.json",
+        "--changed-node",
+        "contracts/api",
+        "--facet",
+        "interface"
+      ],
+      "covers": [
+        "workspace-trace"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "graph unreadable"
         ]
       }
     }

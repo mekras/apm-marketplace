@@ -1,0 +1,8 @@
+{
+  "request": {
+    "name": "string"
+  },
+  "response": {
+    "greeting": "string"
+  }
+}

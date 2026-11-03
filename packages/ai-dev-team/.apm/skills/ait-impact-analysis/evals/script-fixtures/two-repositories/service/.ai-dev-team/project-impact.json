@@ -1,0 +1,97 @@
+{
+  "schema_version": 2,
+  "graph": {
+    "name": "service",
+    "description": "Два связанных репозитория.",
+    "default_facet": "semantic",
+    "unmapped_paths": "block",
+    "ignore": [
+      ".git/**"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "api",
+      "title": "api",
+      "kind": "requirements",
+      "semantic_type": "api",
+      "authority": "canonical",
+      "paths": [
+        "api.md"
+      ],
+      "checks": [
+        "local-documentation-check"
+      ]
+    },
+    {
+      "id": "installed-rules",
+      "title": "installed-rules",
+      "kind": "configuration",
+      "semantic_type": "installed-rules",
+      "authority": "derived",
+      "paths": [
+        "packages/rules.md",
+        "dependencies.json"
+      ],
+      "checks": [
+        "local-configuration-check"
+      ]
+    },
+    {
+      "id": "implementation",
+      "title": "implementation",
+      "kind": "implementation",
+      "semantic_type": "implementation",
+      "authority": "derived",
+      "paths": [
+        "src/service.py"
+      ],
+      "checks": [
+        "local-implementation-check"
+      ]
+    },
+    {
+      "id": "tests",
+      "title": "tests",
+      "kind": "test",
+      "semantic_type": "tests",
+      "authority": "derived",
+      "paths": [
+        "tests/check.py"
+      ],
+      "checks": [
+        "local-test-check"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "installed-rules",
+      "to": "implementation",
+      "relation": "governs",
+      "facets": [
+        "semantic",
+        "quality"
+      ],
+      "rationale": "Изменение основания требует проверки потребителя."
+    },
+    {
+      "from": "implementation",
+      "to": "tests",
+      "relation": "verifies",
+      "facets": [
+        "any"
+      ],
+      "rationale": "Изменение основания требует проверки потребителя."
+    },
+    {
+      "from": "api",
+      "to": "implementation",
+      "relation": "realizes",
+      "facets": [
+        "interface"
+      ],
+      "rationale": "Реализация следует местной спецификации интерфейса."
+    }
+  ]
+}

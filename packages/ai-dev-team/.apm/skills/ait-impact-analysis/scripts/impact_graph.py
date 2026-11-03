@@ -3,19 +3,21 @@ from __future__ import annotations
 
 import argparse
 import fnmatch
+import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
 from collections import deque
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from typing import Any
 
 
 SCHEMA_VERSION = 2
 SUPPORTED_SCHEMA_VERSIONS = {1, 2}
 NODE_ID_RE = re.compile(r"^[a-z][a-z0-9-]*$")
+NODE_REFERENCE_RE = re.compile(r"^[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)?$")
 NODE_KINDS = {
     "concept",
     "knowledge",
@@ -151,15 +153,20 @@ def validate_string_list(
 
 
 def load_graph(path: Path) -> dict[str, Any]:
+    return graph_snapshot(path)[0]
+
+
+def graph_snapshot(path: Path) -> tuple[dict[str, Any], str]:
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise ContractError(f"graph not found: {path}") from exc
+        content = path.read_bytes()
+        data = json.loads(content)
+    except (OSError, UnicodeError) as exc:
+        raise ContractError(f"graph unreadable: {path}: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise ContractError(
             f"{path}:{exc.lineno}:{exc.colno}: {exc.msg}",
         ) from exc
-    return validate_graph(data)
+    return validate_graph(data), hashlib.sha256(content).hexdigest()
 
 
 def validate_graph(data: Any) -> dict[str, Any]:
@@ -337,7 +344,12 @@ def validate_graph(data: Any) -> dict[str, Any]:
                 + ", ".join(unsupported_stages),
             )
 
-    edges = require_list(root.get("edges"), "root.edges")
+    validate_edges(root.get("edges"), node_ids)
+    return root
+
+
+def validate_edges(raw_edges: Any, node_ids: set[str]) -> None:
+    edges = require_list(raw_edges, "root.edges")
     edge_keys: set[tuple[str, str, str]] = set()
     for index, raw_edge in enumerate(edges):
         location = f"root.edges[{index}]"
@@ -381,7 +393,106 @@ def validate_graph(data: Any) -> dict[str, Any]:
             )
         edge_keys.add(key)
 
-    return root
+
+def resolve_workspace_path(path: Path, location: str) -> Path:
+    try:
+        return path.resolve()
+    except (OSError, RuntimeError, ValueError) as exc:
+        raise ContractError(f"{location}: путь недоступен: {exc}") from exc
+
+
+def workspace_path(base: Path, raw_path: Any, location: str) -> Path:
+    value = require_string(raw_path, location).replace("\\", "/")
+    if PurePosixPath(value).is_absolute() or PureWindowsPath(value).drive:
+        raise ContractError(f"{location}: требуется относительный путь")
+    path = resolve_workspace_path(base / value, location)
+    if ".." in PurePosixPath(value).parts or not path.is_relative_to(base):
+        raise ContractError(f"{location}: путь выходит за объявленную границу")
+    return path
+
+
+def load_workspace(path: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    path = resolve_workspace_path(path, "workspace")
+    try:
+        content = path.read_bytes()
+        workspace = require_mapping(json.loads(content), "workspace")
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ContractError(f"описание связей недоступно: {path}: {exc}") from exc
+    reject_unknown(workspace, {"schema_version", "name", "repositories", "edges"}, "workspace")
+    if type(workspace.get("schema_version")) is not int or workspace["schema_version"] != 1:
+        raise ContractError("workspace.schema_version: требуется версия 1")
+    name = require_string(workspace.get("name"), "workspace.name")
+    repositories = require_list(
+        workspace.get("repositories"), "workspace.repositories", nonempty=True,
+    )
+    graph: dict[str, Any] = {
+        "schema_version": SCHEMA_VERSION,
+        "graph": {
+            "name": name,
+            "description": "Временное объединение местных графов и внешних связей.",
+            "default_facet": "semantic",
+            "unmapped_paths": "block",
+            "ignore": [],
+        },
+        "nodes": [],
+        "edges": [],
+    }
+    snapshots: list[dict[str, str]] = []
+    repository_ids: set[str] = set()
+    roots: set[Path] = set()
+    for index, raw_repository in enumerate(repositories):
+        location = f"workspace.repositories[{index}]"
+        repository = require_mapping(raw_repository, location)
+        reject_unknown(repository, {"id", "path", "graph"}, location)
+        repository_id = require_string(repository.get("id"), f"{location}.id")
+        if not NODE_ID_RE.fullmatch(repository_id) or repository_id in repository_ids:
+            raise ContractError(f"{location}.id: неизвестный формат или повтор идентификатора")
+        repository_ids.add(repository_id)
+        root = workspace_path(path.parent, repository.get("path"), f"{location}.path")
+        if not root.is_dir():
+            raise ContractError(f"{location}.path: корень должен быть доступным каталогом")
+        if root in roots:
+            raise ContractError(f"{location}.path: повтор корня репозитория")
+        roots.add(root)
+        graph_path = workspace_path(root, repository.get("graph"), f"{location}.graph")
+        local, graph_hash = graph_snapshot(graph_path)
+        if local["schema_version"] != SCHEMA_VERSION:
+            raise ContractError(f"{graph_path}: межрепозиторный анализ требует граф версии 2")
+        prefix = f"{repository_id}/"
+        graph["graph"]["ignore"].extend(prefix + item for item in local["graph"]["ignore"])
+        for node in local["nodes"]:
+            graph["nodes"].append({
+                **node,
+                "id": prefix + node["id"],
+                "paths": [prefix + item for item in node["paths"]],
+                "representations": [
+                    {**item, "path": prefix + item["path"]}
+                    for item in node["representations"]
+                ],
+                "repository": repository_id,
+            })
+        graph["edges"].extend(
+            {**edge, "from": prefix + edge["from"], "to": prefix + edge["to"]}
+            for edge in local["edges"]
+        )
+        snapshots.append({
+            "id": repository_id,
+            "root": str(root),
+            "graph": str(graph_path),
+            "sha256": graph_hash,
+        })
+    external_edges = require_list(workspace.get("edges"), "workspace.edges")
+    validate_edges(external_edges, {node["id"] for node in graph["nodes"]})
+    for edge in external_edges:
+        if edge["from"].split("/")[0] == edge["to"].split("/")[0]:
+            raise ContractError("workspace.edges: местное ребро должно находиться в местном графе")
+    graph["edges"].extend(external_edges)
+    return graph, {
+        "path": str(path),
+        "sha256": hashlib.sha256(content).hexdigest(),
+        "scope": "declared-repositories",
+        "repositories": snapshots,
+    }
 
 
 def matches(path: str, pattern: str) -> bool:
@@ -404,7 +515,7 @@ def parse_changed_node(raw: str, default_facet: str) -> tuple[str, str]:
     node_id, separator, facet = raw.partition(":")
     if not separator:
         facet = default_facet
-    if not NODE_ID_RE.fullmatch(node_id):
+    if not NODE_REFERENCE_RE.fullmatch(node_id):
         raise ContractError(f"invalid changed node: {raw!r}")
     if facet not in FACETS:
         raise ContractError(f"invalid change facet in {raw!r}")
@@ -521,6 +632,8 @@ def trace_result(
         )
         entry["facets"].append(state_facet)
         entry["paths"].append(paths[(node_id, state_facet)])
+        if "repository" in nodes[node_id]:
+            entry["repository"] = nodes[node_id]["repository"]
 
     review_stages = sorted(
         {
@@ -552,7 +665,7 @@ def parse_statuses(raw_statuses: list[str]) -> dict[str, str]:
     result: dict[str, str] = {}
     for raw in raw_statuses:
         node_id, separator, status = raw.partition("=")
-        if not separator or not NODE_ID_RE.fullmatch(node_id):
+        if not separator or not NODE_REFERENCE_RE.fullmatch(node_id):
             raise ContractError(f"invalid status assignment: {raw!r}")
         if status not in STATUSES:
             raise ContractError(f"unsupported status in {raw!r}")
@@ -707,8 +820,14 @@ def validation_result(graph: dict[str, Any]) -> tuple[dict[str, Any], int]:
     return result, 3 if problems else 0
 
 
+def add_graph_arguments(parser: argparse.ArgumentParser) -> None:
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument("--graph", type=Path)
+    source.add_argument("--workspace", type=Path, help="Описание межрепозиторных связей.")
+
+
 def add_trace_arguments(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument("--graph", required=True, type=Path)
+    add_graph_arguments(parser)
     parser.add_argument("--changed-node", action="append", default=[])
     parser.add_argument("--changed-path", action="append", default=[])
     parser.add_argument("--facet", choices=sorted(FACETS))
@@ -721,7 +840,7 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     validate_parser = subparsers.add_parser("validate")
-    validate_parser.add_argument("--graph", required=True, type=Path)
+    add_graph_arguments(validate_parser)
 
     trace_parser = subparsers.add_parser("trace")
     add_trace_arguments(trace_parser)
@@ -741,30 +860,44 @@ def emit(data: dict[str, Any]) -> None:
 
 
 def main() -> int:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
     args = build_parser().parse_args()
     try:
-        graph = load_graph(args.graph)
+        snapshot = None
+        if getattr(args, "workspace", None) is not None:
+            graph, snapshot = load_workspace(args.workspace)
+        else:
+            graph = load_graph(args.graph)
         if args.command == "validate":
             result, exit_code = validation_result(graph)
+            if snapshot is not None:
+                result["workspace"] = snapshot
             emit(result)
             return exit_code
         if args.command == "coverage":
             result, exit_code = coverage_result(graph, args.repo)
             emit(result)
             return exit_code
+        if snapshot is not None and args.facet is None:
+            raise ContractError("для --workspace требуется явный --facet")
         result = trace_result(
             graph,
             args.changed_node,
             args.changed_path,
             args.facet,
         )
+        if snapshot is not None:
+            result["workspace"] = snapshot
         if args.command == "assess":
             result, exit_code = assess_result(result, args.status)
             emit(result)
             return exit_code
         emit(result)
         return 0
-    except ContractError as exc:
+    except (ContractError, OSError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
 

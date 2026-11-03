@@ -42,6 +42,18 @@
       "prompt": "Добавь требованию ссылки на источник, реализацию и тесты.",
       "should_trigger": false,
       "rationale": "Локальными связями требования владеет ait-req-management."
+    },
+    {
+      "id": "ait-impact-analysis-workspace-trigger-1",
+      "prompt": "Изменён общий контракт. Найди влияние через местные графы двух репозиториев.",
+      "should_trigger": true,
+      "rationale": "Нужна трасса по объявленным внешним связям."
+    },
+    {
+      "id": "ait-impact-analysis-workspace-trigger-2",
+      "prompt": "Проверь только доступность записи ресурса в существующем реестре, без анализа изменений.",
+      "should_trigger": false,
+      "rationale": "Доступ к ресурсу не является анализом влияния."
     }
   ]
 }

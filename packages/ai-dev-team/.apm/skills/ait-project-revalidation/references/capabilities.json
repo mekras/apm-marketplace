@@ -149,6 +149,14 @@
       "applicability": "model"
     },
     {
+      "id": "skill-ait-bug-triage",
+      "kind": "skill",
+      "name": "ait-bug-triage",
+      "purpose": "Разбор отдельно переданного сообщения об ошибке",
+      "participation": "not_applicable",
+      "applicability": "never"
+    },
+    {
       "id": "skill-ait-changelog",
       "kind": "skill",
       "name": "ait-changelog",

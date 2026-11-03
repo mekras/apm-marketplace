@@ -1,0 +1,59 @@
+{
+  "skill_name": "ait-bug-triage",
+  "cases": [
+    {
+      "id": "ait-bug-triage-positive-report",
+      "prompt": "Разбери сообщение тестировщика: это ошибки и что требуется исправить?",
+      "should_trigger": true,
+      "rationale": "Нужны проверенные замечания и состав дальнейшей работы."
+    },
+    {
+      "id": "ait-bug-triage-positive-mixed",
+      "prompt": "В жалобе пять пунктов. Проверь каждый и вынеси отдельные вердикты.",
+      "should_trigger": true,
+      "rationale": "Составное сообщение требует отдельных проверок и выводов."
+    },
+    {
+      "id": "ait-bug-triage-boundary-gap",
+      "prompt": "Документация молчит, но система теряет сохранённые настройки. Ошибка ли это?",
+      "should_trigger": true,
+      "rationale": "Нужно независимо оценить поведение и состояние спецификации."
+    },
+    {
+      "id": "ait-bug-triage-positive-inline",
+      "prompt": "Вот исходный текст сообщения: после обновления исчезла кнопка. Проверь замечание.",
+      "should_trigger": true,
+      "rationale": "Исходник в диалоге достаточен для начала разбора."
+    },
+    {
+      "id": "ait-bug-triage-negative-registration",
+      "prompt": "Без анализа перепиши готовый отчёт об ошибке в запись нашего трекера.",
+      "should_trigger": false,
+      "rationale": "Это оформление по правилам целевого проекта."
+    },
+    {
+      "id": "ait-bug-triage-negative-accepted-fix",
+      "prompt": "Ошибка уже установлена: исправь нарушение REQ-4 и добавь регрессионный тест.",
+      "should_trigger": false,
+      "rationale": "Вердикт принят, требуется профильное исправление."
+    },
+    {
+      "id": "ait-bug-triage-negative-remainder",
+      "prompt": "Проверь, что осталось сделать по критериям ранее выполненной задачи.",
+      "should_trigger": false,
+      "rationale": "Это проверка завершённости по ai-work-result-evaluation."
+    },
+    {
+      "id": "ait-bug-triage-negative-code-review",
+      "prompt": "Проведи обзор изменений в коде и найди дефекты обработки исключений.",
+      "should_trigger": false,
+      "rationale": "Это обзор кода по ait-code-review."
+    },
+    {
+      "id": "ait-bug-triage-boundary-debug",
+      "prompt": "Найди первопричину уже воспроизведённого зависания, вердикт об ошибке принят.",
+      "should_trigger": false,
+      "rationale": "Нужно расследование установленного дефекта, а не новый разбор жалобы."
+    }
+  ]
+}

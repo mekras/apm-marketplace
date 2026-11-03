@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "name": "two-repositories",
+  "repositories": [
+    {
+      "id": "contracts",
+      "path": "contracts",
+      "graph": ".ai-dev-team/project-impact.json"
+    },
+    {
+      "id": "service",
+      "path": "service",
+      "graph": ".ai-dev-team/project-impact.json"
+    }
+  ],
+  "edges": [
+    {
+      "from": "contracts/api",
+      "to": "service/implementation",
+      "relation": "realizes",
+      "facets": [
+        "interface"
+      ],
+      "rationale": "Изменение основания требует проверки потребителя."
+    },
+    {
+      "from": "contracts/rules",
+      "to": "service/installed-rules",
+      "relation": "governs",
+      "facets": [
+        "semantic",
+        "quality"
+      ],
+      "rationale": "Изменение основания требует проверки потребителя."
+    }
+  ]
+}
