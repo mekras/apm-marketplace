@@ -1,0 +1,17 @@
+{
+  "scope_version": 1,
+  "sources": [
+    {
+      "id": "DEMO",
+      "title": "Справочник вводных занятий",
+      "root": "data/example",
+      "authorized_for_local_search": true,
+      "limitations": [
+        "Учебный пример"
+      ],
+      "constraints": {
+        "allowed_use": "Только проверка учебного примера"
+      }
+    }
+  ]
+}

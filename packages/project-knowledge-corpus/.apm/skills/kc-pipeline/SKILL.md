@@ -11,6 +11,11 @@ optional_dependencies: PyYAML
 
 ## Переносимость
 
+PyYAML 6.0.3 разрешён только в файлах из
+[`references/dependency-exceptions.json`](references/dependency-exceptions.json).
+Условия установки и работы без пакета описаны в
+[разрешении зависимости](references/pyyaml-approval.md).
+
 P0 — агент вручную читает карточки, формирует task packet и принимает
 проверяемое evidence без скрипта. P1 требует Python 3.10+; PyYAML — необязательная
 зависимость только для YAML-контроллера. При недоступном Python или PyYAML

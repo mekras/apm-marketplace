@@ -1,0 +1,32 @@
+{
+  "suite_version": 1,
+  "cases": [
+    {
+      "id": "direct",
+      "question": "Кого назначают стажёру?",
+      "query": "наставника",
+      "expected": [
+        {
+          "path": "data/example/statements.yml",
+          "contains": "Стажёру назначают наставника."
+        }
+      ]
+    },
+    {
+      "id": "expanded-paraphrase",
+      "question": "Будет ли у стажёра помощник?",
+      "query": "помощник наставника",
+      "expected": [
+        {
+          "path": "data/example/занятие.расшифровано",
+          "contains": "стажёру назначают наставника."
+        }
+      ]
+    },
+    {
+      "id": "no-known-evidence",
+      "query": "аэродинамика",
+      "expected": []
+    }
+  ]
+}

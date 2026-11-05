@@ -1,0 +1,14 @@
+{
+  "scope_version": 1,
+  "sources": [
+    {
+      "id": "DEMO",
+      "title": "Учебный корпус",
+      "root": "data/demo",
+      "authorized_for_local_search": true,
+      "limitations": [
+        "Вымышленные материалы для сравнения способов поиска"
+      ]
+    }
+  ]
+}

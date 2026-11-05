@@ -1,0 +1,16 @@
+{
+  "embedding_config_version": 1,
+  "model": "Укажите модель",
+  "revision": "Укажите закреплённую версию",
+  "execution": "local",
+  "approved_scope_sha256": "Укажите SHA-256 проверенного файла области",
+  "command": [
+    "Укажите локальную команду адаптера"
+  ],
+  "query_prefix": "query: ",
+  "passage_prefix": "passage: ",
+  "batch_size": 16,
+  "max_input_chars": 1000,
+  "rank_window": 50,
+  "rrf_constant": 60
+}

@@ -1,0 +1,9 @@
+permissions:
+  corpus_access_approved: true
+  source_evidence_to_judge_approved: true
+adapters:
+  unavailable: "definitely-not-installed"
+models:
+  inspector: unavailable:model
+  answerer: unavailable:model
+  judge: unavailable:model

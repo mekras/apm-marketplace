@@ -1,0 +1,7 @@
+suite_version: 1
+id: invalid
+description: "Broken fixture."
+cases:
+  - id: bad
+    status: approved
+    source: {artifact: data/release.md, line_start: 1, line_end: 1, sha256: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}

@@ -1,0 +1,17 @@
+suite_version: 1
+id: absent-adapter
+description: "Automation is unavailable."
+cases:
+  - id: absent-001
+    status: approved
+    source: {artifact: data/release.md, line_start: 1, line_end: 5, sha256: aa882393252bcf5f28f3de4e7ffaba73cbf3f2a66518c0aa9628ed548c5b7b33}
+    target: {text: "AGENTS.md applies when CLAUDE.md is absent.", importance_class: fact, importance_rationale: "Fixture.", limitations: []}
+    acceptable_answers: ["AGENTS.md applies when CLAUDE.md is absent."]
+    must_not_claim: []
+    corpus_expectation: {representation: present, statement_ids: [RELEASE-001]}
+    questions:
+      - {id: direct, type: direct, text: "When does AGENTS.md apply?"}
+      - {id: paraphrase, type: paraphrase, text: "Which file works alone?"}
+    provenance: {target_author: author-a}
+    review: {target_entailment: confirmed, question_answerability: confirmed, target_reviewer: reviewer-b, question_reviewer: reviewer-c}
+    access_review: {source_evidence_to_judge: approved, reviewed_by: reviewer-d, rationale: "Public fixture."}

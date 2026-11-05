@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "operations": [
     {
       "id": "validate-layout",
@@ -12,17 +12,6 @@
         "knowledge/catalog.yml",
         "knowledge/concepts.yml",
         "docs/decisions/mode.yml"
-      ],
-      "absent_inputs": [
-        "knowledge/analysis",
-        "knowledge/concepts.yml",
-        "knowledge/data/fixture/source-map.yml",
-        "knowledge/index/items.yml",
-        "knowledge/inventory",
-        "knowledge/normalized",
-        "knowledge/primary",
-        "knowledge/reports",
-        "knowledge/statements"
       ]
     },
     {
@@ -47,12 +36,6 @@
         "knowledge/corpus.yml",
         "knowledge/data/fixture/documents/item/item.yml",
         "knowledge/data/fixture/documents/item/snapshot.txt"
-      ],
-      "absent_inputs": [
-        "knowledge/data/corpus.yml",
-        "knowledge/data/fixture/corpus.yml",
-        "knowledge/data/fixture/documents/corpus.yml",
-        "knowledge/data/fixture/documents/item/corpus.yml"
       ]
     }
   ],
@@ -75,7 +58,45 @@
         "stdout_contains": [
           "\"contract_errors\": []"
         ]
-      }
+      },
+      "absent_inputs": [
+        {
+          "path": "knowledge/analysis",
+          "reason": "Минимальный корпус не содержит производных аналитических материалов."
+        },
+        {
+          "path": "knowledge/concepts.yml",
+          "reason": "В минимальной фикстуре понятийный аппарат ещё не создан; строгая проверка понятий не включена."
+        },
+        {
+          "path": "knowledge/data/fixture/source-map.yml",
+          "reason": "Фикстура короткого источника не требует карты длинного источника."
+        },
+        {
+          "path": "knowledge/index/items.yml",
+          "reason": "Фикстура использует карточку источника без общего индекса единиц."
+        },
+        {
+          "path": "knowledge/inventory",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/normalized",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/primary",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/reports",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/statements",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        }
+      ]
     },
     {
       "id": "invalid-corpus-is-rejected",
@@ -96,7 +117,41 @@
         "stdout_contains": [
           "missing corpus.yml"
         ]
-      }
+      },
+      "absent_inputs": [
+        {
+          "path": "knowledge/analysis",
+          "reason": "Минимальный корпус не содержит производных аналитических материалов."
+        },
+        {
+          "path": "knowledge/concepts.yml",
+          "reason": "В минимальной фикстуре понятийный аппарат ещё не создан; строгая проверка понятий не включена."
+        },
+        {
+          "path": "knowledge/index/items.yml",
+          "reason": "Фикстура использует карточку источника без общего индекса единиц."
+        },
+        {
+          "path": "knowledge/inventory",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/normalized",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/primary",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/reports",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/statements",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        }
+      ]
     },
     {
       "id": "healthy-quality-matrix",
@@ -190,7 +245,25 @@
             "contains": "sha256"
           }
         ]
-      }
+      },
+      "absent_inputs": [
+        {
+          "path": "knowledge/data/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        },
+        {
+          "path": "knowledge/data/fixture/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        },
+        {
+          "path": "knowledge/data/fixture/documents/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        },
+        {
+          "path": "knowledge/data/fixture/documents/item/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        }
+      ]
     },
     {
       "id": "admitted-source-and-project-decision",
@@ -214,7 +287,41 @@
         "stdout_contains": [
           "\"contract_errors\": []"
         ]
-      }
+      },
+      "absent_inputs": [
+        {
+          "path": "knowledge/analysis",
+          "reason": "Минимальный корпус не содержит производных аналитических материалов."
+        },
+        {
+          "path": "knowledge/data/fixture/source-map.yml",
+          "reason": "Фикстура короткого источника не требует карты длинного источника."
+        },
+        {
+          "path": "knowledge/index/items.yml",
+          "reason": "Фикстура использует карточку источника без общего индекса единиц."
+        },
+        {
+          "path": "knowledge/inventory",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/normalized",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/primary",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/reports",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        },
+        {
+          "path": "knowledge/statements",
+          "reason": "Устаревший корневой каталог запрещён действующим договором структуры корпуса."
+        }
+      ]
     },
     {
       "id": "admission-before-content-processing",
@@ -284,7 +391,25 @@
             "contains": "workflow_stage: indexed"
           }
         ]
-      }
+      },
+      "absent_inputs": [
+        {
+          "path": "knowledge/data/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        },
+        {
+          "path": "knowledge/data/fixture/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        },
+        {
+          "path": "knowledge/data/fixture/documents/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        },
+        {
+          "path": "knowledge/data/fixture/documents/item/corpus.yml",
+          "reason": "Кандидат поиска манифеста отсутствует; используется knowledge/corpus.yml в корне корпуса."
+        }
+      ]
     }
   ],
   "unexercised_functions": [

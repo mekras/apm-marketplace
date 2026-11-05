@@ -1,0 +1,11 @@
+permissions:
+  corpus_access_approved: true
+  source_evidence_to_judge_approved: true
+adapters:
+  fixture: "./adapter.py"
+models:
+  inspector: fixture:inspector
+  answerer: fixture:answerer
+  judge: fixture:judge
+timeout: 5
+closed_book: true

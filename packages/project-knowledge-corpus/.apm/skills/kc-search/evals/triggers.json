@@ -1,0 +1,59 @@
+{
+  "skill_name": "kc-search",
+  "cases": [
+    {
+      "id": "kc-search-find",
+      "prompt": "Найди в корпусе основания для сопровождения стажёра. Дай цитаты.",
+      "should_trigger": true,
+      "rationale": "Нужен поиск существующих оснований."
+    },
+    {
+      "id": "kc-search-miss",
+      "prompt": "Поиск в индексе ничего не дал. Проверь тексты утверждений и стенограммы.",
+      "should_trigger": true,
+      "rationale": "Нужно расширить поиск по слоям."
+    },
+    {
+      "id": "kc-search-cli",
+      "prompt": "Настрой единый локальный поиск по текущим текстам корпуса.",
+      "should_trigger": true,
+      "rationale": "Нужен поисковый вход для корпуса."
+    },
+    {
+      "id": "kc-search-extract",
+      "prompt": "Извлеки утверждения из новой записи.",
+      "should_trigger": false,
+      "rationale": "Извлечением управляет kc-statements."
+    },
+    {
+      "id": "kc-search-measure",
+      "prompt": "Измерь качество ответов модели через корпус и без него.",
+      "should_trigger": false,
+      "rationale": "Модельное измерение ведёт kc-retrieval-evaluation."
+    },
+    {
+      "id": "kc-search-fetch",
+      "prompt": "Добавь новый сайт в корпус и скачай материалы.",
+      "should_trigger": false,
+      "rationale": "Получение выполняет kc-sources-add или kc-pipeline."
+    },
+    {
+      "id": "kc-search-semantic",
+      "prompt": "Найди основания по смыслу: вопрос сформулирован другими словами, точных совпадений нет.",
+      "should_trigger": true,
+      "rationale": "Нужен поиск по смыслу через настроенный векторизатор."
+    },
+    {
+      "id": "kc-search-compare-ranks",
+      "prompt": "Сравни полнотекстовый, семантический и гибридный поиск на одинаковых вопросах, сохрани ранги.",
+      "should_trigger": true,
+      "rationale": "Сравнивается фактическая поисковая выдача, без оценки ответов модели."
+    },
+    {
+      "id": "kc-search-e5-setup",
+      "prompt": "Подключи готовый локальный E5 для смыслового поиска в этом корпусе.",
+      "should_trigger": true,
+      "rationale": "Настройка поставляемого профиля относится к поиску, веса и среда подключаются отдельно."
+    }
+  ]
+}

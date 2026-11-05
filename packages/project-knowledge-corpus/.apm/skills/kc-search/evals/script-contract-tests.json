@@ -1,0 +1,359 @@
+{
+  "version": 2,
+  "operations": [
+    {
+      "id": "search",
+      "script": "scripts/search-corpus.py",
+      "command_prefix": [
+        "search"
+      ],
+      "inputs": [
+        "scope.json",
+        "corpus/data/example/message.md",
+        "corpus/data/example/statements.yml",
+        "corpus/data/example/занятие.расшифровано"
+      ]
+    },
+    {
+      "id": "evaluate",
+      "script": "scripts/search-corpus.py",
+      "command_prefix": [
+        "evaluate"
+      ],
+      "inputs": [
+        "scope.json",
+        "corpus/data/example/message.md",
+        "corpus/data/example/statements.yml",
+        "corpus/data/example/занятие.расшифровано",
+        "suite.json"
+      ]
+    },
+    {
+      "id": "search-semantic",
+      "script": "scripts/search-corpus.py",
+      "command_prefix": [
+        "search",
+        "--mode",
+        "semantic"
+      ],
+      "inputs": [
+        "scope.json",
+        "embedding.json",
+        "embedding_adapter.py",
+        "corpus/data/example/message.md",
+        "corpus/data/example/statements.yml",
+        "corpus/data/example/занятие.расшифровано"
+      ]
+    },
+    {
+      "id": "search-hybrid",
+      "script": "scripts/search-corpus.py",
+      "command_prefix": [
+        "search",
+        "--mode",
+        "hybrid"
+      ],
+      "inputs": [
+        "scope.json",
+        "embedding.json",
+        "embedding_adapter.py",
+        "corpus/data/example/message.md",
+        "corpus/data/example/statements.yml",
+        "corpus/data/example/занятие.расшифровано"
+      ]
+    },
+    {
+      "id": "search-compare",
+      "script": "scripts/search-corpus.py",
+      "command_prefix": [
+        "evaluate",
+        "--mode",
+        "compare"
+      ],
+      "inputs": [
+        "scope.json",
+        "embedding.json",
+        "embedding_adapter.py",
+        "corpus/data/example/message.md",
+        "corpus/data/example/statements.yml",
+        "corpus/data/example/занятие.расшифровано",
+        "suite.json"
+      ]
+    },
+    {
+      "id": "configure-e5",
+      "script": "scripts/configure-e5.py",
+      "command_prefix": [
+        "--scope"
+      ],
+      "inputs": [
+        "scope.json"
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "id": "search-statements-and-transcript",
+      "script": "scripts/search-corpus.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "search"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "search",
+        "--corpus-root",
+        "{fixture}/corpus",
+        "--scope",
+        "{fixture}/scope.json",
+        "--top-k",
+        "10",
+        "--query",
+        "наставника"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "Стажёру назначают наставника.",
+          "занятие.расшифровано",
+          "unassessed",
+          "configured_sources_only"
+        ]
+      }
+    },
+    {
+      "id": "evaluate-real-ranks",
+      "script": "scripts/search-corpus.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "evaluate"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "evaluate",
+        "--corpus-root",
+        "{fixture}/corpus",
+        "--scope",
+        "{fixture}/scope.json",
+        "--top-k",
+        "10",
+        "--suite",
+        "{fixture}/suite.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"recall_at_k\": 1.0",
+          "\"answer_quality_measured\": false",
+          "expanded-paraphrase"
+        ]
+      }
+    },
+    {
+      "id": "empty-query-rejected",
+      "script": "scripts/search-corpus.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "search"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "search",
+        "--corpus-root",
+        "{fixture}/corpus",
+        "--scope",
+        "{fixture}/scope.json",
+        "--top-k",
+        "10",
+        "--query",
+        "***"
+      ],
+      "expect": {
+        "exit_code": 1,
+        "stderr_contains": [
+          "Query must contain words"
+        ]
+      }
+    },
+    {
+      "id": "search-semantic",
+      "script": "scripts/search-corpus.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "search-semantic"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "search",
+        "--mode",
+        "semantic",
+        "--corpus-root",
+        "{fixture}/corpus",
+        "--scope",
+        "{fixture}/scope.json",
+        "--embedding-config",
+        "{fixture}/embedding.json",
+        "--top-k",
+        "3",
+        "--query",
+        "помощник"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "test-vectors",
+          "fixture-v1",
+          "Стажёру назначают наставника.",
+          "\"mode\": \"semantic\""
+        ]
+      }
+    },
+    {
+      "id": "search-hybrid",
+      "script": "scripts/search-corpus.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "search-hybrid"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "search",
+        "--mode",
+        "hybrid",
+        "--corpus-root",
+        "{fixture}/corpus",
+        "--scope",
+        "{fixture}/scope.json",
+        "--embedding-config",
+        "{fixture}/embedding.json",
+        "--top-k",
+        "3",
+        "--query",
+        "помощник"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "test-vectors",
+          "fixture-v1",
+          "Стажёру назначают наставника.",
+          "\"mode\": \"hybrid\""
+        ]
+      }
+    },
+    {
+      "id": "search-compare",
+      "script": "scripts/search-corpus.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "search-compare"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "evaluate",
+        "--mode",
+        "compare",
+        "--corpus-root",
+        "{fixture}/corpus",
+        "--scope",
+        "{fixture}/scope.json",
+        "--embedding-config",
+        "{fixture}/embedding.json",
+        "--top-k",
+        "3",
+        "--suite",
+        "{fixture}/suite.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "test-vectors",
+          "fixture-v1",
+          "Стажёру назначают наставника.",
+          "\"mode\": \"compare\""
+        ]
+      }
+    },
+    {
+      "id": "configure-local-e5",
+      "script": "scripts/configure-e5.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "configure-e5"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--scope",
+        "{fixture}/scope.json",
+        "--approved-scope-sha256",
+        "7d2e6b0150f3b005077d980461cc3d25ce5b7b2b0fd44f768fefa864dfecdf7d",
+        "--model-dir",
+        "{fixture}/model.local.data",
+        "--runtime-python",
+        "{python}",
+        "--output",
+        "{fixture}/e5.local.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "\"runtime_validated\": false",
+          "Xenova/multilingual-e5-small"
+        ],
+        "files": [
+          {
+            "path": "e5.local.json",
+            "json": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "configure-shared-model",
+      "script": "scripts/configure-e5.py",
+      "fixture": "evals/script-fixtures/ready",
+      "covers": [
+        "configure-e5"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--scope",
+        "{fixture}/scope.json",
+        "--approved-scope-sha256",
+        "7d2e6b0150f3b005077d980461cc3d25ce5b7b2b0fd44f768fefa864dfecdf7d",
+        "--shared-dir",
+        "{fixture}/common",
+        "--runtime-python",
+        "{python}",
+        "--output",
+        "{fixture}/shared.local.json"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "Xenova--multilingual-e5-small",
+          "\"runtime_preparation\": \"not_requested\""
+        ],
+        "files": [
+          {
+            "path": "shared.local.json",
+            "json": true
+          }
+        ]
+      }
+    }
+  ],
+  "unexercised_functions": [
+    {
+      "script": "scripts/search-corpus.py",
+      "function": "scan.<locals>.walk_error",
+      "reason": "Отказ обхода каталога зависит от прав ОС. Отсутствующий источник проверяется регрессией CLI, ветка отказа каталога остаётся ограничением контрактного прогона."
+    },
+    {
+      "script": "scripts/configure-e5.py",
+      "function": "download_model",
+      "reason": "Сеть и настоящие веса исключены из обычного контракта. Загрузка проверяется регрессиями с подставным транспортом и отдельным модельным прогоном по инструкции E5."
+    }
+  ]
+}

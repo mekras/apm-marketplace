@@ -1,0 +1,16 @@
+{
+  "scope_version": 1,
+  "sources": [
+    {
+      "id": "DEMO",
+      "title": "Учебные материалы",
+      "description": "Вводные занятия и справочник",
+      "root": "data/example",
+      "authorized_for_local_search": true,
+      "allow_local": false,
+      "exclude": [],
+      "constraints": {"allowed_use": "Укажите правила конкретного источника"},
+      "limitations": ["Образец требует проверки состава и разрешений"]
+    }
+  ]
+}

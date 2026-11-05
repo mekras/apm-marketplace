@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "dependencies": [
+    {
+      "package": "numpy",
+      "imports": [
+        "numpy"
+      ],
+      "version": "2.2.2",
+      "scripts": [
+        "scripts/e5_runtime/adapter.py"
+      ],
+      "approval": {
+        "status": "approved",
+        "owner": "Пользователь проекта",
+        "decision": "references/e5-dependency-approval.md"
+      },
+      "justification": "Вычисление векторов закреплённой ONNX-моделью на CPU в необязательном профиле E5.",
+      "installation": {
+        "command": "python3.13 -m pip --python <venv>/bin/python install --no-compile --only-binary=:all: --require-hashes -r assets/e5-requirements.txt",
+        "integrity": "sha256:2f01cc127b3ecd2694db95e079a562d61f1ce6f81916473de9b5196431adc287"
+      },
+      "source": "https://pypi.org/project/numpy/2.2.2/",
+      "license": "BSD-3-Clause",
+      "network": true,
+      "absence_behavior": "Отказ E5 без установки и без скрытой смены режима. Агент сообщает причину и продолжает P0.",
+      "basic_route": "P0: чтение и поиск файловыми средствами агента без поставляемого кода."
+    },
+    {
+      "package": "onnxruntime",
+      "imports": [
+        "onnxruntime"
+      ],
+      "version": "1.26.0",
+      "scripts": [
+        "scripts/e5_runtime/adapter.py"
+      ],
+      "approval": {
+        "status": "approved",
+        "owner": "Пользователь проекта",
+        "decision": "references/e5-dependency-approval.md"
+      },
+      "justification": "Вычисление векторов закреплённой ONNX-моделью на CPU в необязательном профиле E5.",
+      "installation": {
+        "command": "python3.13 -m pip --python <venv>/bin/python install --no-compile --only-binary=:all: --require-hashes -r assets/e5-requirements.txt",
+        "integrity": "sha256:2f01cc127b3ecd2694db95e079a562d61f1ce6f81916473de9b5196431adc287"
+      },
+      "source": "https://pypi.org/project/onnxruntime/1.26.0/",
+      "license": "MIT",
+      "network": true,
+      "absence_behavior": "Отказ E5 без установки и без скрытой смены режима. Агент сообщает причину и продолжает P0.",
+      "basic_route": "P0: чтение и поиск файловыми средствами агента без поставляемого кода."
+    },
+    {
+      "package": "tokenizers",
+      "imports": [
+        "tokenizers"
+      ],
+      "version": "0.22.2",
+      "scripts": [
+        "scripts/e5_runtime/adapter.py"
+      ],
+      "approval": {
+        "status": "approved",
+        "owner": "Пользователь проекта",
+        "decision": "references/e5-dependency-approval.md"
+      },
+      "justification": "Вычисление векторов закреплённой ONNX-моделью на CPU в необязательном профиле E5.",
+      "installation": {
+        "command": "python3.13 -m pip --python <venv>/bin/python install --no-compile --only-binary=:all: --require-hashes -r assets/e5-requirements.txt",
+        "integrity": "sha256:2f01cc127b3ecd2694db95e079a562d61f1ce6f81916473de9b5196431adc287"
+      },
+      "source": "https://pypi.org/project/tokenizers/0.22.2/",
+      "license": "Apache-2.0",
+      "network": true,
+      "absence_behavior": "Отказ E5 без установки и без скрытой смены режима. Агент сообщает причину и продолжает P0.",
+      "basic_route": "P0: чтение и поиск файловыми средствами агента без поставляемого кода."
+    }
+  ]
+}

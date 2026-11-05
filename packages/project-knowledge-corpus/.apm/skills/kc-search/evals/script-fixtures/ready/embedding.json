@@ -1,0 +1,17 @@
+{
+  "embedding_config_version": 1,
+  "model": "test-vectors",
+  "revision": "fixture-v1",
+  "execution": "local",
+  "approved_scope_sha256": "7d2e6b0150f3b005077d980461cc3d25ce5b7b2b0fd44f768fefa864dfecdf7d",
+  "command": [
+    "{python}",
+    "{config_dir}/embedding_adapter.py"
+  ],
+  "query_prefix": "query: ",
+  "passage_prefix": "passage: ",
+  "batch_size": 16,
+  "max_input_chars": 1000,
+  "rank_window": 50,
+  "rrf_constant": 60
+}

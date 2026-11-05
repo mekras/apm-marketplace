@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "dependencies": [
+    {
+      "package": "PyYAML",
+      "imports": [
+        "yaml"
+      ],
+      "version": "6.0.3",
+      "scripts": [
+        "scripts/record-snapshot-verification.py",
+        "scripts/validate-corpus-layout.py"
+      ],
+      "approval": {
+        "status": "approved",
+        "owner": "ответственный за решение по проекту",
+        "decision": "references/pyyaml-approval.md"
+      },
+      "justification": "Чтение и запись YAML в существующей необязательной автоматизации навыка.",
+      "installation": {
+        "command": "<python> -m pip install --no-deps --require-hashes -r references/pyyaml-requirements.txt",
+        "integrity": "sha256:8ef62a5d305b85696ba2c3d56b1c66e9582dd5ca32690a7c7605955d68fe06f8"
+      },
+      "source": "https://pypi.org/project/PyYAML/6.0.3/",
+      "license": "MIT. При распространении пакета сохраняются уведомления об авторстве и текст лицензии. Пакет не включён в коллекцию.",
+      "network": false,
+      "absence_behavior": "Зависимая операция завершается с сообщением о PyYAML, без установки пакета и изменения данных корпуса.",
+      "basic_route": "Ручной маршрут раздела «Переносимость» в SKILL.md сохраняет полезный результат без Python и PyYAML."
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "kc-search"
+  short_description: "Поиск по словам и смыслу с точными ссылками"
+  default_prompt: "Используй $kc-search, чтобы найти основание по словам или смыслу, проверить фрагмент и дать точную ссылку с ограничениями."
+policy:
+  allow_implicit_invocation: true
