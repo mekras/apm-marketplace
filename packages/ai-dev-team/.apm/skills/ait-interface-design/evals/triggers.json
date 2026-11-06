@@ -2,6 +2,12 @@
   "skill_name": "ait-interface-design",
   "cases": [
     {
+      "id": "ait-interface-design-positive-plan-local-visual-change",
+      "prompt": "Меняем только контраст существующей подписи по принятому требованию. Составь порядок от проверки основания до внедрения. Ответ без изменения файлов.",
+      "should_trigger": true,
+      "rationale": "План интерфейсной правки сохраняет проверку макета и согласование перед внедрением, даже когда в текущем ответе не меняются файлы."
+    },
+    {
       "id": "ait-interface-design-interface-design-positive-new-screen",
       "prompt": "Спроектируй и реализуй экран входа для Android-приложения: нужен опрятный интерфейс, состояния ошибки и загрузки.",
       "should_trigger": true,
