@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterator
 
 # Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
@@ -224,6 +224,15 @@ def validate_case(
     if not isinstance(vcs, str) or vcs not in {"git", "none"}:
         errors.append(f"{label}: workspace_vcs must be git or none")
     validate_input_files(case.get("input_files"), label, errors)
+    if "rule_files" in case:
+        require_string_list(case["rule_files"], f"{label}.rule_files", errors)
+        for value in case["rule_files"] if isinstance(case["rule_files"], list) else []:
+            if not isinstance(value, str):
+                continue
+            path = PurePosixPath(value)
+            if (path.is_absolute() or ".." in path.parts or "\\" in value
+                    or len(path.parts) < 2 or path.suffix != ".md" or any(part.lower() == "evals" for part in path.parts)):
+                errors.append(f"{label}: rule_files содержит недопустимый путь правила: {value}")
 
     validate_expected_output(case.get("expected_output"), label, errors)
     validate_application_contract(case, label, errors)

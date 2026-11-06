@@ -36,6 +36,18 @@
       "prompt": "Настрой общую политику моделей и маршрутов для подагентов двух проектов.",
       "should_trigger": false,
       "rationale": "Настройка политики относится к ai-setup-subagents."
+    },
+    {
+      "id": "ai-session-handoff-positive-other-agent",
+      "prompt": "Подготовь запрос об этой проблеме для агента другого проекта, решение пусть выберет он.",
+      "should_trigger": true,
+      "rationale": "Нужна передача проблемы и фактов другому исполнителю."
+    },
+    {
+      "id": "ai-session-handoff-negative-solve-here",
+      "prompt": "Разберись с этой ошибкой и исправь её в текущем проекте.",
+      "should_trigger": false,
+      "rationale": "Пользователь поручил выполнение, передачу задачи не просил."
     }
   ]
 }

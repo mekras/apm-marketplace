@@ -17,6 +17,15 @@ class PolicyError(ValueError):
     """Ошибка структуры или свидетельств пакета передачи."""
 
 HANDOFF_SECTIONS = (
+    "Проблема и цель",
+    "Существенные факты",
+)
+OPTIONAL_SECTIONS = (
+    "Решения пользователя",
+    "Предположения и наработки",
+    "Состояние работы",
+)
+LEGACY_HANDOFF_SECTIONS = (
     "Причина передачи",
     "Цель и критерии готовности",
     "Границы и запреты",
@@ -60,17 +69,18 @@ def check_handoff(args: argparse.Namespace) -> int:
         return 2
     missing: list[str] = []
     sections: dict[str, str] = {}
-    for section in HANDOFF_SECTIONS + EVALUATION_SECTIONS:
-        heading = f"## {section}"
-        start = content.find(heading)
-        if start < 0:
-            if section in HANDOFF_SECTIONS:
+    headings = list(re.finditer(r"(?m)^## ([^\r\n]+?)[ \t]*$", content))
+    for index, heading in enumerate(headings):
+        end = headings[index + 1].start() if index + 1 < len(headings) else len(content)
+        sections[heading.group(1)] = content[heading.end():end]
+    required = HANDOFF_SECTIONS if any(section in sections for section in HANDOFF_SECTIONS) else LEGACY_HANDOFF_SECTIONS
+    known = dict.fromkeys(HANDOFF_SECTIONS + OPTIONAL_SECTIONS + LEGACY_HANDOFF_SECTIONS + EVALUATION_SECTIONS)
+    for section in known:
+        if section not in sections:
+            if section in required:
                 missing.append(section)
             continue
-        start += len(heading)
-        end = content.find("\n## ", start)
-        section_content = content[start:] if end < 0 else content[start:end]
-        sections[section] = section_content
+        section_content = sections[section]
         if not section_content.strip() or "<заполнить>" in section_content:
             missing.append(section)
     if missing:

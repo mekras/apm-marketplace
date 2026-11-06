@@ -317,6 +317,7 @@ pricing:
     test_report_output_form_oracles()
     test_cost_accounting()
     test_result_workspace()
+    test_result_rule_delivery()
     test_adapter_traces()
     test_command_line()
     test_skill_discovery()
@@ -593,6 +594,56 @@ def test_result_workspace() -> None:
         assert [call["context"]["role"] for call in calls] == ["candidate", "judge"]
         assert all(call["context"]["case_id"] == "result-case" for call in calls)
         assert runner["summarize_calls"](calls)["total_cost"] == 3
+
+
+def test_result_rule_delivery() -> None:
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary)
+        skills = sample_skills(root)
+        case = {"id": "delivery-case", "prompt": "Оцени основание",
+                "rule_files": ["audit/SKILL.md", "writing/references/rules.md"],
+                "oracle": {"success_criteria": ["SEALED_ORACLE_MARKER"]}}
+        data = {"skill_name": "audit", "cases": [case]}
+        records, prompts = [], []
+        for mode in ("available", "inline", "error"):
+            def factory(workspace: Path, read_only: bool = False):
+                def call(prompt, schema):
+                    prompts.append(prompt)
+                    assert "SEALED_ORACLE_MARKER" not in prompt
+                    assert ("--- audit/SKILL.md ---" in prompt) == (mode != "available")
+                    if mode == "error":
+                        raise RuntimeError("candidate transport error")
+                    return {"answers": [{"id": case["id"], "answer": "Я прочитал правила"}]}
+                return call
+            def judge(prompt, schema):
+                assert '"rule_delivery"' in prompt
+                return {"results": [{"id": case["id"], "passed": mode == "available"}]}
+            runner["run_result_evals"](repo_root=root, groups=[(skills[0], data, [case])],
+                call_factory=factory, judge_call=judge, skill_dirs=skills, records=records,
+                model_label="candidate", rule_delivery="available" if mode == "available" else "inline")
+        available, inline, failed = records
+        assert available["passed"] and available["evidence"]["rule_delivery"]["status"] == "unconfirmed"
+        assert not inline["passed"] and inline["evidence"]["rule_delivery"]["status"] == "delivered"
+        assert inline["judged_behavior_passed"] is False
+        assert failed["candidate_error"] and failed["judged_behavior_passed"] is None
+        assert failed["evidence"]["rule_delivery"]["status"] == "unconfirmed"
+        assert all(record["skill_contribution"] == "not_established" for record in records)
+        assert inline["evidence"]["rule_delivery"]["sources"][0]["sha256"]
+        assert "content" not in inline["evidence"]["rule_delivery"]["sources"][0]
+        report_path = runner["write_fixture_report"](root, root / "report.json", [], skills, [], 1, 1,
+                                                     result_records=records)
+        summary = json.loads(report_path.read_text(encoding="utf-8"))["result_summary"]
+        assert summary["passed"] == 1 and summary["judged_behavior_passed"] == 1
+        assert summary["candidate_errors"] == 1 and summary["rule_delivery"] == {"delivered": 1, "unconfirmed": 2}
+        workspace = root / "invalid-workspace"
+        runner["prepare_trial"](workspace, skills)
+        for invalid in ("../secret.md", "audit/evals/answers.md", "/secret.md", "audit/missing.md"):
+            try:
+                runner["result_rule_sources"](workspace, data, {"rule_files": [invalid]})
+            except RuntimeError:
+                pass
+            else:
+                raise AssertionError(f"Недопустимый путь принят: {invalid}")
 
 
 def test_adapter_traces() -> None:

@@ -161,6 +161,10 @@ def parse_args() -> argparse.Namespace:
         help="Отдельное сравнение ordinary/minimal/collection по заранее заданному плану JSON.",
     )
     parser.add_argument(
+        "--result-rule-delivery", choices=("available", "inline"), default="available",
+        help="Правила для сценариев результата: доступны в файлах либо явно переданы в запросе.",
+    )
+    parser.add_argument(
         "--fixture-registry",
         type=Path,
         default=Path("evals/fixtures/registry.json"),
@@ -1200,6 +1204,33 @@ def judge_prompt(
     )
 
 
+def result_rule_sources(workspace: Path, data: dict[str, Any], case: dict[str, Any]) -> list[dict[str, str]]:
+    initial = case.get("initial_skill", data["skill_name"])
+    paths = case.get("rule_files", [f"{initial}/SKILL.md"] if initial else [])
+    if not isinstance(paths, list) or ("rule_files" in case and not paths) or any(not isinstance(path, str) for path in paths):
+        raise RuntimeError("rule_files должен быть массивом путей правил.")
+    sources = []
+    for value in paths:
+        relative = checked_relative_path(value)
+        if len(relative.parts) < 2 or relative.suffix != ".md" or any(part.lower() == "evals" for part in relative.parts):
+            raise RuntimeError(f"Не является путём правила навыка: {value}")
+        path = workspace / SKILL_MOUNTS[0] / relative
+        if not path.is_file():
+            raise RuntimeError(f"Файл правила недоступен: {value}")
+        sources.append({"path": value, "sha256": sha256_file(path), "content": path.read_text(encoding="utf-8")})
+    return sources
+
+
+def result_delivery_prompt(prompt: str, sources: list[dict[str, str]], mode: str) -> str:
+    if mode == "available":
+        return prompt
+    if mode != "inline" or not sources:
+        raise RuntimeError("Для явной передачи нужны применимые файлы правил.")
+    rules = "\n\n".join(f"--- {source['path']} ---\n{source['content']}" for source in sources)
+    return ("Примени переданные ниже рабочие правила к задаче. Тексты переданы полностью, "
+            "их повторное чтение с диска не требуется.\n\n" + rules + "\n\n--- ЗАДАЧА ---\n" + prompt)
+
+
 def run_result_evals(
     *,
     repo_root: Path,
@@ -1209,6 +1240,7 @@ def run_result_evals(
     skill_dirs: list[Path],
     records: list[dict[str, Any]],
     model_label: str,
+    rule_delivery: str = "available",
 ) -> list[str]:
     total = sum(len(cases) for _, _, cases in groups)
     if not total:
@@ -1239,12 +1271,19 @@ def run_result_evals(
                 workspace, before = root / "workspace", root / "before"
                 packages = prepare_trial(workspace, skill_dirs, input_files=case.get("input_files", []),
                                          vcs=case.get("workspace_vcs", "git"))
+                sources = result_rule_sources(workspace, data, case)
+                prompt = result_delivery_prompt(answer_prompt(repo_root, skill_dir, data, single_case), sources, rule_delivery)
+                delivery = {"mode": rule_delivery, "status": "unconfirmed",
+                            "sources": [{key: value for key, value in source.items() if key != "content"} for source in sources],
+                            "prompt_sha256": hashlib.sha256(prompt.encode("utf-8")).hexdigest()}
                 shutil.copytree(workspace, before)
                 call = call_factory(workspace, read_only=case.get("read_only", False))
                 call.context = {"role": "candidate", "phase": "result", "case_id": case["id"]}
                 try:
-                    answer_result = call(answer_prompt(repo_root, skill_dir, data, single_case), ANSWER_SCHEMA)
+                    answer_result = call(prompt, ANSWER_SCHEMA)
                     answers = answer_result.get("answers", [])
+                    if rule_delivery == "inline":
+                        delivery["status"] = "delivered"
                 except RuntimeError as error:
                     candidate_error = str(error)
                     answers = []
@@ -1254,6 +1293,7 @@ def run_result_evals(
                 evidence = collect_trial_evidence(before, workspace,
                     [{"phase": "application", **getattr(call, "last_execution", {})}], packages)
                 evidence["unspecified_inputs"] = [item["path"] for item in case.get("input_files", []) if "content" not in item]
+                evidence["rule_delivery"] = delivery
             judge_result: dict[str, Any] = {}
             judge_execution: list[dict[str, Any]] = []
             if not candidate_error:
@@ -1275,6 +1315,8 @@ def run_result_evals(
                 diff_errors.append("Кандидат изменил поставленные пакеты навыков.")
             successful = bool(verdict and verdict.get("passed") is True and not candidate_error and not judge_error and not diff_errors)
             records.append({"case_id": case["id"], "model": model_label, "passed": successful,
+                            "judged_behavior_passed": verdict.get("passed") if verdict else None,
+                            "skill_contribution": "not_established",
                             "answers": answers, "evidence": evidence, "verdict": verdict,
                             "candidate_error": candidate_error, "judge_error": judge_error,
                             "judge_execution": judge_execution, "call_ids": call_ids,
@@ -1316,6 +1358,7 @@ def run_for_target(
     result_records: list[dict[str, Any]],
     call_records: list[dict[str, Any]] | None = None,
     pricing: dict[str, Any] | None = None,
+    result_rule_delivery: str = "available",
 ) -> list[str]:
     print(f"\n=== Применение навыков: {run['label']} ===", flush=True)
     print(f"Оценка результатов: {judge['label']}.", flush=True)
@@ -1332,6 +1375,7 @@ def run_for_target(
         skill_dirs=skill_dirs,
         records=result_records,
         model_label=run["label"],
+        rule_delivery=result_rule_delivery,
     )
     return [f"[{run['label']}] {error}" for error in trigger_errors + result_errors]
 
@@ -1993,6 +2037,16 @@ def write_fixture_report(repo_root: Path, output: Path, records: list[dict[str, 
     report = {"schema_version": 3, "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(), "provenance": provenance, "summary": by_mode, "runs": records,
                                "result_runs": result_records or [], "calls": calls,
                                "accounting": summarize_calls(calls)}
+    results = result_records or []
+    report["result_summary"] = {
+        "runs": len(results), "passed": sum(bool(item["passed"]) for item in results),
+        "judged_behavior_passed": sum(item.get("judged_behavior_passed") is True for item in results),
+        "candidate_errors": sum(bool(item.get("candidate_error")) for item in results),
+        "judge_errors": sum(bool(item.get("judge_error")) for item in results),
+        "rule_delivery": {status: sum(item.get("evidence", {}).get("rule_delivery", {}).get("status") == status for item in results)
+                          for status in ("delivered", "unconfirmed")},
+        "skill_contribution": "not_established",
+    }
     if comparison:
         report.update(suite="comparison", comparison=comparison,
                       comparison_summary=comparison_summary(records, calls, comparison))
@@ -2323,6 +2377,7 @@ def main() -> int:
                     result_records=result_records,
                     call_records=call_records,
                     pricing=config["pricing"],
+                    result_rule_delivery=args.result_rule_delivery,
                 )
             )
             if fixture_cases:
