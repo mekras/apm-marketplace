@@ -58,7 +58,7 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.8.0 --target <цель>
+apm install ai-agent-supervisor@mekras#2.8.1 --target <цель>
 ```
 
 `<цель>` — это `claude` для Claude Code или `codex` для Codex CLI.
@@ -66,7 +66,7 @@ apm install ai-agent-supervisor@mekras#2.8.0 --target <цель>
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.8.0 --target codex
+apm install ai-agent-supervisor@mekras#2.8.1 --target codex
 ```
 
 ### Настройка проекта
