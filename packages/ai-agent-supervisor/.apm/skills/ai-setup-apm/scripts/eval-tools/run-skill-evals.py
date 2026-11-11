@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import argparse
+from eval_freshness import inventory as scenario_inventory
 import datetime as dt
 import difflib
 import hashlib
@@ -2008,7 +2009,8 @@ def git_revision(repo_root: Path) -> str | None:
 def write_fixture_report(repo_root: Path, output: Path, records: list[dict[str, Any]], skill_dirs: list[Path], cases: list[dict[str, Any]], repetitions: int, judge_repetitions: int,
                          result_records: list[dict[str, Any]] | None = None,
                          call_records: list[dict[str, Any]] | None = None,
-                         comparison: dict[str, Any] | None = None) -> Path:
+                         comparison: dict[str, Any] | None = None,
+                         scenario_revisions: dict[str, str] | None = None) -> Path:
     path = output if output.is_absolute() else repo_root / output
     if path.suffix.lower() != ".json":
         path.mkdir(parents=True, exist_ok=True)
@@ -2036,6 +2038,7 @@ def write_fixture_report(repo_root: Path, output: Path, records: list[dict[str, 
     calls = call_records if call_records is not None else []
     report = {"schema_version": 3, "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(), "provenance": provenance, "summary": by_mode, "runs": records,
                                "result_runs": result_records or [], "calls": calls,
+                               "scenario_revisions": scenario_revisions or {},
                                "accounting": summarize_calls(calls)}
     results = result_records or []
     report["result_summary"] = {
@@ -2355,6 +2358,7 @@ def main() -> int:
             print("Выполнение задач требует адаптера с рабочей копией. Добавьте в workspace_models: "
                   + ", ".join(unavailable), file=sys.stderr)
             return 1
+    scenario_revisions = scenario_inventory(repo_root, catalog_dirs, args.fixture_registry)
     repetitions = args.repetitions or config["repetitions"]
     if not confirm_model_run(runs=config["runs"], fixture_cases=fixture_cases, trigger_cases=trigger_cases, result_groups=result_groups, repetitions=repetitions, judge_repetitions=config["judge_repetitions"], yes=args.yes):
         print("Модельный прогон отменён до вызова моделей.", flush=True)
@@ -2414,6 +2418,7 @@ def main() -> int:
                 config["judge_repetitions"],
                 result_records,
                 call_records,
+                scenario_revisions=scenario_revisions,
             )
             print(f"Отчёт модельного прогона: {report_path}", flush=True)
 

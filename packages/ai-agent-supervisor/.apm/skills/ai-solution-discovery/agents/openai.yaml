@@ -1,0 +1,4 @@
+interface:
+  display_name: "ai-solution-discovery"
+  short_description: "Поиск и сравнение полезных решений других проектов"
+  default_prompt: "Используй $ai-solution-discovery, чтобы настроить источники или собрать предложения полезных решений для текущего продукта из выбранных локальных проектов."

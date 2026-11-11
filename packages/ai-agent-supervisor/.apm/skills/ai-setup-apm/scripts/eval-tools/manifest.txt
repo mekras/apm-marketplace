@@ -25,3 +25,5 @@ run-fixture-checks.py|tools/run-fixture-checks.py|644
 adapters/codex|tools/adapters/codex|755
 adapters/claude|tools/adapters/claude|755
 evals.sample.yml|evals.sample.yml|644
+eval_freshness.py|tools/eval_freshness.py|644
+test-eval-freshness.py|tools/test-eval-freshness.py|644

@@ -36,6 +36,7 @@ def main() -> int:
         [tools / "test-validate-python-artifacts.py"],
         [tools / "test-validate-python-syntax.py"],
         [tools / "test-run-apm-safe.py"],
+        [tools / "test-eval-freshness.py"],
         [tools / "test-apm-audit-ci.py"],
         [tools / "validate-hidden-unicode.py"],
         [tools / "validate-skill-descriptions.py", Path(args.skills_path)],
@@ -46,6 +47,7 @@ def main() -> int:
     if (root / "evals" / "fixtures" / "registry.json").is_file():
         checks.append([tools / "validate-fixture-evals.py"])
         checks.append([tools / "run-fixture-checks.py"])
+    checks.append([tools / "eval_freshness.py", Path(args.skills_path)])
     checks.append([tools / "validate-python-artifacts.py"])
     for command in checks:
         script = command[0]

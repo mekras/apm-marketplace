@@ -1,0 +1,77 @@
+{
+  "skill_name": "ai-solution-discovery",
+  "cases": [
+    {
+      "id": "ai-solution-discovery-setup",
+      "prompt": "Настрой сбор полезных решений из локальных проектов. Я дам пути.",
+      "should_trigger": true,
+      "rationale": "Настройка списка источников."
+    },
+    {
+      "id": "ai-solution-discovery-collect",
+      "prompt": "Собери полезные правила и навыки из отслеживаемых проектов для нашего продукта.",
+      "should_trigger": true,
+      "rationale": "Сбор по сохранённому списку."
+    },
+    {
+      "id": "ai-solution-discovery-add",
+      "prompt": "Добавь ../example-source к источникам полезных решений, существующие оставь.",
+      "should_trigger": true,
+      "rationale": "Обновление списка источников."
+    },
+    {
+      "id": "ai-solution-discovery-repeat",
+      "prompt": "Повтори поиск решений в проектах из нашей конфигурации.",
+      "should_trigger": true,
+      "rationale": "Повторный сбор."
+    },
+    {
+      "id": "ai-solution-discovery-static-source",
+      "prompt": "Посмотри правила соседних проектов из списка и предложи подходящие нам улучшения.",
+      "should_trigger": true,
+      "rationale": "Статический анализ с отбором для текущего продукта."
+    },
+    {
+      "id": "ai-solution-discovery-history",
+      "prompt": "Проанализируй историю моих сессий по всем проектам.",
+      "should_trigger": false,
+      "rationale": "Анализ истории относится к ai-usage-analysis."
+    },
+    {
+      "id": "ai-solution-discovery-create",
+      "prompt": "Создай новый навык поиска решений в других проектах.",
+      "should_trigger": false,
+      "rationale": "Разработка механизма относится к ai-skill-development, не запускает сбор."
+    },
+    {
+      "id": "ai-solution-discovery-audit",
+      "prompt": "Проверь конфликты в AGENTS.md этого проекта.",
+      "should_trigger": false,
+      "rationale": "Аудит действующих правил относится к ai-audit-agent-rules."
+    },
+    {
+      "id": "ai-solution-discovery-install",
+      "prompt": "Найди и установи популярный навык из интернет-каталога.",
+      "should_trigger": false,
+      "rationale": "Поиск по локальному списку не заменяет сетевой каталог и установку."
+    },
+    {
+      "id": "ai-solution-discovery-implement",
+      "prompt": "Внедри уже согласованное предложение о резервных копиях.",
+      "should_trigger": false,
+      "rationale": "Внедрение согласованного изменения идёт по профильному маршруту."
+    },
+    {
+      "id": "ai-solution-discovery-cross-project",
+      "prompt": "Сравни повторяющиеся решения во всех отслеживаемых проектах. Учти, что часть правил может быть стандартом одной организации.",
+      "should_trigger": true,
+      "rationale": "Общее сравнение локальных источников и условий переноса."
+    },
+    {
+      "id": "ai-solution-discovery-nested",
+      "prompt": "Собери полезные решения из источников списка, включая вложенные проекты внутри выбранных каталогов.",
+      "should_trigger": true,
+      "rationale": "Обнаружение вложенных проектов при сборе."
+    }
+  ]
+}
