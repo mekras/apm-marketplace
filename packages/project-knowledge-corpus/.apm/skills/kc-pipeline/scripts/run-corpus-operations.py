@@ -337,6 +337,7 @@ class AdapterResult:
     status: str
     message: str
     changed_paths: tuple[str, ...]
+    observation: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -1145,6 +1146,8 @@ def source_index_delta(
         if current is None or item_is_unpublished(current):
             if previous is not None:
                 removed.append(item_id)
+                if not unit_eligibility(previous)[0]:
+                    rejected.append(item_id)
             continue
         if not unit_eligibility(current)[0]:
             rejected.append(item_id)
@@ -1345,6 +1348,7 @@ def validate_finding_source_units(
         or not isinstance(delta.get("source_id"), str)
         or not isinstance(delta.get("categories"), list)
         or not delta["categories"]
+        or not all(isinstance(value, str) for value in delta["categories"])
         or not isinstance(delta.get("unit_ids"), list)
         or not delta["unit_ids"]
         or not all(isinstance(value, str) and value for value in delta["unit_ids"])
@@ -1359,15 +1363,25 @@ def validate_finding_source_units(
     )
     if source_delta is None:
         raise OperationsError(f"Находка {finding['id']} не связана с дельтой источника.")
+    if finding.get("source") != delta["source_id"]:
+        raise OperationsError(f"Источник находки {finding['id']} не совпадает с source_delta.source_id.")
+    if not set(delta["categories"]) <= {"added", "changed", "removed", "unchanged", "technical_only"}:
+        raise OperationsError(f"Находка {finding['id']} содержит неизвестную категорию дельты.")
     category_ids = {
         unit_id for category in delta["categories"]
         for unit_id in source_delta.get(category, []) if isinstance(unit_id, str)
     }
     if not set(delta["unit_ids"]) <= category_ids:
         raise OperationsError(f"Находка {finding['id']} ссылается на единицы вне текущей дельты источника.")
-    current = source_index_snapshot(corpus_root).get(delta["source_id"], {})
+    sync = index_sync or {}
+    observation = sync.get("observations", {}).get(delta["source_id"], {})
+    current = observation.get("units", sync.get("after", {}).get(delta["source_id"], {}))
+    local = source_index_snapshot(corpus_root).get(delta["source_id"], {})
+    previous_observation = sync.get("baseline_observations", {}).get(delta["source_id"], {})
+    previous = previous_observation.get("units", sync.get("baseline", {}).get(delta["source_id"], {}))
     for unit_id in delta["unit_ids"]:
-        eligible, reason = unit_eligibility(current.get(unit_id))
+        record = current.get(unit_id, previous.get(unit_id) if unit_id in source_delta.get("removed", []) else None)
+        eligible, reason = unit_eligibility(local.get(unit_id, record))
         if not eligible:
             raise OperationsError(
                 f"Находка {finding['id']} использует недопустимую единицу {unit_id}: {reason}."
@@ -1380,6 +1394,8 @@ def validate_impact_findings(
     operations: dict[str, Any],
     findings: list[dict[str, Any]],
     index_sync: dict[str, Any] | None,
+    *,
+    require_coverage: bool = True,
 ) -> None:
     for finding in findings:
         validate_finding_source_units(corpus_root, finding, index_sync)
@@ -1399,6 +1415,48 @@ def validate_impact_findings(
                     finding["configuration_gap"] = str(exc)
                 else:
                     raise
+    if require_coverage:
+        covered: dict[str, set[str]] = {}
+        for finding in findings:
+            delta = finding["source_delta"]
+            covered.setdefault(delta["source_id"], set()).update(delta["unit_ids"])
+        for delta in (index_sync or {}).get("delta", {}).get("sources", []):
+            required = set(delta.get("added", [])) | set(delta.get("changed", [])) | set(delta.get("removed", []))
+            required -= set(delta.get("technical_only", [])) | set(delta.get("rejected", []))
+            missing = required - covered.get(delta["source_id"], set())
+            if missing:
+                raise OperationsError(
+                    f"Анализ влияния не покрывает изменения {delta['source_id']}: {', '.join(sorted(missing))}"
+                )
+
+
+def impact_review_digest(root: Path, corpus_root: Path, operations: dict[str, Any], index_sync: dict[str, Any] | None) -> str:
+    """Bind a review to its source inputs and report, without a second coverage registry."""
+    sync = index_sync or {}
+    report = impact_report_path(root, operations)
+    def source_content(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: source_content(child) for key, child in value.items() if key not in PROCESSING_INDEX_FIELDS}
+        if isinstance(value, list):
+            return [source_content(child) for child in value]
+        return value
+    return snapshot_digest({
+        "baseline": source_content(sync.get("baseline")),
+        "after": source_content(source_index_snapshot(corpus_root)),
+        "locators": {source.source_id: source.locator for source in load_sources(corpus_root)},
+        "baseline_observations": {key: {"scope": value["scope"], "units": value["units"]}
+                                  for key, value in sync.get("baseline_observations", {}).items()},
+        "observations": {key: {"scope": value["scope"], "units": value["units"]}
+                         for key, value in sync.get("observations", {}).items()},
+        "report": file_content_digest(report) if report is not None and report.is_file() else None,
+    })
+
+
+def check_impact_review(root: Path, corpus_root: Path, operations: dict[str, Any],
+                        index_sync: dict[str, Any] | None) -> str:
+    findings = load_impact_findings(root, operations)
+    validate_impact_findings(root, corpus_root, operations, findings, index_sync)
+    return impact_review_digest(root, corpus_root, operations, index_sync)
 
 
 def normalize_impact_finding(finding: dict[str, Any]) -> dict[str, Any]:
@@ -1821,7 +1879,10 @@ def owner_unit_entries(index_sync: dict[str, Any] | None) -> list[dict[str, Any]
         source_id = delta["source_id"]
         for category in ("added", "changed", "removed", "unchanged", "technical_only", "rejected"):
             for unit_id in delta.get(category, []):
-                record = after.get(source_id, {}).get(unit_id) or before.get(source_id, {}).get(unit_id) or {}
+                record = (after.get(source_id, {}).get(unit_id)
+                          or sync.get("observations", {}).get(source_id, {}).get("units", {}).get(unit_id)
+                          or before.get(source_id, {}).get(unit_id)
+                          or sync.get("baseline_observations", {}).get(source_id, {}).get("units", {}).get(unit_id) or {})
                 eligible, classification = unit_eligibility(record)
                 entries.append(
                     {
@@ -1848,7 +1909,13 @@ def build_owner_summary(
     source_quality: dict[str, Any],
 ) -> dict[str, Any]:
     findings = load_impact_findings(root, operations, required=False)
-    validate_impact_findings(root, corpus_root, operations, findings, index_sync)
+    validate_impact_findings(
+        root, corpus_root, operations, findings, index_sync,
+        require_coverage="impact_audit" in result.completed_global_stages,
+    )
+    if result.status == "completed" and index_sync is not None:
+        if index_sync.get("impact_review_hash") != impact_review_digest(root, corpus_root, operations, index_sync):
+            raise OperationsError("Основания или отчёт анализа влияния изменились после проверки.")
     unit_entries = owner_unit_entries(index_sync)
     index_counts = {
         category: sum(entry["category"] == category for entry in unit_entries)
@@ -1901,6 +1968,8 @@ def build_owner_summary(
         {"kind": "queue", "queue": entry.get("queue"), "reason": entry.get("reason")}
         for entry in result.resource_waiting
     )
+    if result.status == "failed" and result.reason_code == "execution_contract_error":
+        blockers.append({"kind": "execution_contract", "message": result.message})
     limitations: list[dict[str, Any]] = []
     if isinstance(index_sync, dict) and index_sync.get("status") != "completed":
         limitations.extend(
@@ -2586,6 +2655,7 @@ def validate_adapter_result(
         status,
         safe_adapter_message(message),
         tuple(sorted(changed_paths)),
+        data.get("observation"),
     )
 
 
@@ -2809,6 +2879,31 @@ def scoped_file_manifest(root: Path, scopes: list[str]) -> dict[str, str]:
     return dict(sorted(manifest.items()))
 
 
+def validate_source_observation(value: Any) -> dict[str, Any]:
+    """Validate upstream navigation evidence, independently of local write paths."""
+    if not isinstance(value, dict) or value.get("complete") is not True:
+        raise OperationsError("Наблюдение источника отсутствует или неполно: требуется observation.complete: true.")
+    if set(value) != {"scope", "complete", "evidence", "units"}:
+        raise OperationsError("Наблюдение источника содержит только scope, complete, evidence и units.")
+    if not isinstance(value.get("scope"), str) or not value["scope"].strip():
+        raise OperationsError("Наблюдение источника должно задавать scope обследования.")
+    evidence = value.get("evidence")
+    if not isinstance(evidence, list) or not evidence or not all(isinstance(item, str) and item.strip() for item in evidence):
+        raise OperationsError("Наблюдение источника должно содержать evidence получения состава и отпечатков.")
+    units = value.get("units")
+    if not isinstance(units, dict):
+        raise OperationsError("Наблюдение источника должно содержать словарь units, включая пустой для пустого источника.")
+    for unit_id, unit in units.items():
+        if (not isinstance(unit_id, str) or not unit_id.strip() or not isinstance(unit, dict)
+                or not isinstance(unit.get("locator"), str) or not unit["locator"].strip()
+                or not isinstance(unit.get("fingerprint"), str)
+                or re.fullmatch(r"[0-9a-f]{64}", unit["fingerprint"]) is None):
+            raise OperationsError("Каждая единица observation.units требует устойчивый id, locator и fingerprint SHA-256.")
+        if set(unit) != {"locator", "fingerprint"}:
+            raise OperationsError("observation.units хранит только locator и fingerprint, без копии содержания или состояния обработки.")
+    return canonical_data(value)
+
+
 def validate_agent_index_evidence(
     root: Path,
     source: CorpusSource,
@@ -2816,9 +2911,10 @@ def validate_agent_index_evidence(
     run_id: str,
     before: dict[str, dict[str, Any]],
     after: dict[str, dict[str, Any]],
+    previous_observation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     data = load_yaml(evidence_path)
-    if not isinstance(data, dict) or data.get("contract_version") != 1:
+    if not isinstance(data, dict) or data.get("contract_version") not in {1, 2}:
         raise OperationsError(f"Свидетельство агентного индекса {repo_relative(root, evidence_path)} имеет неподдерживаемый договор.")
     if data.get("run_id") != run_id or data.get("source_id") != source.source_id:
         raise OperationsError("Свидетельство агентного индекса не связано с текущим проходом и источником.")
@@ -2874,7 +2970,12 @@ def validate_agent_index_evidence(
     if status not in {"changed", "no_change"}:
         raise OperationsError("Свидетельство агентного индекса должно иметь результат changed или no_change.")
     snapshots_differ = before.get(source.source_id, {}) != actual_after
-    if status == "changed" and (not snapshots_differ or not changed):
+    observation = None
+    if data.get("contract_version") == 2:
+        observation = validate_source_observation(data.get("observation"))
+        observation_changed = observation["units"] != (previous_observation or {}).get("units", {})
+        snapshots_differ = snapshots_differ or observation_changed
+    if status == "changed" and (not snapshots_differ or (observation is None and not changed)):
         raise OperationsError("changed требует различающиеся снимки и непустой changed_paths.")
     if status == "no_change" and (snapshots_differ or changed):
         raise OperationsError("no_change требует эквивалентные снимки и пустой changed_paths.")
@@ -2888,6 +2989,7 @@ def validate_agent_index_evidence(
         "allowed_write_scope": allowed_scope,
         "before_hash": before_data["snapshot_hash"],
         "after_hash": after_data["snapshot_hash"],
+        "observation": observation,
     }
 
 
@@ -2899,6 +3001,7 @@ def run_index_refresh(
     agent_index_confirmed: set[str] | None = None,
     agent_index_evidence: dict[str, Path] | None = None,
     run_id: str = "",
+    baseline_observations: dict[str, Any] | None = None,
 ) -> tuple[list[AdapterResult], dict[str, Any]]:
     """Refresh provider indexes before queues are built and persist their delta."""
     definitions = adapter_definitions(operations)
@@ -2910,6 +3013,8 @@ def run_index_refresh(
     failed_attempts: list[dict[str, Any]] = []
     evidence_records: list[dict[str, Any]] = []
     confirmed_after = canonical_data(baseline)
+    previous_observations = baseline_observations or {}
+    observations = canonical_data(previous_observations)
     sources = load_sources(corpus_root)
     refreshable = [
         source
@@ -2949,6 +3054,7 @@ def run_index_refresh(
                         run_id,
                         baseline,
                         observed,
+                        previous_observations.get(source.source_id),
                     )
                     result = AdapterResult(
                         source.source_id,
@@ -2957,6 +3063,7 @@ def run_index_refresh(
                         evidence_record["result"],
                         message + " Свидетельство проверено контроллером.",
                         tuple(evidence_record["changed_paths"]),
+                        evidence_record["observation"],
                     )
             else:
                 definition = definitions.get(source.adapter)
@@ -2997,15 +3104,33 @@ def run_index_refresh(
                             result = probe
                         else:
                             result = run_adapter_operation(root, corpus_root, source, definition, "index")
-            results.append(result)
             if result.status in ADAPTER_SUCCESS_STATUSES["index"]:
                 after_source = source_index_snapshot(corpus_root).get(source.source_id, {})
+                strategy = source.card.get("storage_strategy")
+                requires_observation = strategy == "external_reference" or (
+                    strategy == "index_only" and source.adapter == AGENT_ADAPTER
+                )
+                if requires_observation or result.observation is not None:
+                    observation = validate_source_observation(result.observation)
+                    old_observation = previous_observations.get(source.source_id, {})
+                    if old_observation and old_observation["scope"] != observation["scope"]:
+                        raise OperationsError("Область observation.scope изменилась. Для сопоставления сохраните прежнюю область наблюдения, изменение договора выполните через kc-setup.")
+                    observations[source.source_id] = observation
+                    delta = source_index_delta(source, old_observation.get("units", {}), observation["units"])
+                    delta["rejected"] = sorted(
+                        unit_id for unit_id in set(observation["units"]) | set(delta["removed"])
+                        if not unit_eligibility(after_source.get(unit_id, previous.get(unit_id, {})))[0]
+                    )
+                    delta["counts"]["rejected"] = len(delta["rejected"])
+                else:
+                    delta = source_index_delta(source, previous, after_source)
                 confirmed_after[source.source_id] = after_source
-                deltas.append(source_index_delta(source, previous, after_source))
+                deltas.append(delta)
                 if evidence_record is not None:
                     evidence_records.append(evidence_record)
             else:
                 incomplete.append({"source_id": source.source_id, "reason": result.message})
+            results.append(result)
         except OperationsError as exc:
             message = safe_adapter_message(str(exc))
             result = AdapterResult(source.source_id, source.adapter, "index", "fetch-error", message, ())
@@ -3028,6 +3153,8 @@ def run_index_refresh(
         "after": confirmed_after,
         "last_successful_after": confirmed_after,
         "observed_after": observed_after,
+        "baseline_observations": previous_observations,
+        "observations": observations,
         "adapter_results": [
             {
                 "source_id": result.source_id,
@@ -3371,6 +3498,18 @@ def read_run_state(path: Path) -> dict[str, Any] | None:
         raise OperationsError(f"Состояние прохода {path} содержит неизвестную transfer_policy.")
     if data.get("index_sync") is not None and not isinstance(data.get("index_sync"), dict):
         raise OperationsError(f"Состояние прохода {path} содержит неверную index_sync.")
+    sync = data.get("index_sync") or {}
+    for field in ("observations", "baseline_observations"):
+        if field in sync:
+            if not isinstance(sync[field], dict) or not all(isinstance(key, str) and key for key in sync[field]):
+                raise OperationsError(f"Состояние прохода {path} содержит неверный {field}.")
+            for observation in sync[field].values():
+                validate_source_observation(observation)
+    if "impact_review_hash" in sync and (
+        not isinstance(sync["impact_review_hash"], str)
+        or re.fullmatch(r"[0-9a-f]{64}", sync["impact_review_hash"]) is None
+    ):
+        raise OperationsError(f"Состояние прохода {path} содержит неверный impact_review_hash.")
     queues = data.get("queues")
     if isinstance(queues, dict):
         for stage in QUEUE_ORDER:
@@ -3719,6 +3858,14 @@ def complete_global_stage(
                 f"Нарушен порядок глобальных стадий: следующая незакрытая стадия — {expected}, "
                 f"а не {stage}."
             )
+        if stage in {"impact_audit", "apply_changes"}:
+            sync = previous_state.get("index_sync")
+            if not isinstance(sync, dict) or sync.get("status") != "completed":
+                raise OperationsError("Ручное закрытие анализа требует завершённого обновления индексов источников.")
+            digest = check_impact_review(root, corpus_root, operations, sync)
+            if stage == "apply_changes" and sync.get("impact_review_hash") != digest:
+                raise OperationsError("Основания или отчёт анализа влияния изменились: повторите полный проход для пересмотра impact_audit.")
+            sync["impact_review_hash"] = digest
         completed_at = datetime.now(UTC).isoformat()
         completed_global_stages.append(stage)
         completions = dict(previous_state.get("global_stage_completions", {}))
@@ -3882,6 +4029,8 @@ def run_pipeline(
                 validate_impact_findings(
                     root, corpus_root, operations, apply_findings, index_sync
                 )
+                if index_sync is not None and index_sync.get("impact_review_hash") != impact_review_digest(root, corpus_root, operations, index_sync):
+                    raise OperationsError("Основания или отчёт анализа влияния изменились до переноса.")
             except OperationsError as exc:
                 return PipelineResult(
                     "failed",
@@ -4036,6 +4185,10 @@ def run_pipeline(
                     transfer_evidence=tuple(transfer_evidence),
                 )
         if queue in GLOBAL_STAGES:
+            if queue == "impact_audit":
+                digest = check_impact_review(root, corpus_root, operations, index_sync)
+                if index_sync is not None:
+                    index_sync["impact_review_hash"] = digest
             completed_global_stages.add(queue)
         queues = build_run_queues(
             corpus_root,
@@ -4327,9 +4480,8 @@ def main() -> int:
                             dict,
                         )
                     ):
-                        baseline = previous_index_sync.get(
-                            "last_successful_after", previous_index_sync.get("after", {})
-                        )
+                        baseline = (previous_index_sync.get("baseline", {}) if resumable else
+                                    previous_index_sync.get("last_successful_after", previous_index_sync.get("after", {})))
                     else:
                         baseline = source_index_snapshot(corpus_root)
                     adapter_results, index_sync = run_index_refresh(
@@ -4340,7 +4492,18 @@ def main() -> int:
                         set(args.agent_index_refreshed),
                         agent_evidence,
                         running_state["run_id"],
+                        (previous_index_sync or {}).get("baseline_observations" if resumable else "observations", {}),
                     )
+                    if resumable and "impact_audit" in completed_global_stages:
+                        old_digest = (previous_index_sync or {}).get("impact_review_hash")
+                        if old_digest and old_digest == impact_review_digest(root, corpus_root, operations, index_sync):
+                            index_sync["impact_review_hash"] = old_digest
+                        else:
+                            completed_global_stages.difference_update({"impact_audit", "apply_changes", "corpus_validation"})
+                            completions = running_state.get("global_stage_completions", {})
+                            for stage in ("impact_audit", "apply_changes", "corpus_validation"):
+                                completions.pop(stage, None)
+                            running_state["completed_global_stages"] = [stage for stage in GLOBAL_STAGES if stage in completed_global_stages]
                     if index_sync["status"] == "completed":
                         try:
                             index_counts = rebuild_indexes(corpus_root, root)

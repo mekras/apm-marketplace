@@ -1,0 +1,58 @@
+operations_version: 1
+transfer_policy:
+  mode: propose_only
+impact_report:
+  path: .local/impact.yml
+adapters:
+  fixture.provider:
+    contract_version: 2
+    operations:
+      probe:
+        argv:
+        - python3
+        - provider.py
+        - probe
+        working_directory: .
+        write_paths: []
+      index:
+        argv:
+        - python3
+        - provider.py
+        - index
+        working_directory: .
+        write_paths:
+        - knowledge/data/fixture
+stages:
+  concepts:
+    commands:
+    - id: concepts
+      argv:
+      - python3
+      - -c
+      - pass
+      working_directory: .
+      write_paths:
+      - knowledge
+      required: true
+  impact_audit:
+    commands:
+    - id: impact_audit
+      argv:
+      - python3
+      - -c
+      - pass
+      working_directory: .
+      write_paths:
+      - knowledge
+      required: true
+  corpus_validation:
+    commands:
+    - id: corpus_validation
+      argv:
+      - python3
+      - -c
+      - pass
+      working_directory: .
+      write_paths:
+      - knowledge
+      required: true

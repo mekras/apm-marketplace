@@ -1,0 +1,14 @@
+findings:
+- id: card-x-reviewed
+  status: no_change
+  source: FIXTURE
+  basis: Static provider fixture and its explicitly pinned product scope.
+  reason: The new unit is outside the pinned lesson.
+  affected_surfaces:
+  - data
+  source_delta:
+    source_id: FIXTURE
+    categories:
+    - added
+    unit_ids:
+    - CARD-X

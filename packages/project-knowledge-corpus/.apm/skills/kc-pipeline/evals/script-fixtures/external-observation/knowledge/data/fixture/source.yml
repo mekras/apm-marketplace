@@ -1,0 +1,16 @@
+id: FIXTURE
+slug: fixture
+title: External navigation fixture
+access:
+  default: Public fixture.
+status: active
+carrier_type: document
+source_kind: reference
+adapter: fixture.provider
+reliability: fixture
+refresh_policy: manual
+storage_strategy: external_reference
+processing_scope: metadata_only
+retrieval_mode: external_reference
+copy_policy: no_bulk_copy
+locator: fixture://provider/cards
