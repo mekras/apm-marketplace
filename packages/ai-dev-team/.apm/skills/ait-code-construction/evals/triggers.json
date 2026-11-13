@@ -36,6 +36,12 @@
       "prompt": "Определи архитектурные границы и направление зависимостей между компонентами системы.",
       "should_trigger": false,
       "rationale": "Выбор архитектурных границ относится к ait-architecture."
+    },
+    {
+      "id": "ait-code-construction-negative-refactoring-selection",
+      "prompt": "Исследуй всё приложение и выбери следующий целостный шаг рефакторинга.",
+      "should_trigger": false,
+      "rationale": "Выбор структурного шага ведёт ait-refactoring, затем передаёт реализацию."
     }
   ]
 }

@@ -166,6 +166,15 @@
       "applicability": "model"
     },
     {
+      "id": "skill-ait-refactoring",
+      "kind": "skill",
+      "name": "ait-refactoring",
+      "purpose": "Выбор и выполнение согласованного структурного улучшения ПО",
+      "participation": "correction",
+      "stage": "code",
+      "applicability": "model"
+    },
+    {
       "id": "skill-ait-code-construction",
       "kind": "skill",
       "name": "ait-code-construction",

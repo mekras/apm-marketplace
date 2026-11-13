@@ -1,0 +1,47 @@
+{
+  "skill_name": "ait-refactoring",
+  "cases": [
+    {
+      "id": "ait-refactoring-positive-series",
+      "prompt": "Исследуй приложение и предложи следующий целостный шаг рефакторинга.",
+      "should_trigger": true,
+      "rationale": "Нужно исследовать структуру и выбрать шаг."
+    },
+    {
+      "id": "ait-refactoring-positive-boundary",
+      "prompt": "Рефакторинг должен отделить правила импорта от формата поставщика. Подготовь предложение.",
+      "should_trigger": true,
+      "rationale": "Нужно изменить структурную границу с сохранением поведения."
+    },
+    {
+      "id": "ait-refactoring-negative-local",
+      "prompt": "Переименуй локальную переменную total в invoiceTotal в одной функции.",
+      "should_trigger": false,
+      "rationale": "Выбранной локальной правке достаточно конструирования кода."
+    },
+    {
+      "id": "ait-refactoring-negative-requirements",
+      "prompt": "Сократи повторы требований, сохрани их нормативный смысл.",
+      "should_trigger": false,
+      "rationale": "Это ait-req-refactoring."
+    },
+    {
+      "id": "ait-refactoring-negative-review",
+      "prompt": "Проверь готовый код по требованиям и найди ошибки.",
+      "should_trigger": false,
+      "rationale": "Это ait-code-review."
+    },
+    {
+      "id": "ait-refactoring-negative-feature",
+      "prompt": "Добавь экспорт заказа по действующему требованию.",
+      "should_trigger": false,
+      "rationale": "Обычная разработка не запускает серию рефакторинга."
+    },
+    {
+      "id": "ait-refactoring-negative-performance",
+      "prompt": "Измерь расход памяти и найди причину медленного запроса.",
+      "should_trigger": false,
+      "rationale": "Измерение ресурсов само по себе не требует структурного преобразования."
+    }
+  ]
+}
