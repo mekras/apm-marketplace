@@ -713,6 +713,22 @@
       "purpose": "Локальные инструкции Claude целевого проекта",
       "participation": "not_applicable",
       "applicability": "never"
+    },
+    {
+      "id": "skill-ait-release",
+      "kind": "skill",
+      "name": "ait-release",
+      "purpose": "Выпуск версии с предложением углублённой проверки",
+      "participation": "not_applicable",
+      "applicability": "never"
+    },
+    {
+      "id": "skill-ait-project-check",
+      "kind": "skill",
+      "name": "ait-project-check",
+      "purpose": "Выбор программы проверки проекта без дублирования полного прохода",
+      "participation": "not_applicable",
+      "applicability": "never"
     }
   ]
 }

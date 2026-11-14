@@ -1,0 +1,77 @@
+{
+  "skill_name": "ait-project-check",
+  "cases": [
+    {
+      "id": "ait-project-check-general",
+      "prompt": "Проверь проект.",
+      "should_trigger": true,
+      "rationale": "Общий выбор или углублённая программа."
+    },
+    {
+      "id": "ait-project-check-quick",
+      "prompt": "Быстро проверь проект на явные ошибки.",
+      "should_trigger": true,
+      "rationale": "Общий выбор или углублённая программа."
+    },
+    {
+      "id": "ait-project-check-release-check",
+      "prompt": "Проверь готовность версии к выпуску, не публикуй её.",
+      "should_trigger": true,
+      "rationale": "Общий выбор или углублённая программа."
+    },
+    {
+      "id": "ait-project-check-deep",
+      "prompt": "Углублённо проверь проект, выпуск пока не планируется.",
+      "should_trigger": true,
+      "rationale": "Общий выбор или углублённая программа."
+    },
+    {
+      "id": "ait-project-check-select",
+      "prompt": "Помоги выбрать подходящую проверку проекта.",
+      "should_trigger": true,
+      "rationale": "Общий выбор или углублённая программа."
+    },
+    {
+      "id": "ait-project-check-extension",
+      "prompt": "Выбери программу проверки после обновления зависимостей.",
+      "should_trigger": true,
+      "rationale": "Общий выбор или углублённая программа."
+    },
+    {
+      "id": "ait-project-check-publish",
+      "prompt": "Выпускай новую версию.",
+      "should_trigger": false,
+      "rationale": "Явный соседний маршрут без общего меню."
+    },
+    {
+      "id": "ait-project-check-full",
+      "prompt": "Полностью перепроверь весь проект по всем аспектам.",
+      "should_trigger": false,
+      "rationale": "Явный соседний маршрут без общего меню."
+    },
+    {
+      "id": "ait-project-check-one-function",
+      "prompt": "Проверь эту функцию на ошибки.",
+      "should_trigger": false,
+      "rationale": "Явный соседний маршрут без общего меню."
+    },
+    {
+      "id": "ait-project-check-requirements",
+      "prompt": "Полностью перепроверь требования проекта.",
+      "should_trigger": false,
+      "rationale": "Явный соседний маршрут без общего меню."
+    },
+    {
+      "id": "ait-project-check-create-skill",
+      "prompt": "Создай навык выбора программы проверки проекта.",
+      "should_trigger": false,
+      "rationale": "Явный соседний маршрут без общего меню."
+    },
+    {
+      "id": "ait-project-check-feature",
+      "prompt": "Добавь экспорт в CSV.",
+      "should_trigger": false,
+      "rationale": "Явный соседний маршрут без общего меню."
+    }
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "skill_name": "ait-release",
+  "cases": [
+    {
+      "id": "ait-release-prepare",
+      "prompt": "Подготовь приложение к выпуску, начни с наиболее значимых рисков.",
+      "should_trigger": true,
+      "rationale": "Явно запрошен выпускной проход."
+    },
+    {
+      "id": "ait-release-library",
+      "prompt": "Проверь риски выпуска новой версии библиотеки и совместимость обновления.",
+      "should_trigger": false,
+      "rationale": "Запрошена только проверка перед выпуском через ait-project-check."
+    },
+    {
+      "id": "ait-release-project-rule",
+      "prompt": "Выполни принятый в проекте этап углублённой проверки перед выпуском.",
+      "should_trigger": false,
+      "rationale": "Запрошена только проверка перед выпуском через ait-project-check."
+    },
+    {
+      "id": "ait-release-publish",
+      "prompt": "Опубликуй уже проверенную версию по существующему порядку проекта.",
+      "should_trigger": true,
+      "rationale": "Обычный запрос публикации проходит через выпускной сценарий и предложение углублённой проверки."
+    },
+    {
+      "id": "ait-release-tag",
+      "prompt": "Создай тег для готовой версии. Дополнительные проверки не поручаю.",
+      "should_trigger": false,
+      "rationale": "Нужна конкретная операция VCS."
+    },
+    {
+      "id": "ait-release-full-review",
+      "prompt": "Полностью перепроверь весь проект по всем аспектам.",
+      "should_trigger": false,
+      "rationale": "Это договор ait-project-revalidation."
+    },
+    {
+      "id": "ait-release-code-review",
+      "prompt": "Проверь одну готовую функцию на ошибки.",
+      "should_trigger": false,
+      "rationale": "Нужен профильный обзор кода."
+    },
+    {
+      "id": "ait-release-develop",
+      "prompt": "Добавь экспорт отчёта по согласованному требованию.",
+      "should_trigger": false,
+      "rationale": "Обычная разработка не запускает выпускной проход."
+    },
+    {
+      "id": "ait-release-skill-authoring",
+      "prompt": "Создай опциональную процедуру углублённой проверки выпуска для коллекции навыков.",
+      "should_trigger": false,
+      "rationale": "Разработка самой процедуры относится к ai-skill-development."
+    },
+    {
+      "id": "ait-release-version",
+      "prompt": "Выпускай новую версию.",
+      "should_trigger": true,
+      "rationale": "Навык ведёт выпуск, учитывая решение по дополнительной углублённой проверке."
+    },
+    {
+      "id": "ait-release-typo",
+      "prompt": "Выпукскай версию 2.0.",
+      "should_trigger": true,
+      "rationale": "Навык ведёт выпуск, учитывая решение по дополнительной углублённой проверке."
+    },
+    {
+      "id": "ait-release-disabled",
+      "prompt": "Выпусти версию по правилам проекта, где предложение углублённой проверки отключено.",
+      "should_trigger": true,
+      "rationale": "Навык ведёт выпуск, учитывая решение по дополнительной углублённой проверке."
+    },
+    {
+      "id": "ait-release-declined",
+      "prompt": "Выпускай версию без углублённой проверки.",
+      "should_trigger": true,
+      "rationale": "Навык ведёт выпуск, учитывая решение по дополнительной углублённой проверке."
+    },
+    {
+      "id": "ait-release-in-depth-review",
+      "prompt": "Выполни углублённую проверку проекта перед выпуском, не ограничиваясь рисками.",
+      "should_trigger": false,
+      "rationale": "Запрошена только проверка перед выпуском через ait-project-check."
+    }
+  ]
+}
