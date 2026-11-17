@@ -351,6 +351,11 @@
     },
     {
       "script": "scripts/run-corpus-operations.py",
+      "function": "run_statement_baseline",
+      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/run-corpus-operations.py",
       "function": "safe_delete_file",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
@@ -382,6 +387,11 @@
     {
       "script": "scripts/run-corpus-operations.py",
       "function": "statement_processing_tasks",
+      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
+    },
+    {
+      "script": "scripts/run-corpus-operations.py",
+      "function": "statements_requiring_review.<locals>.content",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
     {

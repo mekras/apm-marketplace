@@ -159,6 +159,13 @@ PROCESSING_INDEX_FIELDS = {
     "retrieved_at",
     "last_checked_at",
 }
+# Изменение только этих полей утверждения не требует повторного анализа влияния.
+STATEMENT_PROCESSING_FIELDS = {
+    "processing_status",
+    "checked_at",
+    "checked_by",
+    "last_checked_at",
+}
 REMOVED_PUBLICATION_STATUSES = {"removed", "unpublished", "archived", "withdrawn"}
 ALLOWED_IMPACT_SURFACES = {
     "requirements",
@@ -1255,6 +1262,31 @@ def statement_delta(
     }
 
 
+def statements_requiring_review(
+    before: dict[str, dict[str, Any]], after: dict[str, dict[str, Any]]
+) -> list[str]:
+    """Return new or content-changed statements that impact findings must cover."""
+    def content(statement: dict[str, Any]) -> dict[str, Any]:
+        return {key: value for key, value in statement.items() if key not in STATEMENT_PROCESSING_FIELDS}
+
+    return sorted(
+        statement_id
+        for statement_id, statement in after.items()
+        if statement_id not in before or content(before[statement_id]) != content(statement)
+    )
+
+
+def run_statement_baseline(state: dict[str, Any] | None) -> dict[str, dict[str, Any]] | None:
+    """Statement snapshot the current pass compares against until it completes."""
+    if not isinstance(state, dict):
+        return None
+    for key in ("statement_baseline", "statement_snapshot"):
+        value = state.get(key)
+        if isinstance(value, dict):
+            return value
+    return None
+
+
 def effective_transfer_policy(operations: dict[str, Any], override: str | None = None) -> str:
     if override is not None:
         if override not in TRANSFER_POLICIES:
@@ -1396,6 +1428,7 @@ def validate_impact_findings(
     index_sync: dict[str, Any] | None,
     *,
     require_coverage: bool = True,
+    statement_baseline: dict[str, dict[str, Any]] | None = None,
 ) -> None:
     for finding in findings:
         validate_finding_source_units(corpus_root, finding, index_sync)
@@ -1428,6 +1461,25 @@ def validate_impact_findings(
                 raise OperationsError(
                     f"Анализ влияния не покрывает изменения {delta['source_id']}: {', '.join(sorted(missing))}"
                 )
+    referenced = {
+        statement_id for finding in findings for statement_id in finding.get("statements", [])
+    }
+    if not referenced and not (require_coverage and statement_baseline is not None):
+        return
+    current_statements = statement_snapshot(corpus_root)
+    unknown = referenced - set(current_statements) - set(statement_baseline or {})
+    if unknown:
+        raise OperationsError(
+            "Отчёт влияния ссылается на неизвестные утверждения: " + ", ".join(sorted(unknown))
+        )
+    if require_coverage and statement_baseline is not None:
+        missing_statements = set(statements_requiring_review(statement_baseline, current_statements)) - referenced
+        if missing_statements:
+            raise OperationsError(
+                "Анализ влияния не покрывает утверждения дельты: "
+                + ", ".join(sorted(missing_statements))
+                + ". Каждое новое или изменённое утверждение должно войти в statements хотя бы одной находки."
+            )
 
 
 def impact_review_digest(root: Path, corpus_root: Path, operations: dict[str, Any], index_sync: dict[str, Any] | None) -> str:
@@ -1453,9 +1505,12 @@ def impact_review_digest(root: Path, corpus_root: Path, operations: dict[str, An
 
 
 def check_impact_review(root: Path, corpus_root: Path, operations: dict[str, Any],
-                        index_sync: dict[str, Any] | None) -> str:
+                        index_sync: dict[str, Any] | None,
+                        statement_baseline: dict[str, dict[str, Any]] | None = None) -> str:
     findings = load_impact_findings(root, operations)
-    validate_impact_findings(root, corpus_root, operations, findings, index_sync)
+    validate_impact_findings(
+        root, corpus_root, operations, findings, index_sync, statement_baseline=statement_baseline
+    )
     return impact_review_digest(root, corpus_root, operations, index_sync)
 
 
@@ -1485,6 +1540,7 @@ def normalize_impact_finding(finding: dict[str, Any]) -> dict[str, Any]:
         "recommended_change": finding.get("recommended_change", finding.get("recommendation", "")),
         "decision_required": finding.get("decision_required", finding.get("question", "")),
         "no_change_reason": finding.get("no_change_reason", finding.get("reason", "")),
+        "statements": finding.get("statements", []),
         "source_delta": finding.get("source_delta"),
         "target_paths": finding.get("target_paths", finding.get("expected_paths", [])),
         "target_surfaces": finding.get("target_surfaces"),
@@ -1496,6 +1552,10 @@ def normalize_impact_finding(finding: dict[str, Any]) -> dict[str, Any]:
         for field in ("basis", "source")
     ):
         raise OperationsError("Каждая находка должна содержать отдельные source и basis.")
+    if not isinstance(normalized["statements"], list) or not all(
+        isinstance(statement_id, str) and statement_id.strip() for statement_id in normalized["statements"]
+    ):
+        raise OperationsError("Поле statements находки должно быть списком идентификаторов утверждений.")
     if status == "apply_now" and not all(
         isinstance(normalized[field], str) and normalized[field].strip()
         for field in ("expected_result", "recommended_change")
@@ -1907,11 +1967,13 @@ def build_owner_summary(
     transfer_policy: str,
     operational_check: OperationalCheckResult | None,
     source_quality: dict[str, Any],
+    statement_baseline: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     findings = load_impact_findings(root, operations, required=False)
     validate_impact_findings(
         root, corpus_root, operations, findings, index_sync,
         require_coverage="impact_audit" in result.completed_global_stages,
+        statement_baseline=statement_baseline,
     )
     if result.status == "completed" and index_sync is not None:
         if index_sync.get("impact_review_hash") != impact_review_digest(root, corpus_root, operations, index_sync):
@@ -1944,6 +2006,7 @@ def build_owner_summary(
             "basis": finding["basis"],
             "affected_surfaces": finding["affected_surfaces"],
             "reason": finding["no_change_reason"],
+            "statements": finding["statements"],
         }
         for finding in findings
         if finding["status"] == "no_change"
@@ -3318,6 +3381,7 @@ def render_report(
                 f"- применено изменений: {len(summary.get('applied_changes', []))}",
                 f"- предложено изменений: {len(summary.get('proposed_changes', []))}",
                 f"- решений владельца требуется: {len(summary.get('owner_decisions', []))}",
+                f"- без изменений (no_change): {len(summary.get('no_change_findings', []))}",
                 f"- блокеров и ограничений: {len(summary.get('blockers', [])) + len(summary.get('limitations', []))}",
             ]
             for blocker in summary.get("blockers", []):
@@ -3351,6 +3415,7 @@ def render_report(
             for finding in summary.get("no_change_findings", []):
                 lines.append(
                     f"  - no_change {finding.get('id')}: причина={finding.get('reason')}; "
+                    f"утверждения={', '.join(finding.get('statements', [])) or 'нет'}; "
                     f"основание={finding.get('basis')}; источник={finding.get('source')}; "
                     f"поверхности={', '.join(finding.get('affected_surfaces', []))}"
                 )
@@ -3862,7 +3927,9 @@ def complete_global_stage(
             sync = previous_state.get("index_sync")
             if not isinstance(sync, dict) or sync.get("status") != "completed":
                 raise OperationsError("Ручное закрытие анализа требует завершённого обновления индексов источников.")
-            digest = check_impact_review(root, corpus_root, operations, sync)
+            digest = check_impact_review(
+                root, corpus_root, operations, sync, run_statement_baseline(previous_state)
+            )
             if stage == "apply_changes" and sync.get("impact_review_hash") != digest:
                 raise OperationsError("Основания или отчёт анализа влияния изменились: повторите полный проход для пересмотра impact_audit.")
             sync["impact_review_hash"] = digest
@@ -3919,6 +3986,7 @@ def run_pipeline(
     *,
     transfer_policy: str = "apply_now",
     index_sync: dict[str, Any] | None = None,
+    statement_baseline: dict[str, dict[str, Any]] | None = None,
 ) -> PipelineResult:
     normalized_names = normalized_artifacts(operations)
     queues = build_run_queues(
@@ -4027,7 +4095,8 @@ def run_pipeline(
                     required=transfer_policy == "propose_only",
                 )
                 validate_impact_findings(
-                    root, corpus_root, operations, apply_findings, index_sync
+                    root, corpus_root, operations, apply_findings, index_sync,
+                    statement_baseline=statement_baseline,
                 )
                 if index_sync is not None and index_sync.get("impact_review_hash") != impact_review_digest(root, corpus_root, operations, index_sync):
                     raise OperationsError("Основания или отчёт анализа влияния изменились до переноса.")
@@ -4186,7 +4255,7 @@ def run_pipeline(
                 )
         if queue in GLOBAL_STAGES:
             if queue == "impact_audit":
-                digest = check_impact_review(root, corpus_root, operations, index_sync)
+                digest = check_impact_review(root, corpus_root, operations, index_sync, statement_baseline)
                 if index_sync is not None:
                     index_sync["impact_review_hash"] = digest
             completed_global_stages.add(queue)
@@ -4462,6 +4531,11 @@ def main() -> int:
             previous_statement_snapshot = previous_state.get("statement_snapshot") if isinstance(previous_state, dict) else None
             if not isinstance(previous_statement_snapshot, dict):
                 previous_statement_snapshot = statement_snapshot(corpus_root)
+            # До завершения прохода база утверждений не сдвигается, как и база индекса.
+            statement_baseline = run_statement_baseline(previous_state) if resumable else None
+            if statement_baseline is None:
+                statement_baseline = previous_statement_snapshot
+            running_state["statement_baseline"] = statement_baseline
             if not operational_check.contract_errors:
                 baseline: dict[str, dict[str, dict[str, Any]]] = {}
                 agent_evidence: dict[str, Path] = {}
@@ -4593,6 +4667,7 @@ def main() -> int:
                         persist_activity,
                         transfer_policy=transfer_policy,
                         index_sync=index_sync,
+                        statement_baseline=statement_baseline,
                     )
                 except OperationsError as exc:
                     current_queues = build_run_queues(
@@ -4650,7 +4725,7 @@ def main() -> int:
                         pipeline_result.completed_global_stages,
                     )
             current_statement_snapshot = statement_snapshot(corpus_root)
-            statement_counts = statement_delta(previous_statement_snapshot, current_statement_snapshot)
+            statement_counts = statement_delta(statement_baseline, current_statement_snapshot)
             source_quality = source_quality_result(root, operations)
             try:
                 owner_summary = build_owner_summary(
@@ -4664,6 +4739,7 @@ def main() -> int:
                     transfer_policy,
                     operational_check,
                     source_quality,
+                    statement_baseline,
                 )
             except OperationsError as exc:
                 owner_summary = {

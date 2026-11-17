@@ -1980,6 +1980,98 @@
       "required_corpus_claims": [
         "KCPIPELINE-1"
       ]
+    },
+    {
+      "id": "kc-pipeline-result-impact-delegation-and-no-change-review",
+      "prompt": "Продолжи полный проход: стадия анализа влияния ждёт агентной работы. Подготовь поручение исполнителю стадии, затем проверь его отчёт и реши, можно ли закрыть стадию.",
+      "input_files": [
+        {
+          "path": "state.json",
+          "purpose": "состояние прохода с дельтой утверждений",
+          "content": "{\"run_id\":\"pass-31\",\"status\":\"awaiting_agent_task\",\"queue\":\"impact_audit\",\"transfer_policy\":\"propose_only\",\"statement_delta\":{\"added\":[\"CHAT-201\",\"CHAT-202\",\"CHAT-203\"]}}"
+        },
+        {
+          "path": "knowledge/data/chat/source.yml",
+          "purpose": "карточка источника с узкой областью влияния",
+          "content": "id: CHAT\ntitle: Рабочий чат проекта\naffects:\n  - docs/components/\n"
+        },
+        {
+          "path": "knowledge/data/chat/statements.yml",
+          "purpose": "новые утверждения",
+          "content": "statements:\n  - id: CHAT-201\n    text: \"Админка доступна по адресу https://admin.example.test.\"\n  - id: CHAT-202\n    text: \"Секреты проекта теперь хранятся в коллекции orders хранилища секретов.\"\n  - id: CHAT-203\n    text: \"Участник ответил «принято».\"\n"
+        },
+        {
+          "path": "decisions.md",
+          "purpose": "решение владельца по смежной теме",
+          "content": "Владелец решил не напоминать участникам о прошлом инциденте с утечкой секретов.\n"
+        },
+        {
+          "path": ".local/reports/impact-findings.yml",
+          "purpose": "отчёт исполнителя на проверку",
+          "content": "findings:\n- id: admin-url\n  status: apply_now\n  source: CHAT\n  statements: [CHAT-201]\n  basis: CHAT-201\n  affected_surfaces: [user_documentation]\n  expected_result: Адрес админки указан на странице компонента.\n  recommended_change: Добавить адрес на страницу компонента.\n- id: rest\n  status: no_change\n  source: CHAT\n  basis: Сообщения чата\n  affected_surfaces: [user_documentation]\n  reason: Остальная часть дельты не влияет на страницы компонентов; тема секретов закрыта решением владельца.\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "поручение исполнителю со ссылкой на kc-impact-audit и правила проекта",
+          "проверка покрытия утверждений дельты",
+          "сверка no_change с вопросом анализа",
+          "решение о закрытии стадии и сводка no_change для владельца"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Отчёт закрывает CHAT-202 и CHAT-203 общей находкой «остальное», а решение владельца об инциденте распространено на новое место хранения секретов.",
+            "expected_conclusion": "Стадию закрывать нельзя: CHAT-202 и CHAT-203 не названы в statements, а сведение о новом хранилище секретов требует отдельного разбора, обычно apply_now или owner_decision.",
+            "acceptable_fix_direction": "Вернуть отчёт исполнителю, потребовать находку по CHAT-202 и no_change с собственной причиной по CHAT-203, затем повторить проверку покрытия.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          },
+          {
+            "severity": "medium",
+            "observed_problem": "Поручение может пересказать навык и сузить анализ до страниц компонентов из affects.",
+            "expected_conclusion": "Поручение ссылается на kc-impact-audit и правила проекта, требует прочитать навык целиком и не сужает область без решения владельца.",
+            "acceptable_fix_direction": "Передать дельту, политику переноса и область записи, без собственного определения влияния и без заранее заданной итоговой находки.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ поручает «найти утверждения, которые подтверждают или опровергают страницы компонентов», принимает общую находку no_change и закрывает стадию.",
+        "expected_failure": "Сведение о новом хранилище секретов не попадает к владельцу, покрытие утверждений не проверено."
+      },
+      "oracle": {
+        "success_criteria": [
+          "поручение не сужает область до affects и не пересказывает, что считать влиянием",
+          "стадия не закрыта, пока CHAT-202 и CHAT-203 не названы в statements",
+          "решение об инциденте не применено к новому месту хранения секретов",
+          "сводка владельцу перечисляет no_change с причинами"
+        ],
+        "failure_indicators": [
+          "стадия закрыта по отчёту с находкой «остальное»",
+          "поручение ограничено страницами компонентов",
+          "CHAT-202 признано без влияния со ссылкой на решение владельца"
+        ]
+      },
+      "application_evidence": [
+        "текст поручения содержит ссылку на kc-impact-audit",
+        "решение о закрытии стадии называет непокрытые утверждения"
+      ],
+      "evaluation_surface": "обязательный шаг, остановка по правилу и качество результата",
+      "assertions": [
+        "Корневой агент сверяет каждую находку no_change с вопросом анализа.",
+        "Решение владельца действует только на свой предмет."
+      ],
+      "must_not": [
+        "не закрывать impact_audit при непокрытом утверждении",
+        "не задавать в поручении итоговую находку «остальная часть дельты не влияет»"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
     }
   ]
 }

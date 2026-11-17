@@ -1,7 +1,7 @@
 interface:
   display_name: "kc-impact-audit"
-  short_description: "Анализ влияния источников на проектную документацию"
-  default_prompt: "Используй $kc-impact-audit, чтобы проверить влияние изменившихся источников на документацию проекта."
+  short_description: "Анализ влияния новых сведений источников на проект"
+  default_prompt: "Используй $kc-impact-audit, чтобы проверить, что изменившиеся источники меняют в проекте."
 
 policy:
   allow_implicit_invocation: true
