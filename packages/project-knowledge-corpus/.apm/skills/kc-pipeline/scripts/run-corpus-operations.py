@@ -1552,6 +1552,19 @@ def impact_report_path(root: Path, operations: dict[str, Any]) -> Path | None:
     return resolve_inside(root, report["path"], "impact_report.path")
 
 
+def impact_report_gap(root: Path, operations: dict[str, Any]) -> str:
+    """Name the missing report behind a coverage refusal, so the cause is not hidden as empty findings."""
+    path = impact_report_path(root, operations)
+    if path is None:
+        return (
+            " Путь к отчёту влияния не задан: укажите impact_report.path в настройках операций,"
+            " например .local/reports/impact-findings.yml. Контроллер читает находки только из этого файла."
+        )
+    if not path.is_file():
+        return f" Отчёт влияния не найден: {repo_relative(root, path)}."
+    return ""
+
+
 def surface_path_contract(operations: dict[str, Any]) -> dict[str, list[str]]:
     """Read consumer-owned surface -> path mappings without guessing them."""
     mapping = operations.get("surface_paths")
@@ -1703,7 +1716,8 @@ def validate_impact_findings(
             missing = required - covered.get(delta["source_id"], set())
             if missing:
                 raise OperationsError(
-                    f"Анализ влияния не покрывает изменения {delta['source_id']}: {', '.join(sorted(missing))}"
+                    f"Анализ влияния не покрывает изменения {delta['source_id']}: {', '.join(sorted(missing))}."
+                    + impact_report_gap(root, operations)
                 )
     referenced = {
         statement_id for finding in findings for statement_id in finding.get("statements", [])
@@ -1723,6 +1737,7 @@ def validate_impact_findings(
                 "Анализ влияния не покрывает утверждения дельты: "
                 + ", ".join(sorted(missing_statements))
                 + ". Каждое новое или изменённое утверждение должно войти в statements хотя бы одной находки."
+                + impact_report_gap(root, operations)
             )
 
 
@@ -3645,6 +3660,12 @@ def run_index_refresh(
                     strategy == "index_only" and source.adapter == AGENT_ADAPTER
                 )
                 partial = result.status == "partial"
+                if requires_observation and result.observation is None:
+                    raise OperationsError(
+                        f"Для стратегии {strategy} нужно наблюдение observation: свидетельство агента версии 2 "
+                        "или результат index адаптера с этим блоком. Формат описан в договоре операций "
+                        "kc-pipeline, раздел «Наблюдение внешнего источника»."
+                    )
                 if requires_observation or result.observation is not None:
                     observation = validate_source_observation(result.observation)
                     old_observation = previous_observations.get(source.source_id, {})

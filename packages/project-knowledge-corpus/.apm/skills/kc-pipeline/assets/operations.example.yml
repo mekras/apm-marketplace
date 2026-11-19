@@ -7,8 +7,11 @@ operations_version: 1
 transfer_policy:
   mode: apply_now # apply_now | propose_only
 
-# In propose_only this local report is the checked hand-off for every apply_now
-# finding. It must stay outside the tracked product layer.
+# Локальный отчёт о влиянии. По его находкам контроллер проверяет покрытие
+# изменений источников перед закрытием анализа влияния, переносом и
+# завершением прохода; в режиме propose_only он же передаёт предложения.
+# Без этого пути проход с изменениями источников или утверждений не
+# завершится. Отчёт должен оставаться вне отслеживаемого слоя продукта.
 impact_report:
   path: .local/reports/impact-findings.yml
 

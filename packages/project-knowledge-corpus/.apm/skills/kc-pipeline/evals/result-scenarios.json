@@ -1485,6 +1485,73 @@
       ]
     },
     {
+      "id": "kc-pipeline-result-external-reference-index-evidence",
+      "prompt": "Продолжи полный kc-pipeline. Источник научных статей хранится только ссылкой: external_reference, adapter: agent. Контроллер ждёт свидетельство обновления индекса. Я открыл три выбранные статьи по их адресам, локальные файлы источника не менялись. Подготовь свидетельство и продолжи проход.",
+      "input_files": [
+        {
+          "path": ".apm/skills/kc-pipeline/references/operations-contract.md",
+          "purpose": "строгое свидетельство agent-index и наблюдение внешнего источника"
+        },
+        {
+          "path": "knowledge/data/papr/source.yml",
+          "purpose": "карточка внешней ссылки с агентным маршрутом",
+          "content": "id: PAPR\nstatus: approved\nadapter: agent\nagent_route:\n  mode: agent\n  allowed_operations: [index]\n  write_scope: [knowledge/data/papr]\n  instructions: Проверить выбранные статьи по их адресам без массовой копии.\nstorage_strategy: external_reference\nprocessing_scope: selected_fragments\ncopy_policy: no_bulk_copy\nlocator: https://papers.example.org\n"
+        }
+      ],
+      "expected_output": {
+        "report_structure": [
+          "свидетельство версии 2",
+          "блок observation с областью, полнотой, способом проверки и единицами",
+          "отпечаток SHA-256 каждой выбранной статьи",
+          "повторный запуск с --agent-index-evidence"
+        ],
+        "findings": [
+          {
+            "severity": "high",
+            "observed_problem": "Для внешней ссылки подготовлено свидетельство версии 1: хэши локальных файлов без наблюдения источника.",
+            "expected_conclusion": "Локальные файлы не доказывают состояние внешнего источника, поэтому свидетельство версии 1 оставляет его непроверенным. Нужна версия 2 с блоком observation и отпечатком каждой единицы.",
+            "acceptable_fix_direction": "Сохранить поля версии 1 и добавить observation по договору операций без копии содержания статей.",
+            "corpus_claims": [
+              "KCPIPELINE-1"
+            ]
+          }
+        ]
+      },
+      "negative_control": {
+        "description": "Ответ предъявляет свидетельство версии 1 с совпадающими хэшами локальных файлов и результатом no_change.",
+        "expected_failure": "Источник остаётся непроверенным, а проход останавливается на обновлении индекса."
+      },
+      "oracle": {
+        "success_criteria": [
+          "свидетельство имеет contract_version: 2",
+          "observation содержит scope, complete, evidence и units",
+          "у каждой единицы есть locator и fingerprint SHA-256",
+          "в свидетельство не попадает текст статей"
+        ],
+        "failure_indicators": [
+          "contract_version: 1 для external_reference",
+          "нет блока observation",
+          "отпечаток заменён хэшем локального файла или числом единиц"
+        ]
+      },
+      "application_evidence": [
+        "ответ называет раздел договора о наблюдении внешнего источника",
+        "свидетельство содержит отпечаток каждой из трёх статей"
+      ],
+      "evaluation_surface": "обязательный шаг и исполняемый договор свидетельства",
+      "assertions": [
+        "Для external_reference свидетельство агента имеет версию 2 с блоком observation.",
+        "Каждая проверенная единица получает locator и отпечаток SHA-256."
+      ],
+      "must_not": [
+        "не выдавать неизменность локальных файлов за неизменность внешнего источника",
+        "не копировать содержание статей в свидетельство"
+      ],
+      "required_corpus_claims": [
+        "KCPIPELINE-1"
+      ]
+    },
+    {
       "id": "kc-pipeline-result-admission-before-processing",
       "prompt": "Запусти полный проход корпуса. В нём есть оформленный источник из рабочего разговора со статусом approved. Не расширяй принятую политику и не удаляй данные.",
       "input_files": [

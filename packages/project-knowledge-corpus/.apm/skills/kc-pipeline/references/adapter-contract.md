@@ -139,10 +139,10 @@ python3 .apm/skills/kc-pipeline/scripts/run-corpus-operations.py \
 получения материала самим агентом применяется специальный `adapter: agent` с
 `agent_route.mode: agent`, инструкциями, `write_scope` и разрешённой операцией
 `index`; это не зарегистрированный адаптер. После ручного обновления агентом
-контроллеру нужно передать `--agent-index-evidence SOURCE-ID PATH`. Свидетельство
-содержит `run_id`, хэши before/after, `checked_paths`, `changed_paths`,
-`allowed_write_scope`, результат и `source_locator`. Один
-`--agent-index-refreshed` его не заменяет. В старых карточках `manual` читается
+контроллеру нужно передать `--agent-index-evidence SOURCE-ID PATH`. Состав
+свидетельства задаёт раздел «Строгое свидетельство agent-index» в
+[`operations-contract.md`](operations-contract.md#строгое-свидетельство-agent-index).
+Один `--agent-index-refreshed` его не заменяет. В старых карточках `manual` читается
 только в совместимом режиме и явно диагностируется.
 
 Не храните в настройках токены, cookies, пароли, ключи API, заголовки
