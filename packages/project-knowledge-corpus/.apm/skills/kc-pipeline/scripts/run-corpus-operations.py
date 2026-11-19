@@ -76,6 +76,7 @@ RUN_STATUSES = {
     "paused_resources",
     "awaiting_agent_task",
     "waiting_external",
+    "environment_limited",
     "failed",
     "completed",
 }
@@ -85,8 +86,19 @@ RUN_EXIT_CODES = {
     "paused_resources": 11,
     "awaiting_agent_task": 12,
     "waiting_external": 20,
+    "environment_limited": 21,
     "failed": 1,
 }
+# Очереди, задачи которых обращаются к самому источнику. Для источника,
+# не проверенного в текущей среде, они откладываются, остальная работа идёт.
+SOURCE_ACCESS_QUEUES = ("fetch", "source_check", "verification")
+COMMAND_FAILURE_REASONS = ("command_failed", "command_unavailable", "command_no_progress")
+UNIT_PARAMETER_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
+# Итоги обновления индекса, которые требуют правки настройки проекта, а не
+# другой среды.
+CONFIGURATION_INDEX_STATUSES = {"invalid-registry", "unsupported-adapter", "terms-decision-required"}
+INDEX_BASELINE_FILE = "index-baseline.yml"
+INDEX_BASELINE_CONTRACT_VERSION = 1
 BLOCKER_CODES = {
     "access_unavailable",
     "source_unavailable",
@@ -225,6 +237,10 @@ SENSITIVE_OUTPUT_PATTERN = re.compile(
 
 class OperationsError(RuntimeError):
     """The project operations contract or its observable state is invalid."""
+
+
+class CommandLaunchError(OperationsError):
+    """A registered command could not be started, for example a missing tool."""
 
 
 def process_is_alive(pid: int) -> bool:
@@ -561,6 +577,16 @@ def validate_operation_extensions(data: dict[str, Any]) -> None:
     for stage, settings in stages.items():
         if not isinstance(stage, str) or not isinstance(settings, dict):
             raise OperationsError("Каждая стадия должна иметь строковое имя и словарь настроек.")
+        commands = settings.get("commands", [])
+        scopes = {
+            command.get("scope") for command in commands if isinstance(command, dict)
+        } if isinstance(commands, list) else set()
+        if scopes - {None, "unit"}:
+            raise OperationsError(f"stages.{stage}.commands[].scope поддерживает только unit.")
+        if "unit" in scopes and (len(scopes) != 1 or stage in GLOBAL_STAGES):
+            raise OperationsError(
+                f"stages.{stage}: scope unit задаётся всем командам стадии первичного контура."
+            )
         task_contract = settings.get("task_contract")
         if task_contract is not None and task_contract != "compound_media":
             raise OperationsError(
@@ -1034,6 +1060,34 @@ def build_run_queues(
     return queues
 
 
+def unchecked_source_ids(index_sync: dict[str, Any] | None) -> set[str]:
+    entries = index_sync.get("unchecked_sources", []) if isinstance(index_sync, dict) else []
+    return {
+        entry["source_id"]
+        for entry in entries
+        if isinstance(entry, dict) and isinstance(entry.get("source_id"), str)
+    }
+
+
+def defer_unchecked_source_tasks(
+    queues: dict[str, list[dict[str, str]]],
+    unchecked_sources: set[str] | frozenset[str],
+) -> tuple[dict[str, list[dict[str, str]]], list[dict[str, str]]]:
+    """Set aside tasks that need a source not checked in this environment."""
+    deferred: list[dict[str, str]] = []
+    if not unchecked_sources:
+        return queues, deferred
+    for name in SOURCE_ACCESS_QUEUES:
+        kept: list[dict[str, str]] = []
+        for task in queues[name]:
+            if task.get("source_id") in unchecked_sources:
+                deferred.append({**task, "queue": name, "reason": "source_not_checked_in_environment"})
+            else:
+                kept.append(task)
+        queues[name] = kept
+    return queues, deferred
+
+
 def available_task_count(queues: dict[str, list[dict[str, str]]]) -> int:
     return sum(len(queues[name]) for name in AUTOMATED_QUEUES)
 
@@ -1069,10 +1123,15 @@ def canonical_data(value: Any) -> Any:
         raise OperationsError(f"Не удалось нормализовать данные индекса: {exc}") from exc
 
 
-def source_index_snapshot(corpus_root: Path) -> dict[str, dict[str, dict[str, Any]]]:
+def source_index_snapshot(
+    corpus_root: Path,
+    only: str | None = None,
+) -> dict[str, dict[str, dict[str, Any]]]:
     """Read the provider index without treating processing state as source content."""
     snapshot: dict[str, dict[str, dict[str, Any]]] = {}
     for source in load_sources(corpus_root):
+        if only is not None and source.source_id != only:
+            continue
         path = source.source_dir / "items.yml"
         if not path.is_file():
             continue
@@ -1191,6 +1250,191 @@ def source_index_delta(
             "rejected": len(rejected),
         },
     }
+
+
+def content_fingerprint(source: CorpusSource, record: dict[str, Any]) -> str:
+    """Fingerprint a unit record without the technical fields of the source change policy."""
+    technical_fields = source_change_policy(source)
+    content = {
+        key: value
+        for key, value in flatten_values(record).items()
+        if key.rsplit(".", 1)[-1] not in technical_fields
+    }
+    return sha256_bytes(json.dumps(content, ensure_ascii=False, sort_keys=True).encode("utf-8"))
+
+
+def index_baseline_path(source: CorpusSource) -> Path:
+    return source.source_dir / INDEX_BASELINE_FILE
+
+
+def validate_index_baseline(data: Any, source_id: str, label: str) -> dict[str, Any]:
+    """Check the portable baseline: identifiers, locators, fingerprints and dates only."""
+    if not isinstance(data, dict) or data.get("contract_version") != INDEX_BASELINE_CONTRACT_VERSION:
+        raise OperationsError(f"{label}: неподдерживаемый договор базы сравнения источника.")
+    allowed = {"contract_version", "source_id", "checked_at", "reviewed_at", "units", "observation"}
+    if not set(data) <= allowed or data.get("source_id") != source_id:
+        raise OperationsError(f"{label}: база сравнения содержит лишние поля или чужой source_id.")
+    for field in ("checked_at", "reviewed_at"):
+        if data.get(field) is not None and not isinstance(data[field], str):
+            raise OperationsError(f"{label}: {field} должен быть строкой даты.")
+    units = data.get("units")
+    if not isinstance(units, dict):
+        raise OperationsError(f"{label}: units должен быть словарём единиц.")
+    for unit_id, unit in units.items():
+        if (
+            not isinstance(unit_id, str)
+            or not isinstance(unit, dict)
+            or not set(unit) <= {"fingerprint", "eligible"}
+            or not isinstance(unit.get("fingerprint"), str)
+            or re.fullmatch(r"[0-9a-f]{64}", unit["fingerprint"]) is None
+            or unit.get("eligible", False) is not False
+        ):
+            raise OperationsError(
+                f"{label}: единица базы хранит только fingerprint SHA-256 и необязательный eligible: false."
+            )
+    observation = data.get("observation")
+    if observation is not None:
+        if (
+            not isinstance(observation, dict)
+            or set(observation) != {"scope", "units"}
+            or not isinstance(observation.get("scope"), str)
+            or not isinstance(observation.get("units"), dict)
+        ):
+            raise OperationsError(f"{label}: observation базы хранит только scope и units.")
+        for unit_id, unit in observation["units"].items():
+            if (
+                not isinstance(unit_id, str)
+                or not isinstance(unit, dict)
+                or set(unit) != {"locator", "fingerprint"}
+                or not isinstance(unit.get("locator"), str)
+                or not isinstance(unit.get("fingerprint"), str)
+                or re.fullmatch(r"[0-9a-f]{64}", unit["fingerprint"]) is None
+            ):
+                raise OperationsError(f"{label}: единица observation базы хранит только locator и fingerprint.")
+    return canonical_data(data)
+
+
+def load_index_baseline(source: CorpusSource) -> dict[str, Any] | None:
+    path = index_baseline_path(source)
+    if not path.is_file():
+        return None
+    return validate_index_baseline(load_yaml(path), source.source_id, str(path))
+
+
+def portable_baseline_records(
+    source: CorpusSource,
+    current_records: dict[str, dict[str, Any]],
+    baseline_doc: dict[str, Any],
+) -> dict[str, dict[str, Any]]:
+    """Restore comparable records of the last reviewed state from fingerprints.
+
+    A unit whose current content matches the reviewed fingerprint keeps its
+    current record. Otherwise a stub stands in for the reviewed record, so the
+    unreviewed difference appears in the delta instead of becoming the base.
+    """
+    records: dict[str, dict[str, Any]] = {}
+    for unit_id, unit in baseline_doc["units"].items():
+        current = current_records.get(unit_id)
+        if current is not None and content_fingerprint(source, current) == unit["fingerprint"]:
+            records[unit_id] = current
+            continue
+        stub: dict[str, Any] = {"id": unit_id, "_baseline_fingerprint": unit["fingerprint"]}
+        if unit.get("eligible") is False:
+            stub["rejected"] = True
+        records[unit_id] = stub
+    return canonical_data(records)
+
+
+def write_index_baseline(
+    source: CorpusSource,
+    records: dict[str, dict[str, Any]],
+    observation: dict[str, Any] | None,
+    checked_at: str | None,
+    reviewed_at: str | None,
+) -> None:
+    units: dict[str, dict[str, Any]] = {}
+    for unit_id, record in sorted(records.items()):
+        if isinstance(record.get("_baseline_fingerprint"), str):
+            fingerprint = record["_baseline_fingerprint"]
+        else:
+            fingerprint = content_fingerprint(source, record)
+        entry: dict[str, Any] = {"fingerprint": fingerprint}
+        if not unit_eligibility(record)[0]:
+            entry["eligible"] = False
+        units[unit_id] = entry
+    data: dict[str, Any] = {
+        "contract_version": INDEX_BASELINE_CONTRACT_VERSION,
+        "source_id": source.source_id,
+        "checked_at": checked_at,
+        "reviewed_at": reviewed_at,
+        "units": units,
+    }
+    if isinstance(observation, dict):
+        data["observation"] = {"scope": observation["scope"], "units": observation["units"]}
+    dump_yaml_atomically(index_baseline_path(source), data)
+
+
+def record_index_check(corpus_root: Path, source_ids: set[str], checked_at: str) -> None:
+    """Move only the check date; the compared composition waits for the impact review."""
+    for source in load_sources(corpus_root):
+        if source.source_id not in source_ids:
+            continue
+        baseline_doc = load_index_baseline(source)
+        if baseline_doc is None:
+            continue
+        baseline_doc["checked_at"] = checked_at
+        dump_yaml_atomically(index_baseline_path(source), baseline_doc)
+
+
+def commit_reviewed_baselines(corpus_root: Path, index_sync: dict[str, Any], reviewed_at: str) -> list[str]:
+    """Shift the portable base of every source whose delta passed the impact review."""
+    checked = set(index_sync.get("checked_sources", []))
+    partial = {
+        entry["source_id"]
+        for entry in index_sync.get("partial_sources", [])
+        if isinstance(entry, dict) and isinstance(entry.get("source_id"), str)
+    }
+    written: list[str] = []
+    for source in load_sources(corpus_root):
+        source_id = source.source_id
+        if source_id not in checked and source_id not in partial:
+            continue
+        previous = load_index_baseline(source) or {}
+        checked_at = index_sync.get("checked_at") if source_id in checked else previous.get("checked_at")
+        write_index_baseline(
+            source,
+            index_sync.get("after", {}).get(source_id, {}),
+            index_sync.get("observations", {}).get(source_id),
+            checked_at,
+            reviewed_at,
+        )
+        written.append(source_id)
+    return written
+
+
+def apply_portable_baselines(
+    corpus_root: Path,
+    baseline: dict[str, dict[str, dict[str, Any]]],
+    observations: dict[str, Any] | None,
+) -> tuple[dict[str, dict[str, dict[str, Any]]], dict[str, Any]]:
+    """Start a new pass from the last reviewed state shared through the tracked layer."""
+    baseline = canonical_data(baseline)
+    observations = canonical_data(observations or {})
+    current = source_index_snapshot(corpus_root)
+    for source in load_sources(corpus_root):
+        baseline_doc = load_index_baseline(source)
+        if baseline_doc is None:
+            continue
+        baseline[source.source_id] = portable_baseline_records(
+            source, current.get(source.source_id, {}), baseline_doc
+        )
+        if isinstance(baseline_doc.get("observation"), dict):
+            observations[source.source_id] = {
+                **baseline_doc["observation"],
+                "complete": True,
+                "evidence": ["Переносимая база сравнения источника."],
+            }
+    return baseline, observations
 
 
 def aggregate_index_delta(deltas: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1975,7 +2219,7 @@ def build_owner_summary(
         require_coverage="impact_audit" in result.completed_global_stages,
         statement_baseline=statement_baseline,
     )
-    if result.status == "completed" and index_sync is not None:
+    if result.status in {"completed", "environment_limited"} and index_sync is not None:
         if index_sync.get("impact_review_hash") != impact_review_digest(root, corpus_root, operations, index_sync):
             raise OperationsError("Основания или отчёт анализа влияния изменились после проверки.")
     unit_entries = owner_unit_entries(index_sync)
@@ -2034,16 +2278,24 @@ def build_owner_summary(
     if result.status == "failed" and result.reason_code == "execution_contract_error":
         blockers.append({"kind": "execution_contract", "message": result.message})
     limitations: list[dict[str, Any]] = []
+    unchecked_sources: list[dict[str, Any]] = []
     if isinstance(index_sync, dict) and index_sync.get("status") != "completed":
-        limitations.extend(
-            {
+        last_checked = {
+            source.source_id: (load_index_baseline(source) or {}).get("checked_at")
+            for source in load_sources(corpus_root)
+        }
+        for entry in index_sync.get("incomplete_sources", []):
+            if not isinstance(entry, dict):
+                continue
+            limitation = {
                 "kind": "index_refresh",
                 "source_id": entry.get("source_id"),
                 "reason": entry.get("reason"),
+                "limitation_kind": entry.get("kind"),
+                "last_checked_at": last_checked.get(entry.get("source_id")),
             }
-            for entry in index_sync.get("incomplete_sources", [])
-            if isinstance(entry, dict)
-        )
+            limitations.append(limitation)
+            unchecked_sources.append(limitation)
     available_tail = available_task_count(result.queues)
     if available_tail:
         limitations.append(
@@ -2108,6 +2360,11 @@ def build_owner_summary(
         "source_quality": source_quality,
         "blockers": blockers,
         "limitations": limitations,
+        "unchecked_sources": unchecked_sources,
+        "unchecked_sources_rule": (
+            "Для непроверенного источника нет вывода ни об изменении, ни об отсутствии изменений; "
+            "его прежние утверждения остаются в силе."
+        ),
         "model_evals": {"status": "not_configured", "residual_risk": "Модельные evals не запускались без настроенных моделей."},
     }
     if result.status == "completed" and not proposed and not applied and not owner_decisions and not significant and not no_change:
@@ -2386,6 +2643,24 @@ def configured_commands(operations: dict[str, Any], stage: str) -> list[dict[str
     return [command for command in commands if isinstance(command, dict)]
 
 
+def stage_is_unit_scoped(operations: dict[str, Any], stage: str) -> bool:
+    return any(command.get("scope") == "unit" for command in configured_commands(operations, stage))
+
+
+def format_unit_argv(argv: list[str], task: dict[str, str], root: Path, command_id: str) -> list[str]:
+    """Substitute only validated identifiers of the unit, never its content (ADR-0015)."""
+    values = {"unit_id": task.get("id", ""), "source_id": task.get("source_id", ""), "unit_path": task.get("path", "")}
+    for name in ("unit_id", "source_id"):
+        if not UNIT_PARAMETER_PATTERN.fullmatch(values[name]):
+            raise OperationsError(f"Команда {command_id}: недопустимое значение {name} задачи: {values[name]!r}")
+    if values["unit_path"]:
+        resolve_inside(root, values["unit_path"], f"unit_path команды {command_id}")
+    try:
+        return [part.format(**values) for part in argv]
+    except (KeyError, IndexError, ValueError) as exc:
+        raise OperationsError(f"В argv команды {command_id} используется неизвестный параметр: {exc}") from exc
+
+
 def stage_resource_reason(root: Path, operations: dict[str, Any], stage: str) -> str | None:
     stages = operations.get("stages")
     stage_data = stages.get(stage) if isinstance(stages, dict) else None
@@ -2512,6 +2787,7 @@ def run_commands(
     *,
     transfer_policy: str = "apply_now",
     corpus_root: Path | None = None,
+    task: dict[str, str] | None = None,
 ) -> list[CommandResult]:
     if stage == "apply_changes":
         raise OperationsError(
@@ -2535,6 +2811,10 @@ def run_commands(
         for path in write_paths:
             resolve_inside(root, path, f"write_paths команды {command_id}")
         command_cwd = resolve_inside(root, cwd, f"working_directory команды {command_id}")
+        if command.get("scope") == "unit":
+            if task is None:
+                raise OperationsError(f"Команде {command_id} со scope unit не передана единица.")
+            argv = format_unit_argv(argv, task, root, command_id)
         before = git_file_fingerprints(root)
         started_at = datetime.now(UTC).isoformat()
         if activity_callback is not None:
@@ -2562,7 +2842,7 @@ def run_commands(
             except OSError as exc:
                 if activity_callback is not None:
                     activity_callback(None)
-                raise OperationsError(f"Не удалось запустить команду {command_id}: {exc}") from exc
+                raise CommandLaunchError(f"Не удалось запустить команду {command_id}: {exc}") from exc
             identity = {
                 "pid": process.pid,
                 "command_id": command_id,
@@ -2923,7 +3203,11 @@ def file_content_digest(path: Path) -> str:
 
 
 def scoped_file_manifest(root: Path, scopes: list[str]) -> dict[str, str]:
-    """Build the complete map promised by an agent index witness."""
+    """Build the complete map promised by an agent index witness.
+
+    The portable baseline belongs to the controller, not to the agent route,
+    so it stays outside the witnessed map.
+    """
     manifest: dict[str, str] = {}
     for raw_scope in scopes:
         scope = resolve_inside(root, raw_scope, "agent_route.write_scope")
@@ -2937,15 +3221,17 @@ def scoped_file_manifest(root: Path, scopes: list[str]) -> dict[str, str]:
                     path.resolve().relative_to(root)
                 except ValueError as exc:
                     raise OperationsError("Симлинк в agent_route.write_scope выходит из проекта.") from exc
-            elif path.is_file():
+            elif path.is_file() and path.name != INDEX_BASELINE_FILE:
                 manifest[repo_relative(root, path)] = file_content_digest(path)
     return dict(sorted(manifest.items()))
 
 
 def validate_source_observation(value: Any) -> dict[str, Any]:
     """Validate upstream navigation evidence, independently of local write paths."""
-    if not isinstance(value, dict) or value.get("complete") is not True:
-        raise OperationsError("Наблюдение источника отсутствует или неполно: требуется observation.complete: true.")
+    if not isinstance(value, dict) or value.get("complete") not in {True, False}:
+        raise OperationsError(
+            "Наблюдение источника отсутствует или не указывает охват: требуется observation.complete: true или false."
+        )
     if set(value) != {"scope", "complete", "evidence", "units"}:
         raise OperationsError("Наблюдение источника содержит только scope, complete, evidence и units.")
     if not isinstance(value.get("scope"), str) or not value["scope"].strip():
@@ -2975,6 +3261,7 @@ def validate_agent_index_evidence(
     before: dict[str, dict[str, Any]],
     after: dict[str, dict[str, Any]],
     previous_observation: dict[str, Any] | None = None,
+    comparison_base: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     data = load_yaml(evidence_path)
     if not isinstance(data, dict) or data.get("contract_version") not in {1, 2}:
@@ -3007,7 +3294,12 @@ def validate_agent_index_evidence(
     after_data = data.get("after")
     if not isinstance(before_data, dict) or not isinstance(after_data, dict):
         raise OperationsError("Свидетельство агентного индекса должно содержать снимки before и after.")
-    if before_data.get("snapshot_hash") != snapshot_digest(before.get(source.source_id, {})):
+    # До обновления законны два состояния: локальный индекс и база сравнения
+    # прохода; они различаются, когда база пришла из отслеживаемого слоя.
+    accepted_before = {snapshot_digest(before.get(source.source_id, {}))}
+    if comparison_base is not None:
+        accepted_before.add(snapshot_digest(comparison_base.get(source.source_id, {})))
+    if before_data.get("snapshot_hash") not in accepted_before:
         raise OperationsError("Хэш before в свидетельстве агентного индекса не совпадает с последним успешным снимком.")
     actual_after = after.get(source.source_id, {})
     if after_data.get("snapshot_hash") != snapshot_digest(actual_after):
@@ -3030,13 +3322,39 @@ def validate_agent_index_evidence(
     if set(changed) != actual_changed:
         raise OperationsError("changed_paths агентного индекса не совпадает с различиями before/after.")
     status = data.get("result")
-    if status not in {"changed", "no_change"}:
-        raise OperationsError("Свидетельство агентного индекса должно иметь результат changed или no_change.")
+    if status not in {"changed", "no_change", "unavailable"}:
+        raise OperationsError(
+            "Свидетельство агентного индекса должно иметь результат changed, no_change или unavailable."
+        )
     snapshots_differ = before.get(source.source_id, {}) != actual_after
+    if status == "unavailable":
+        # Unavailability describes this environment, not the source: it needs
+        # repeated attempts and must leave the index untouched.
+        attempts = data.get("attempts")
+        validate_access_escalation("source_unavailable", attempts, "Свидетельство недоступности агентного индекса")
+        if snapshots_differ or changed:
+            raise OperationsError("unavailable не допускает изменения индекса источника.")
+        return {
+            "path": repo_relative(root, evidence_path),
+            "source_id": source.source_id,
+            "run_id": run_id,
+            "result": status,
+            "checked_paths": checked,
+            "changed_paths": [],
+            "allowed_write_scope": allowed_scope,
+            "before_hash": before_data["snapshot_hash"],
+            "after_hash": after_data["snapshot_hash"],
+            "observation": None,
+            "attempt_count": len({attempt.strip() for attempt in attempts}),
+        }
     observation = None
     if data.get("contract_version") == 2:
         observation = validate_source_observation(data.get("observation"))
-        observation_changed = observation["units"] != (previous_observation or {}).get("units", {})
+        previous_units = (previous_observation or {}).get("units", {})
+        if observation["complete"]:
+            observation_changed = observation["units"] != previous_units
+        else:
+            observation_changed = any(previous_units.get(unit_id) != unit for unit_id, unit in observation["units"].items())
         snapshots_differ = snapshots_differ or observation_changed
     if status == "changed" and (not snapshots_differ or (observation is None and not changed)):
         raise OperationsError("changed требует различающиеся снимки и непустой changed_paths.")
@@ -3056,6 +3374,125 @@ def validate_agent_index_evidence(
     }
 
 
+def recount_delta(delta: dict[str, Any]) -> dict[str, Any]:
+    delta["counts"] = {
+        name: len(delta.get(name, []))
+        for name in ("added", "changed", "removed", "unchanged", "technical_only", "rejected")
+    }
+    return delta
+
+
+def unchecked_index_entry(source_id: str, status: str, message: str, kind: str | None = None) -> dict[str, Any]:
+    """Describe why a source stays unchecked in this environment, kept in the local state only."""
+    if kind is None:
+        kind = "configuration" if status in CONFIGURATION_INDEX_STATUSES else "environment"
+    return {"source_id": source_id, "status": status, "kind": kind, "reason": message}
+
+
+INDEX_GUARD_UNIT_FILES = ("item.yml", "statements.yml", "verification.yml")
+
+
+@dataclass(frozen=True)
+class SourceMetadataGuard:
+    """Copy of a source's index metadata taken before an adapter index operation (ADR-0016)."""
+
+    saved: dict[Path, tuple[bytes, int]]
+    files: frozenset[Path]
+
+
+def capture_source_metadata(source: CorpusSource) -> SourceMetadataGuard:
+    files = frozenset(path for path in source.source_dir.rglob("*") if path.is_file() and not path.is_symlink())
+    saved = {
+        path: (path.read_bytes(), path.stat().st_mode & 0o777)
+        for path in files
+        if path == source.source_dir / "items.yml" or path.name in INDEX_GUARD_UNIT_FILES
+    }
+    return SourceMetadataGuard(saved, files)
+
+
+def restore_metadata_file(root: Path, path: Path, data: bytes, mode: int) -> None:
+    relative = repo_relative(root, path)
+    resolve_inside(root, relative, "Восстанавливаемый файл").parent.mkdir(parents=True, exist_ok=True)
+    safe_replace_bytes(root, relative, data, "Восстанавливаемый файл")
+    os.chmod(path, mode)
+
+
+def restore_source_metadata(
+    root: Path,
+    source: CorpusSource,
+    guard: SourceMetadataGuard,
+    *,
+    partial: bool,
+) -> dict[str, list[str]]:
+    """Return what an unsuccessful or partial index operation took away.
+
+    After an unsuccessful operation every saved file that changed or vanished is
+    restored byte for byte. After a partial one observed changes stay: only
+    vanished unit metadata files and index rows of units missing from
+    ``items.yml`` come back. Other deleted files are only reported.
+    """
+    items_path = source.source_dir / "items.yml"
+    restored: list[str] = []
+    for path, (data, mode) in sorted(guard.saved.items()):
+        if partial and path == items_path:
+            continue
+        current = path.read_bytes() if path.is_file() and not path.is_symlink() else None
+        if current is None or (not partial and current != data):
+            restore_metadata_file(root, path, data, mode)
+            restored.append(repo_relative(root, path))
+    restored_units: list[str] = []
+    if partial and items_path in guard.saved:
+        try:
+            before = yaml.safe_load(guard.saved[items_path][0].decode("utf-8"))
+        except (UnicodeDecodeError, yaml.YAMLError):
+            before = None
+        before_rows = before.get("items") if isinstance(before, dict) else None
+        try:
+            current_data = load_yaml(items_path) if items_path.is_file() else None
+        except OperationsError:
+            current_data = None
+        if not isinstance(current_data, dict) or not isinstance(current_data.get("items"), list):
+            restore_metadata_file(root, items_path, *guard.saved[items_path])
+            restored.append(repo_relative(root, items_path))
+        elif isinstance(before_rows, list):
+            present = {row.get("id") for row in current_data["items"] if isinstance(row, dict)}
+            lost = [
+                row for row in before_rows
+                if isinstance(row, dict) and isinstance(row.get("id"), str) and row["id"] not in present
+            ]
+            if lost:
+                current_data["items"].extend(lost)
+                rendered = yaml.safe_dump(current_data, allow_unicode=True, sort_keys=False).encode("utf-8")
+                restore_metadata_file(root, items_path, rendered, guard.saved[items_path][1])
+                restored.append(repo_relative(root, items_path))
+                restored_units = [row["id"] for row in lost]
+    deleted = sorted(
+        repo_relative(root, path)
+        for path in guard.files
+        if path not in guard.saved and not path.exists()
+    )
+    return {"restored_paths": sorted(set(restored)), "restored_units": restored_units, "deleted_paths": deleted}
+
+
+def apply_metadata_restoration(entry: dict[str, Any], restoration: dict[str, list[str]]) -> None:
+    if restoration["restored_paths"]:
+        entry["restored_paths"] = restoration["restored_paths"]
+        entry["reason"] += (
+            " Операция изменила метаданные источника; контроллер восстановил их из копии до операции: "
+            + ", ".join(restoration["restored_paths"])
+            + "."
+        )
+    if restoration["restored_units"]:
+        entry["restored_units"] = restoration["restored_units"]
+    if restoration["deleted_paths"]:
+        entry["kind"] = "failure"
+        entry["deleted_paths"] = restoration["deleted_paths"]
+        entry["reason"] += (
+            " Операция удалила файлы источника, которые контроллер не восстанавливает; верните их по Git "
+            "или из резервной копии: " + ", ".join(restoration["deleted_paths"]) + "."
+        )
+
+
 def run_index_refresh(
     root: Path,
     corpus_root: Path,
@@ -3065,19 +3502,31 @@ def run_index_refresh(
     agent_index_evidence: dict[str, Path] | None = None,
     run_id: str = "",
     baseline_observations: dict[str, Any] | None = None,
+    pre_refresh: dict[str, dict[str, dict[str, Any]]] | None = None,
 ) -> tuple[list[AdapterResult], dict[str, Any]]:
-    """Refresh provider indexes before queues are built and persist their delta."""
+    """Refresh provider indexes per source before queues are built and persist their delta.
+
+    A source that cannot be checked in this environment keeps its previous
+    index as the base and drops out of this delta only; the others continue.
+    ``pre_refresh`` is the local index before refresh that agent evidence
+    describes, while ``baseline`` is the base of comparison for the delta.
+    """
     definitions = adapter_definitions(operations)
     confirmed = agent_index_confirmed or set()
     evidence_paths = agent_index_evidence or {}
+    pre_refresh = baseline if pre_refresh is None else pre_refresh
     results: list[AdapterResult] = []
     deltas: list[dict[str, Any]] = []
-    incomplete: list[dict[str, str]] = []
+    unchecked: list[dict[str, Any]] = []
+    partial_sources: list[dict[str, Any]] = []
+    checked_sources: list[str] = []
+    agent_pending: list[str] = []
     failed_attempts: list[dict[str, Any]] = []
     evidence_records: list[dict[str, Any]] = []
     confirmed_after = canonical_data(baseline)
     previous_observations = baseline_observations or {}
     observations = canonical_data(previous_observations)
+    checked_at = datetime.now(UTC).isoformat()
     sources = load_sources(corpus_root)
     refreshable = [
         source
@@ -3088,6 +3537,12 @@ def run_index_refresh(
     ]
     for source in refreshable:
         previous = baseline.get(source.source_id, {})
+        local_before = source_index_snapshot(corpus_root, source.source_id).get(source.source_id, {})
+        # Агент меняет файлы до запуска контроллера, поэтому копия есть только у адаптера.
+        guard = (
+            None if source.adapter in {AGENT_ADAPTER, LEGACY_MANUAL_ADAPTER}
+            else capture_source_metadata(source)
+        )
         try:
             evidence_record: dict[str, Any] | None = None
             if source.adapter in {AGENT_ADAPTER, LEGACY_MANUAL_ADAPTER}:
@@ -3100,14 +3555,18 @@ def run_index_refresh(
                 if not valid_agent_route(root, source):
                     result = AdapterResult(source.source_id, source.adapter, "index", "invalid-registry", message, ())
                 elif source.source_id not in evidence_paths:
-                    result = AdapterResult(
-                        source.source_id,
-                        source.adapter,
-                        "index",
-                        "manual-required",
-                        message + " Требуется проверяемое свидетельство, а не один флаг подтверждения.",
-                        (),
+                    results.append(
+                        AdapterResult(
+                            source.source_id,
+                            source.adapter,
+                            "index",
+                            "manual-required",
+                            message + " Требуется проверяемое свидетельство, а не один флаг подтверждения.",
+                            (),
+                        )
                     )
+                    agent_pending.append(source.source_id)
+                    continue
                 else:
                     observed = source_index_snapshot(corpus_root)
                     evidence_record = validate_agent_index_evidence(
@@ -3115,19 +3574,31 @@ def run_index_refresh(
                         source,
                         evidence_paths[source.source_id],
                         run_id,
-                        baseline,
+                        pre_refresh,
                         observed,
                         previous_observations.get(source.source_id),
+                        baseline,
                     )
-                    result = AdapterResult(
-                        source.source_id,
-                        source.adapter,
-                        "index",
-                        evidence_record["result"],
-                        message + " Свидетельство проверено контроллером.",
-                        tuple(evidence_record["changed_paths"]),
-                        evidence_record["observation"],
-                    )
+                    if evidence_record["result"] == "unavailable":
+                        evidence_records.append(evidence_record)
+                        result = AdapterResult(
+                            source.source_id,
+                            source.adapter,
+                            "index",
+                            "access-limited",
+                            message + " Агент подтвердил недоступность источника в этой среде.",
+                            (),
+                        )
+                    else:
+                        result = AdapterResult(
+                            source.source_id,
+                            source.adapter,
+                            "index",
+                            evidence_record["result"],
+                            message + " Свидетельство проверено контроллером.",
+                            tuple(evidence_record["changed_paths"]),
+                            evidence_record["observation"],
+                        )
             else:
                 definition = definitions.get(source.adapter)
                 if definition is None:
@@ -3168,49 +3639,131 @@ def run_index_refresh(
                         else:
                             result = run_adapter_operation(root, corpus_root, source, definition, "index")
             if result.status in ADAPTER_SUCCESS_STATUSES["index"]:
-                after_source = source_index_snapshot(corpus_root).get(source.source_id, {})
+                after_source = source_index_snapshot(corpus_root, source.source_id).get(source.source_id, {})
                 strategy = source.card.get("storage_strategy")
                 requires_observation = strategy == "external_reference" or (
                     strategy == "index_only" and source.adapter == AGENT_ADAPTER
                 )
+                partial = result.status == "partial"
                 if requires_observation or result.observation is not None:
                     observation = validate_source_observation(result.observation)
                     old_observation = previous_observations.get(source.source_id, {})
                     if old_observation and old_observation["scope"] != observation["scope"]:
                         raise OperationsError("Область observation.scope изменилась. Для сопоставления сохраните прежнюю область наблюдения, изменение договора выполните через kc-setup.")
-                    observations[source.source_id] = observation
-                    delta = source_index_delta(source, old_observation.get("units", {}), observation["units"])
+                    old_units = old_observation.get("units", {})
+                    observed_units = observation["units"]
+                    if observation["complete"]:
+                        merged_units = observed_units
+                        delta = source_index_delta(source, old_units, observed_units)
+                    else:
+                        # Unobserved units are not evidence of removal: they keep the previous base.
+                        partial = True
+                        merged_units = {**old_units, **observed_units}
+                        delta = source_index_delta(
+                            source,
+                            {unit_id: unit for unit_id, unit in old_units.items() if unit_id in observed_units},
+                            observed_units,
+                        )
+                        delta["unobserved"] = sorted(set(old_units) - set(observed_units))
+                    observations[source.source_id] = {**observation, "units": merged_units}
                     delta["rejected"] = sorted(
-                        unit_id for unit_id in set(observation["units"]) | set(delta["removed"])
+                        unit_id for unit_id in set(observed_units) | set(delta["removed"])
                         if not unit_eligibility(after_source.get(unit_id, previous.get(unit_id, {})))[0]
                     )
-                    delta["counts"]["rejected"] = len(delta["rejected"])
+                    recount_delta(delta)
                 else:
                     delta = source_index_delta(source, previous, after_source)
+                    if partial:
+                        # A partial answer proves removal only by an explicit publication sign.
+                        missing = [unit_id for unit_id in delta["removed"] if unit_id not in after_source]
+                        delta["removed"] = [unit_id for unit_id in delta["removed"] if unit_id in after_source]
+                        delta["rejected"] = [
+                            unit_id for unit_id in delta["rejected"]
+                            if unit_id not in missing
+                        ]
+                        delta["unobserved"] = missing
+                        after_source = {**{unit_id: previous[unit_id] for unit_id in missing}, **after_source}
+                        recount_delta(delta)
                 confirmed_after[source.source_id] = after_source
                 deltas.append(delta)
+                if partial:
+                    partial_entry: dict[str, Any] = {
+                        "source_id": source.source_id,
+                        "kind": "environment",
+                        "unobserved": list(delta.get("unobserved", [])),
+                        "reason": "Источник обследован частично; необследованные единицы не проверены и сохраняют прежнюю базу.",
+                    }
+                    if guard is not None:
+                        apply_metadata_restoration(
+                            partial_entry, restore_source_metadata(root, source, guard, partial=True)
+                        )
+                    local_after = source_index_snapshot(corpus_root, source.source_id).get(source.source_id, {})
+                    lost = [
+                        unit_id for unit_id in delta.get("unobserved", [])
+                        if unit_id in local_before and unit_id not in local_after
+                    ]
+                    if lost:
+                        partial_entry["reason"] += (
+                            " Частичный ответ убрал из локального индекса единицы "
+                            + ", ".join(lost)
+                            + "; они не считаются исчезнувшими, восстановите их по Git."
+                        )
+                        partial_entry["index_modified"] = True
+                    partial_sources.append(partial_entry)
+                else:
+                    checked_sources.append(source.source_id)
                 if evidence_record is not None:
                     evidence_records.append(evidence_record)
             else:
-                incomplete.append({"source_id": source.source_id, "reason": result.message})
+                entry = unchecked_index_entry(source.source_id, result.status, result.message)
+                if guard is not None:
+                    apply_metadata_restoration(entry, restore_source_metadata(root, source, guard, partial=False))
+                if source_index_snapshot(corpus_root, source.source_id).get(source.source_id, {}) != local_before:
+                    entry["reason"] += (
+                        " Неуспешная операция изменила локальный индекс источника; изменения не учтены "
+                        "в дельте и не сдвигают базу, проверьте их по Git."
+                    )
+                    entry["index_modified"] = True
+                unchecked.append(entry)
             results.append(result)
         except OperationsError as exc:
             message = safe_adapter_message(str(exc))
             result = AdapterResult(source.source_id, source.adapter, "index", "fetch-error", message, ())
             results.append(result)
             failed_attempts.append({"source_id": source.source_id, "operation": "index", "error": message})
-            incomplete.append({"source_id": source.source_id, "reason": message})
+            entry = unchecked_index_entry(source.source_id, "fetch-error", message, "failure")
+            if guard is not None:
+                apply_metadata_restoration(entry, restore_source_metadata(root, source, guard, partial=False))
+            unchecked.append(entry)
     try:
         observed_after = source_index_snapshot(corpus_root)
     except OperationsError as exc:
         observed_after = confirmed_after
         failed_attempts.append({"source_id": "__pipeline__", "operation": "snapshot", "error": safe_adapter_message(str(exc))})
     delta = aggregate_index_delta(deltas)
+    complete = not unchecked and not partial_sources and not agent_pending
     index_sync = {
-        "status": "completed" if not incomplete else "incomplete",
+        "status": "completed" if complete else "incomplete",
         "sources_checked": len(deltas),
         "sources_total": len(refreshable),
-        "incomplete_sources": incomplete,
+        "checked_at": checked_at,
+        "checked_sources": checked_sources,
+        "partial_sources": partial_sources,
+        "unchecked_sources": unchecked,
+        "agent_pending": agent_pending,
+        "incomplete_sources": [
+            *unchecked,
+            *partial_sources,
+            *(
+                {
+                    "source_id": source_id,
+                    "status": "manual-required",
+                    "kind": "agent_evidence",
+                    "reason": "Индекс должен обновить агент по agent_route и предъявить свидетельство.",
+                }
+                for source_id in agent_pending
+            ),
+        ],
         "delta": delta,
         "baseline": baseline,
         "after": confirmed_after,
@@ -3286,6 +3839,23 @@ def format_completed_global_stages(run_state: dict[str, Any]) -> str:
     return ", ".join(parts)
 
 
+def format_command_failure_lines(run_state: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    for entry in run_state.get("environment_deferred", []):
+        if not isinstance(entry, dict) or entry.get("reason") not in COMMAND_FAILURE_REASONS:
+            continue
+        line = (
+            f"  - {entry.get('queue')}: {entry.get('id')} ({entry.get('reason')}, {entry.get('kind')}); "
+            f"{entry.get('detail')}"
+        )
+        if entry.get("repeated"):
+            line += f" Сбой повторяется подряд: {entry.get('consecutive_failures')}."
+        if entry.get("scope") == "queue":
+            line += " Команда без scope: unit отложила очередь целиком; переведите её на запуск по единице."
+        lines.append(line)
+    return lines
+
+
 def format_resource_waiting_lines(run_state: dict[str, Any]) -> list[str]:
     lines: list[str] = []
     for entry in run_state.get("resource_waiting", []):
@@ -3333,6 +3903,15 @@ def render_report(
                 "- групп за пределами бюджета внимания: "
                 f"{run_state.get('human_decision_group_overflow', 0)}"
             ),
+            (
+                "- задач, отложенных до среды с доступом к источнику: "
+                f"{sum(entry.get('reason') not in COMMAND_FAILURE_REASONS for entry in run_state.get('environment_deferred', []))}"
+            ),
+            (
+                "- задач, отложенных после сбоя команды проекта: "
+                f"{sum(entry.get('reason') in COMMAND_FAILURE_REASONS for entry in run_state.get('environment_deferred', []))}"
+            ),
+            *format_command_failure_lines(run_state),
             (
                 "- очередей в ожидании ресурсов: "
                 f"{len(run_state.get('resource_waiting', []))}"
@@ -3497,7 +4076,11 @@ def render_report(
             ]
         )
         for entry in index_sync.get("incomplete_sources", []):
-            lines.append(f"  - источник {entry.get('source_id')}: {entry.get('reason')}")
+            kind = f" [{entry.get('kind')}]" if entry.get("kind") else ""
+            lines.append(f"  - источник {entry.get('source_id')}{kind}: {entry.get('reason')}")
+        reviewed = index_sync.get("reviewed_baselines")
+        if reviewed:
+            lines.append(f"- база сравнения сдвинута после анализа влияния: {', '.join(reviewed)}")
     if operational_check is not None:
         lines.extend(
             [
@@ -3848,6 +4431,7 @@ def finish_run_state(
         "human_decision_group_overflow": overflow,
         "completed_global_stages": list(result.completed_global_stages),
         "resource_waiting": list(result.resource_waiting),
+        "environment_deferred": list(running.get("environment_deferred", [])),
         "active_executor": None,
         "queues": result.queues,
         "message": result.message,
@@ -3906,15 +4490,29 @@ def complete_global_stage(
                 raise OperationsError(f"Путь --evidence не существует: {raw_path}")
             evidence_paths.append(raw_path)
         normalized_names = normalized_artifacts(operations)
-        queues_before = build_run_queues(
-            corpus_root, normalized_names, root, set(completed_global_stages)
-        )
+        # Работа, отложенная до другой среды или после сбоя команды, не задерживает глобальные стадии.
+        unchecked_sources = unchecked_source_ids(previous_state.get("index_sync"))
+        failed_entries = [
+            entry for entry in previous_state.get("environment_deferred", [])
+            if isinstance(entry, dict) and entry.get("reason") in COMMAND_FAILURE_REASONS
+        ]
+        failed_keys = {(entry.get("queue"), entry.get("id")) for entry in failed_entries}
+
+        def deferrable_queues(stages: set[str]) -> tuple[dict[str, list[dict[str, str]]], list[dict[str, Any]]]:
+            rebuilt, deferred = defer_unchecked_source_tasks(
+                build_run_queues(corpus_root, normalized_names, root, stages), unchecked_sources
+            )
+            for name in PRIMARY_QUEUES:
+                rebuilt[name] = [task for task in rebuilt[name] if (name, task.get("id")) not in failed_keys]
+            return rebuilt, [*deferred, *failed_entries]
+
+        queues_before, _ = deferrable_queues(set(completed_global_stages))
         pending_primary = [name for name in PRIMARY_QUEUES if queues_before[name]]
         if pending_primary:
             raise OperationsError(
                 "Первичный контур очередей не пуст: "
                 f"{', '.join(pending_primary)}. Ручное закрытие глобальной стадии допустимо "
-                "только когда первичный контур пуст."
+                "только когда в первичном контуре нет работы, выполнимой в текущей среде."
             )
         pending_global = [name for name in GLOBAL_STAGES if queues_before[name]]
         if not pending_global or pending_global[0] != stage:
@@ -3925,8 +4523,16 @@ def complete_global_stage(
             )
         if stage in {"impact_audit", "apply_changes"}:
             sync = previous_state.get("index_sync")
-            if not isinstance(sync, dict) or sync.get("status") != "completed":
-                raise OperationsError("Ручное закрытие анализа требует завершённого обновления индексов источников.")
+            if (
+                not isinstance(sync, dict)
+                or sync.get("agent_pending")
+                or sync.get("index_refresh_error")
+                or sync.get("index_rebuild_error")
+            ):
+                raise OperationsError(
+                    "Ручное закрытие анализа требует выполненного обновления индексов: без ожидающих "
+                    "свидетельств агента и ошибок обновления."
+                )
             digest = check_impact_review(
                 root, corpus_root, operations, sync, run_statement_baseline(previous_state)
             )
@@ -3942,9 +4548,7 @@ def complete_global_stage(
             "evidence": evidence_paths,
             "note": note,
         }
-        new_queues = build_run_queues(
-            corpus_root, normalized_names, root, set(completed_global_stages)
-        )
+        new_queues, environment_deferred = deferrable_queues(set(completed_global_stages))
         active_groups, group_count, overflow = decision_groups(new_queues, operations)
         resource_waiting = [
             entry
@@ -3963,6 +4567,7 @@ def complete_global_stage(
             "human_decision_group_count": group_count,
             "human_decision_group_overflow": overflow,
             "resource_waiting": resource_waiting,
+            "environment_deferred": environment_deferred,
             "updated_at": completed_at,
             "message": (
                 f"Глобальная стадия {stage} закрыта вручную (evidence: "
@@ -3987,14 +4592,52 @@ def run_pipeline(
     transfer_policy: str = "apply_now",
     index_sync: dict[str, Any] | None = None,
     statement_baseline: dict[str, dict[str, Any]] | None = None,
+    unchecked_sources: set[str] | frozenset[str] = frozenset(),
+    index_incomplete: bool = False,
+    previous_failures: dict[str, int] | None = None,
+    command_failures: list[dict[str, Any]] | None = None,
 ) -> PipelineResult:
     normalized_names = normalized_artifacts(operations)
-    queues = build_run_queues(
-        corpus_root,
-        normalized_names,
-        root,
-        completed_global_stages,
-    )
+    environment_deferred: list[dict[str, Any]] = []
+    # Задачи первичного контура, отложенные до следующей попытки после сбоя команды (ADR-0015).
+    failed_tasks: dict[tuple[str, str], dict[str, Any]] = {}
+    previous_failures = previous_failures or {}
+
+    def rebuild_queues() -> dict[str, list[dict[str, str]]]:
+        rebuilt, deferred = defer_unchecked_source_tasks(
+            build_run_queues(corpus_root, normalized_names, root, completed_global_stages),
+            unchecked_sources,
+        )
+        for name in PRIMARY_QUEUES:
+            rebuilt[name] = [task for task in rebuilt[name] if (name, task.get("id", "")) not in failed_tasks]
+        environment_deferred[:] = [*deferred, *failed_tasks.values()]
+        if command_failures is not None:
+            command_failures[:] = list(failed_tasks.values())
+        return rebuilt
+
+    def defer_failed(
+        name: str,
+        tasks: list[dict[str, str]],
+        reason: str,
+        kind: str,
+        detail: str,
+        unit_scoped: bool,
+    ) -> None:
+        for task in tasks:
+            key = f"{name}:{task.get('id', '')}"
+            count = previous_failures.get(key, 0) + 1
+            failed_tasks[(name, task.get("id", ""))] = {
+                **task,
+                "queue": name,
+                "reason": reason,
+                "kind": kind,
+                "detail": detail,
+                "scope": "unit" if unit_scoped else "queue",
+                "consecutive_failures": count,
+                "repeated": count >= 2,
+            }
+
+    queues = rebuild_queues()
     results: list[CommandResult] = []
     steps = 0
     resource_waiting: dict[str, str] = {}
@@ -4057,6 +4700,19 @@ def run_pipeline(
                     "Автоматический хвост остался, но ни одна готовая очередь сейчас не исполнима.",
                     completed_stages(),
                     waiting_entries,
+                )
+            if index_incomplete or unchecked_sources or environment_deferred:
+                return PipelineResult(
+                    "environment_limited",
+                    "environment_limited",
+                    queues,
+                    tuple(results),
+                    steps,
+                    "Доступная в этой среде работа выполнена. Непроверенные источники и отложенные "
+                    "задачи ждут повторного запуска там, где источник доступен.",
+                    completed_stages(),
+                    (),
+                    transfer_evidence=tuple(transfer_evidence),
                 )
             if queues["human_decision"]:
                 return PipelineResult(
@@ -4124,12 +4780,7 @@ def run_pipeline(
             )
             completed_global_stages.add(queue)
             steps += 1
-            queues = build_run_queues(
-                corpus_root,
-                normalized_names,
-                root,
-                completed_global_stages,
-            )
+            queues = rebuild_queues()
             if activity_callback is not None:
                 activity_callback(None, queues)
             continue
@@ -4137,12 +4788,7 @@ def run_pipeline(
             try:
                 transfer_evidence.extend(apply_controlled_change_sets(root, apply_findings))
             except OperationsError as exc:
-                queues = build_run_queues(
-                    corpus_root,
-                    normalized_names,
-                    root,
-                    completed_global_stages,
-                )
+                queues = rebuild_queues()
                 return PipelineResult(
                     "failed",
                     "apply_evidence_missing",
@@ -4163,15 +4809,14 @@ def run_pipeline(
             )
             steps += 1
             completed_global_stages.add(queue)
-            queues = build_run_queues(
-                corpus_root,
-                normalized_names,
-                root,
-                completed_global_stages,
-            )
+            queues = rebuild_queues()
             if activity_callback is not None:
                 activity_callback(None, queues)
             continue
+        isolated = queue in PRIMARY_QUEUES
+        unit_scoped = isolated and stage_is_unit_scoped(operations, queue)
+        task = queues[queue][0] if unit_scoped else None
+        attempted = [task] if task is not None else list(queues[queue])
         try:
             stage_results = run_commands(
                 root,
@@ -4187,14 +4832,29 @@ def run_pipeline(
                 ),
                 transfer_policy=transfer_policy,
                 corpus_root=corpus_root,
+                task=task,
             )
+        except CommandLaunchError as exc:
+            if not isolated:
+                queues = rebuild_queues()
+                return PipelineResult(
+                    "failed",
+                    "execution_contract_error",
+                    queues,
+                    tuple(results),
+                    steps,
+                    f"Исполнитель очереди {queue} нарушил договор операций: {exc}",
+                    completed_stages(),
+                )
+            # Отсутствующий инструмент — ограничение среды, а не ошибка договора (ФТ-015).
+            defer_failed(queue, attempted, "command_unavailable", "environment", str(exc), unit_scoped)
+            steps += 1
+            queues = rebuild_queues()
+            if activity_callback is not None:
+                activity_callback(None, queues)
+            continue
         except OperationsError as exc:
-            queues = build_run_queues(
-                corpus_root,
-                normalized_names,
-                root,
-                completed_global_stages,
-            )
+            queues = rebuild_queues()
             return PipelineResult(
                 "failed",
                 "execution_contract_error",
@@ -4206,13 +4866,22 @@ def run_pipeline(
             )
         results.extend(stage_results)
         steps += 1
-        if any(result.returncode != 0 for result in stage_results):
-            queues = build_run_queues(
-                corpus_root,
-                normalized_names,
-                root,
-                completed_global_stages,
+        failed_result = next((result for result in stage_results if result.returncode != 0), None)
+        if failed_result is not None and isolated:
+            defer_failed(
+                queue,
+                attempted,
+                "command_failed",
+                "failure",
+                f"Команда {failed_result.command_id} завершилась с кодом {failed_result.returncode}.",
+                unit_scoped,
             )
+            queues = rebuild_queues()
+            if activity_callback is not None:
+                activity_callback(None, queues)
+            continue
+        if failed_result is not None:
+            queues = rebuild_queues()
             return PipelineResult(
                 "failed",
                 "stage_command_failed",
@@ -4237,12 +4906,7 @@ def run_pipeline(
                     )
                 )
             except OperationsError as exc:
-                queues = build_run_queues(
-                    corpus_root,
-                    normalized_names,
-                    root,
-                    completed_global_stages,
-                )
+                queues = rebuild_queues()
                 return PipelineResult(
                     "failed",
                     "apply_evidence_missing",
@@ -4259,15 +4923,26 @@ def run_pipeline(
                 if index_sync is not None:
                     index_sync["impact_review_hash"] = digest
             completed_global_stages.add(queue)
-        queues = build_run_queues(
-            corpus_root,
-            normalized_names,
-            root,
-            completed_global_stages,
-        )
+        queues = rebuild_queues()
         if activity_callback is not None:
             activity_callback(None, queues)
-        if stage_fingerprint(queues, queue) == before:
+        stalled = (
+            task in queues[queue] if unit_scoped else stage_fingerprint(queues, queue) == before
+        )
+        if stalled and isolated:
+            defer_failed(
+                queue,
+                attempted,
+                "command_no_progress",
+                "failure",
+                f"Исполнитель очереди {queue} не изменил машиночитаемую очередь.",
+                unit_scoped,
+            )
+            queues = rebuild_queues()
+            if activity_callback is not None:
+                activity_callback(None, queues)
+            continue
+        if stalled:
             return PipelineResult(
                 "failed",
                 "no_progress",
@@ -4527,6 +5202,13 @@ def main() -> int:
                 )
             index_sync: dict[str, Any] | None = None
             index_counts: tuple[int, int] | None = None
+            unchecked_sources: set[str] = set()
+            command_failures: list[dict[str, Any]] = []
+            previous_failures = (
+                previous_state.get("command_failures", {})
+                if resumable and isinstance(previous_state.get("command_failures"), dict)
+                else {}
+            )
             previous_index_sync = previous_state.get("index_sync") if isinstance(previous_state, dict) else None
             previous_statement_snapshot = previous_state.get("statement_snapshot") if isinstance(previous_state, dict) else None
             if not isinstance(previous_statement_snapshot, dict):
@@ -4558,6 +5240,16 @@ def main() -> int:
                                     previous_index_sync.get("last_successful_after", previous_index_sync.get("after", {})))
                     else:
                         baseline = source_index_snapshot(corpus_root)
+                    pre_refresh = baseline
+                    baseline_observations = (previous_index_sync or {}).get(
+                        "baseline_observations" if resumable else "observations", {}
+                    )
+                    if not resumable:
+                        # Новый проход сравнивает источник с последним рассмотренным
+                        # состоянием из отслеживаемого слоя, общего для всех сред.
+                        baseline, baseline_observations = apply_portable_baselines(
+                            corpus_root, baseline, baseline_observations
+                        )
                     adapter_results, index_sync = run_index_refresh(
                         root,
                         corpus_root,
@@ -4566,8 +5258,10 @@ def main() -> int:
                         set(args.agent_index_refreshed),
                         agent_evidence,
                         running_state["run_id"],
-                        (previous_index_sync or {}).get("baseline_observations" if resumable else "observations", {}),
+                        baseline_observations,
+                        pre_refresh=pre_refresh,
                     )
+                    record_index_check(corpus_root, set(index_sync["checked_sources"]), index_sync["checked_at"])
                     if resumable and "impact_audit" in completed_global_stages:
                         old_digest = (previous_index_sync or {}).get("impact_review_hash")
                         if old_digest and old_digest == impact_review_digest(root, corpus_root, operations, index_sync):
@@ -4578,7 +5272,7 @@ def main() -> int:
                             for stage in ("impact_audit", "apply_changes", "corpus_validation"):
                                 completions.pop(stage, None)
                             running_state["completed_global_stages"] = [stage for stage in GLOBAL_STAGES if stage in completed_global_stages]
-                    if index_sync["status"] == "completed":
+                    if not index_sync["agent_pending"]:
                         try:
                             index_counts = rebuild_indexes(corpus_root, root)
                         except OperationsError as exc:
@@ -4590,6 +5284,9 @@ def main() -> int:
                 except OperationsError as exc:
                     adapter_results = adapter_results or []
                     index_sync = {
+                        "index_refresh_error": str(exc),
+                        "unchecked_sources": [],
+                        "agent_pending": [],
                         "status": "incomplete",
                         "sources_checked": 0,
                         "sources_total": 0,
@@ -4600,11 +5297,15 @@ def main() -> int:
                         "last_successful_after": canonical_data(baseline),
                         "failed_attempts": [{"source_id": "__pipeline__", "operation": "index", "error": str(exc)}],
                     }
-                initial_queues = build_run_queues(
-                    corpus_root,
-                    normalized_artifacts(operations),
-                    root,
-                    completed_global_stages,
+                unchecked_sources = unchecked_source_ids(index_sync)
+                initial_queues, _ = defer_unchecked_source_tasks(
+                    build_run_queues(
+                        corpus_root,
+                        normalized_artifacts(operations),
+                        root,
+                        completed_global_stages,
+                    ),
+                    unchecked_sources,
                 )
                 running_state = {
                     **running_state,
@@ -4630,14 +5331,33 @@ def main() -> int:
                         if stage in completed_global_stages
                     ),
                 )
-            elif index_sync is not None and index_sync.get("status") != "completed":
+            elif index_sync is not None and (
+                index_sync.get("index_refresh_error") or index_sync.get("index_rebuild_error")
+            ):
                 pipeline_result = PipelineResult(
                     "failed",
-                    "index_refresh_incomplete",
+                    "index_refresh_failed",
                     initial_queues,
                     (),
                     0,
-                    "Индекс источников обновлён не полностью; содержательный проход не заявлен завершённым.",
+                    "Обновление или пересборка индексов источников завершились ошибкой: "
+                    + str(index_sync.get("index_refresh_error") or index_sync.get("index_rebuild_error")),
+                    tuple(
+                        stage
+                        for stage in GLOBAL_STAGES
+                        if stage in completed_global_stages
+                    ),
+                )
+            elif index_sync is not None and index_sync.get("agent_pending"):
+                pipeline_result = PipelineResult(
+                    "awaiting_agent_task",
+                    "agent_index_evidence_required",
+                    initial_queues,
+                    (),
+                    0,
+                    "Агент должен обновить индексы источников по agent_route и предъявить свидетельства: "
+                    + ", ".join(index_sync["agent_pending"])
+                    + ". Если источник недоступен в этой среде, свидетельство фиксирует результат unavailable.",
                     tuple(
                         stage
                         for stage in GLOBAL_STAGES
@@ -4668,6 +5388,10 @@ def main() -> int:
                         transfer_policy=transfer_policy,
                         index_sync=index_sync,
                         statement_baseline=statement_baseline,
+                        unchecked_sources=frozenset(unchecked_sources),
+                        index_incomplete=index_sync is not None and index_sync.get("status") != "completed",
+                        previous_failures=previous_failures,
+                        command_failures=command_failures,
                     )
                 except OperationsError as exc:
                     current_queues = build_run_queues(
@@ -4689,7 +5413,7 @@ def main() -> int:
                             if stage in completed_global_stages
                         ),
                     )
-                if pipeline_result.status == "completed":
+                if pipeline_result.status in {"completed", "environment_limited"}:
                     try:
                         postflight = run_operational_check(root, corpus_root, policy)
                     except OperationsError as exc:
@@ -4711,7 +5435,11 @@ def main() -> int:
                             "Итоговая проверка обнаружила ошибки договора или блокеры публикации.",
                             pipeline_result.completed_global_stages,
                         )
-            if index_sync is not None and index_sync.get("status") == "completed":
+            if index_sync is not None and not (
+                index_sync.get("agent_pending")
+                or index_sync.get("index_refresh_error")
+                or index_sync.get("index_rebuild_error")
+            ):
                 try:
                     index_counts = rebuild_indexes(corpus_root, root)
                 except OperationsError as exc:
@@ -4757,7 +5485,7 @@ def main() -> int:
                     "owner_decisions": [],
                     "source_quality": source_quality,
                 }
-                if pipeline_result.status == "completed":
+                if pipeline_result.status in {"completed", "environment_limited"}:
                     pipeline_result = PipelineResult(
                         "failed",
                         "impact_report_invalid",
@@ -4768,6 +5496,33 @@ def main() -> int:
                         pipeline_result.completed_global_stages,
                     )
             owner_summary["run_id"] = running_state["run_id"]
+            if (
+                index_sync is not None
+                and pipeline_result.status in {"completed", "environment_limited"}
+                and "impact_audit" in pipeline_result.completed_global_stages
+            ):
+                # База источника сдвигается только после рассмотрения его дельты.
+                index_sync["reviewed_baselines"] = commit_reviewed_baselines(
+                    corpus_root, index_sync, datetime.now(UTC).isoformat()
+                )
+            if index_sync is not None:
+                running_state["environment_deferred"] = [
+                    *defer_unchecked_source_tasks(
+                        build_run_queues(
+                            corpus_root,
+                            normalized_artifacts(operations),
+                            root,
+                            set(pipeline_result.completed_global_stages),
+                        ),
+                        unchecked_source_ids(index_sync),
+                    )[1],
+                    *command_failures,
+                ]
+            running_state["command_failures"] = {
+                f"{entry['queue']}:{entry.get('id', '')}": entry["consecutive_failures"]
+                for entry in command_failures
+            }
+            owner_summary["deferred_units"] = list(running_state.get("environment_deferred", []))
             running_state["index_sync"] = index_sync
             running_state["statement_snapshot"] = current_statement_snapshot
             running_state["source_quality"] = source_quality

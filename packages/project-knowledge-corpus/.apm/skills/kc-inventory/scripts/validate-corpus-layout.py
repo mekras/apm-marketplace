@@ -1356,6 +1356,61 @@ class Validator:
         self.validate_items(source_dir, source_id, source)
         self.validate_unit_dirs(source_dir, source_id)
         self.validate_long_source(source_dir, source_id, source)
+        self.validate_index_baseline(source_dir, source_id)
+
+    def validate_index_baseline(self, source_dir: Path, source_id: Any) -> None:
+        """The portable base keeps identifiers, locators, fingerprints and dates only."""
+        path = source_dir / "index-baseline.yml"
+        if not path.is_file():
+            return
+        rel = self.rel(path)
+        data = load_yaml(path)
+        allowed = {"contract_version", "source_id", "checked_at", "reviewed_at", "units", "observation"}
+        if not isinstance(data, dict) or data.get("contract_version") != 1:
+            self.errors.append(f"{rel}: index baseline must use contract_version 1")
+            return
+        if not set(data) <= allowed:
+            self.errors.append(f"{rel}: index baseline has unsupported fields: {', '.join(sorted(set(data) - allowed))}")
+        if data.get("source_id") != source_id:
+            self.errors.append(f"{rel}: index baseline source_id must match the source card")
+        for field in ("checked_at", "reviewed_at"):
+            if data.get(field) is not None and not isinstance(data[field], str):
+                self.errors.append(f"{rel}: {field} must be a date string")
+        units = data.get("units")
+        if not isinstance(units, dict):
+            self.errors.append(f"{rel}: units must be a mapping")
+            units = {}
+        for unit_id, unit in units.items():
+            if (
+                not isinstance(unit, dict)
+                or not set(unit) <= {"fingerprint", "eligible"}
+                or not isinstance(unit.get("fingerprint"), str)
+                or re.fullmatch(r"[0-9a-f]{64}", unit["fingerprint"]) is None
+                or unit.get("eligible", False) is not False
+            ):
+                self.errors.append(
+                    f"{rel}: unit {unit_id} keeps only a SHA-256 fingerprint and optional eligible: false"
+                )
+        observation = data.get("observation")
+        if observation is None:
+            return
+        if (
+            not isinstance(observation, dict)
+            or set(observation) != {"scope", "units"}
+            or not isinstance(observation.get("scope"), str)
+            or not isinstance(observation.get("units"), dict)
+        ):
+            self.errors.append(f"{rel}: observation keeps only scope and units")
+            return
+        for unit_id, unit in observation["units"].items():
+            if (
+                not isinstance(unit, dict)
+                or set(unit) != {"locator", "fingerprint"}
+                or not isinstance(unit.get("locator"), str)
+                or not isinstance(unit.get("fingerprint"), str)
+                or re.fullmatch(r"[0-9a-f]{64}", unit["fingerprint"]) is None
+            ):
+                self.errors.append(f"{rel}: observation unit {unit_id} keeps only locator and fingerprint")
 
     def validate_acquisition_route(self, source: dict[str, Any], prefix: str) -> None:
         adapter = source.get("adapter")

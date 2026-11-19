@@ -1,0 +1,11 @@
+contract_version: 1
+source_id: FIXTURE
+checked_at: '2026-11-01T09:00:00+00:00'
+reviewed_at: '2026-11-01T09:05:00+00:00'
+units: {}
+observation:
+  scope: card-navigation-v1
+  units:
+    CARD-X:
+      locator: fixture://provider/cards/x
+      fingerprint: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

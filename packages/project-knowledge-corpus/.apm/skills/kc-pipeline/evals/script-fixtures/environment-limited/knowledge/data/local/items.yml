@@ -1,0 +1,6 @@
+items:
+  - id: LOCAL-1
+    title: "Unit whose fetch command fails"
+    access: "Public fixture."
+    status: active
+    workflow_stage: needs_fetch

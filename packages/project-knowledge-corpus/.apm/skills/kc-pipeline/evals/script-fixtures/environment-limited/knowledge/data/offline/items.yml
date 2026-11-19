@@ -1,0 +1,6 @@
+items:
+  - id: OFFLINE-1
+    title: "Previously indexed unit"
+    access: "Public fixture."
+    status: active
+    workflow_stage: indexed

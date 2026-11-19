@@ -1,0 +1,7 @@
+contract_version: 1
+source_id: OFFLINE
+checked_at: '2026-11-01T09:00:00+00:00'
+reviewed_at: '2026-11-01T09:05:00+00:00'
+units:
+  OFFLINE-1:
+    fingerprint: 735e3266bf0e8fdeda786820287e0c06bf698adc1da4585f6a85f9bcfcddfca8

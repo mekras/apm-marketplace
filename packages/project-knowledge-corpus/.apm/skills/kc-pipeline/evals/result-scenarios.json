@@ -1469,7 +1469,7 @@
       },
       "application_evidence": [
         "валидатор отличает предупреждение legacy от новой ошибки маршрута",
-        "состояние содержит manual-required или index_refresh_incomplete"
+        "состояние содержит manual-required и agent_index_evidence_required либо непроверенный источник"
       ],
       "evaluation_surface": "совместимость договора источника",
       "assertions": [

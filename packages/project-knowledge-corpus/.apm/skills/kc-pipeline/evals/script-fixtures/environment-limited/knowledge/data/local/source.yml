@@ -1,0 +1,14 @@
+id: LOCAL
+slug: local
+title: Stable source with a unit waiting for fetch
+access:
+  default: Public fixture.
+status: active
+carrier_type: document
+source_kind: reference
+adapter: fixture.provider
+reliability: fixture
+stability: stable
+refresh_policy: none
+storage_strategy: index_only
+locator: fixture://provider/local

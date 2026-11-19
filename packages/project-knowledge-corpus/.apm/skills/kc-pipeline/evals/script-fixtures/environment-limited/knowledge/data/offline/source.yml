@@ -1,0 +1,13 @@
+id: OFFLINE
+slug: offline
+title: Source unavailable from this environment
+access:
+  default: Public fixture.
+status: active
+carrier_type: document
+source_kind: reference
+adapter: fixture.provider
+reliability: fixture
+refresh_policy: manual
+storage_strategy: index_only
+locator: fixture://provider/offline

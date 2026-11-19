@@ -206,6 +206,96 @@
           "reason": "The external navigation fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
         }
       ]
+    },
+    {
+      "id": "unavailable-source-narrows-pass",
+      "script": "scripts/run-corpus-operations.py",
+      "fixture": "evals/script-fixtures/environment-limited",
+      "covers": [
+        "corpus-operations"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "knowledge",
+        "--operations",
+        "operations.yml",
+        "--run-pipeline"
+      ],
+      "expect": {
+        "exit_code": 21,
+        "stdout_contains": [
+          "environment_limited",
+          "OFFLINE",
+          "last_checked_at=2026-11-01T09:00:00+00:00",
+          "задач, отложенных после сбоя команды проекта: 1",
+          "fetch: LOCAL-1 (command_failed, failure)"
+        ],
+        "files": [
+          {
+            "path": ".local/state/corpus-pipeline.json",
+            "json": true,
+            "contains": "unchecked_sources"
+          },
+          {
+            "path": "knowledge/data/offline/index-baseline.yml",
+            "contains": "checked_at: '2026-11-01T09:00:00+00:00'"
+          }
+        ]
+      },
+      "requires": [
+        "git"
+      ],
+      "prepare": [
+        [
+          "git",
+          "init",
+          "--quiet"
+        ],
+        [
+          "git",
+          "add",
+          "-A"
+        ]
+      ],
+      "absent_inputs": [
+        {
+          "path": "knowledge/analysis",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/concepts.yml",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/data/fixture/source-map.yml",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/inventory",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/normalized",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/primary",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/reports",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/statements",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        },
+        {
+          "path": "knowledge/data/offline/source-map.yml",
+          "reason": "The environment-limited fixture has no local content or long-source map. The controller probes optional corpus layers without requiring them."
+        }
+      ]
     }
   ],
   "unexercised_functions": [
@@ -217,26 +307,6 @@
     {
       "script": "scripts/run-corpus-operations.py",
       "function": "CorpusItem.contract_version",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "CorpusItem.item_id",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "CorpusItem.stage",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "CorpusItem.storage_strategy",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "CorpusItem.value",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
     {
@@ -271,6 +341,16 @@
     },
     {
       "script": "scripts/run-corpus-operations.py",
+      "function": "complete_global_stage.<locals>.deferrable_queues",
+      "reason": "Часть ручного закрытия глобальной стадии; отложенные задачи при ручном закрытии проверяет tools/test-corpus-operations.py."
+    },
+    {
+      "script": "scripts/run-corpus-operations.py",
+      "function": "restore_metadata_file",
+      "reason": "Возврат метаданных после сбоя адаптера (ADR-0016) проверяет tools/test-corpus-operations.py на неуспешном и частичном ответах."
+    },
+    {
+      "script": "scripts/run-corpus-operations.py",
       "function": "content_file_digest",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
@@ -281,17 +361,7 @@
     },
     {
       "script": "scripts/run-corpus-operations.py",
-      "function": "dump_yaml_atomically",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
       "function": "finding_path_surfaces",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "flatten_values",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
     {
@@ -307,11 +377,6 @@
     {
       "script": "scripts/run-corpus-operations.py",
       "function": "has_statements",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "item_is_negatively_selected",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
     {
@@ -332,11 +397,6 @@
     {
       "script": "scripts/run-corpus-operations.py",
       "function": "process_is_alive",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "queue_name",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
     {
@@ -377,16 +437,6 @@
     {
       "script": "scripts/run-corpus-operations.py",
       "function": "scoped_file_manifest",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "sha256_bytes",
-      "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
-    },
-    {
-      "script": "scripts/run-corpus-operations.py",
-      "function": "statement_processing_tasks",
       "reason": "Редкая специализированная ветвь контроллера покрывается аудиторскими регрессиями; контракт исполняет публичные P1-маршруты."
     },
     {
