@@ -47,7 +47,7 @@
       "id": "ai-audit-agent-rules-positive-default-stepwise-review",
       "prompt": "Проверь все правила агента в проекте.",
       "should_trigger": true,
-      "rationale": "Короткий запрос на аудит правил проекта должен запускать навык; сам навык по умолчанию разбирает проблемы по одной."
+      "rationale": "Короткий запрос на аудит правил проекта должен запускать навык. Навык показывает общий вывод и все находки сразу."
     },
     {
       "id": "ai-audit-agent-rules-positive-agent-project-rules",

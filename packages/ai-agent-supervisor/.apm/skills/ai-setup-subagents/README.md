@@ -97,29 +97,12 @@
 Подробности преобразования конфигурации, замены служебных фрагментов
 и технических проверок — в [справке о миграции существующей установки](references/operation-policy.md#миграция-существующей-установки).
 
-## Полезные материалы
-
-- [Рабочая процедура](SKILL.md)
-- [Паттерны маршрутизации](references/routing-patterns.md), [политика эксплуатации](references/operation-policy.md) и [оценка выбора](references/model-selection-evaluation.md)
-- [Маршрут Hermes → Codex](references/hermes-codex-route.md)
-- [Образец локальной настройки](assets/subagents.local.toml.sample) и [вход оценки](assets/model-selection-input.sample.json)
-- [Сценарии](evals/triggers.json), [проверки результата](evals/result-scenarios.json) и [контракты скриптов](evals/script-contract-tests.json)
-
-Средства, установленные в `tools/`, сверяются с источником навыка командой
-`scripts/check-subagent-tools-drift.py --profile <portable|codex|claude>`.
-
-## Примеры запросов
-
-- «Настрой экономное использование подагентов для проекта.»
-- «Проверь текущую схему подагентов.»
-- «Подготовь сравнение кандидатов для роли исследователя.»
-
-
 ## Использование сравнительного профиля
 
 Навык находит или читает указанный личный файл анализа и связывает измерения
 конкретных пар с задачами проекта. Старые назначения не заменяют сравнение.
-API-стоимость, кредиты и включённый лимит подписки сохраняются раздельно.
+Стоимость обращений через API, кредиты и включённый лимит подписки учитываются
+раздельно.
 При недостатке оснований видны предварительные назначения и неразрешённые
 альтернативы. Профиль не переписывается, новый анализ не запускается автоматически.
 
@@ -141,3 +124,20 @@ API-стоимость, кредиты и включённый лимит под
 `scripts/install-execution-policy-tools` этого навыка.
 Передачу между сессиями выполняет
 [`ai-session-handoff`](../ai-session-handoff/README.md).
+
+## Полезные материалы
+
+- [Рабочая процедура](SKILL.md)
+- [Паттерны маршрутизации](references/routing-patterns.md), [политика эксплуатации](references/operation-policy.md) и [оценка выбора](references/model-selection-evaluation.md)
+- [Маршрут Hermes → Codex](references/hermes-codex-route.md)
+- [Образец локальной настройки](assets/subagents.local.toml.sample) и [вход оценки](assets/model-selection-input.sample.json)
+- [Сценарии](evals/triggers.json), [проверки результата](evals/result-scenarios.json) и [контракты скриптов](evals/script-contract-tests.json)
+
+Средства, установленные в `tools/`, сверяются с источником навыка командой
+`scripts/check-subagent-tools-drift.py --profile <portable|codex|claude>`.
+
+## Примеры запросов
+
+- «Настрой экономное использование подагентов для проекта.»
+- «Проверь текущую схему подагентов.»
+- «Подготовь сравнение кандидатов для роли исследователя.»

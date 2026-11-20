@@ -1,4 +1,4 @@
 interface:
-  display_name: "ai-agents-md-maintenance"
+  display_name: "Сопровождение AGENTS.md"
   short_description: "Создание и сопровождение AGENTS.md"
   default_prompt: "Используй ai-agents-md-maintenance для создания, изменения или стабилизации AGENTS.md и соседних машинных инструкций."

@@ -21,11 +21,15 @@ START = "<!-- ai-setup-subagents:runtime-policy:start -->"
 END = "<!-- ai-setup-subagents:runtime-policy:end -->"
 ASSET = Path(__file__).resolve().parents[1] / "assets" / "worker-policy-entrypoint.md"
 PROCEDURE = Path(__file__).resolve().parents[1] / "references" / "worker-policy-procedure.md"
-# Точные штатные фрагменты до временного хранения и самостоятельной проверки.
+# Точные штатные фрагменты до временного хранения, самостоятельной проверки
+# и понятной записи решения о маршруте в сообщении.
 LEGACY_SHA256 = frozenset({
     '9a518b1ac0606f526c31cca70c5ff20e860e0f2de2ce69729118a929c6087f92',
     '86d0f0283934a880dd90c8bd9e212c326b5be450efccd2414f20b9dd90f3f531',
     '3dd42d49110411687a9f3d2d6c20182f534f86ffa1cc447f9398aa99a3a2611a',
+    '21351baee687906ccbd2afac1e0bbd5a8285e06f4dedc6725e60284fc73bc71b',
+    # Полная процедура в прежней редакции, вставленная целиком.
+    '0f7cc247c8569fe03696e7fcc032e3a420fc30ad9de5b66bfe7a346da4aa4b1f',
 })
 ADAPTED = re.compile(r"(?m)^<!-- ai-setup-subagents:runtime-policy:adapted-v2:(.+) -->$")
 SEMANTIC_DEFAULTS = (

@@ -19,7 +19,8 @@
         "worker-instructions.md",
         "docs/worker-policy.md",
         "legacy-brief-entrypoint.md",
-        "legacy-storage-entrypoint.md"
+        "legacy-storage-entrypoint.md",
+        "legacy-route-message-entrypoint.md"
       ]
     },
     {
@@ -807,6 +808,41 @@
           {
             "path": "legacy-storage-entrypoint.md",
             "contains": "Обозначайте самопроверку явно"
+          },
+          {
+            "path": "subagents.local.toml",
+            "contains": "unavailable_route = \"keep parent route\""
+          }
+        ]
+      }
+    },
+    {
+      "id": "migrate-previous-route-message-without-exception",
+      "script": "scripts/migrate-subagent-policy.py",
+      "fixture": "evals/script-fixtures/policy-migration",
+      "covers": [
+        "migrate-subagent-policy"
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--config",
+        "{fixture}/subagents.local.toml",
+        "--entrypoint",
+        "codex={fixture}/legacy-route-message-entrypoint.md"
+      ],
+      "expect": {
+        "stdout_contains": [
+          "Политика подагентов мигрирована."
+        ],
+        "files": [
+          {
+            "path": "legacy-route-message-entrypoint.md",
+            "contains": "решение в журнале хода или записи задачи запускателя"
+          },
+          {
+            "path": "legacy-route-message-entrypoint.md",
+            "contains": "без ключей политики и идентификаторов"
           },
           {
             "path": "subagents.local.toml",
