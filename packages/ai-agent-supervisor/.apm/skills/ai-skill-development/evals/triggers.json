@@ -134,6 +134,18 @@
       "rationale": "Обучение по текущему опыту относится к разработке навыков."
     },
     {
+      "id": "ai-skill-development-positive-review-learning-proposal",
+      "prompt": "Отклони предложение «Добавить шаблон» из журнала обучения.",
+      "should_trigger": true,
+      "rationale": "Пользователь продолжает работу с конкретным предложением самообучения."
+    },
+    {
+      "id": "ai-skill-development-positive-check-learning-benefit",
+      "prompt": "Помогла ли в последней задаче правка навыка из журнала обучения?",
+      "should_trigger": true,
+      "rationale": "Проверка касается конкретной правки по опыту и результата последующей задачи."
+    },
+    {
       "id": "ai-skill-development-positive-restructure-group",
       "prompt": "Раздели большой навык, объедини дубли и перенеси общие правила так, чтобы меньше читать.",
       "should_trigger": true,

@@ -7,6 +7,16 @@
 
 ## [Невыпущено]
 
+## [2.11.0] - 2026-11-21
+
+- С предложениями самообучения можно работать в разговоре. Агент учитывает
+  решение по предложению, проверяет доступную версию навыка и оценивает пользу
+  изменения по результатам последующих задач.
+- Руководство [«Самообучение»](https://github.com/mekras/ai-agent-supervisor/blob/2.11.0/Документация/Самообучение.md) объясняет,
+  как включить автоматический разбор, какие условия нужны для автоматических
+  правок и как работать с предложениями в журнале. Состав и выбор навыка
+  описаны в [справке о навыке](https://github.com/mekras/ai-agent-supervisor/blob/2.11.0/Документация/Справочник/Навык.md).
+
 ## [2.10.0] - 2026-11-20
 
 - Навыки коллекции помогают снизить риск сброса кэша Claude Code при
@@ -1803,7 +1813,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.29...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.0...HEAD
+[2.11.0]: https://github.com/mekras/ai-agent-supervisor/compare/2.10.0...2.11.0
 [2.6.29]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.28...2.6.29
 [2.6.27]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.26...2.6.27
 [2.6.26]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.25...2.6.26
