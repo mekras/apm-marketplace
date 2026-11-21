@@ -7,6 +7,13 @@
 
 ## [Невыпущено]
 
+## [2.11.1] - 2026-11-21
+
+- В запросах на исправление агент объясняет, что сломалось, где нужна правка
+  и что она позволит сделать. При повторном объяснении он учитывает предыдущие
+  уточнения пользователя. Пакетам, которые ссылаются на проверку текста перед
+  отправкой, стоит сверить свои правила с этим уточнением.
+
 ## [2.11.0] - 2026-11-21
 
 - С предложениями самообучения можно работать в разговоре. Агент учитывает
@@ -1813,7 +1820,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.0...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.1...HEAD
+[2.11.1]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.0...2.11.1
 [2.11.0]: https://github.com/mekras/ai-agent-supervisor/compare/2.10.0...2.11.0
 [2.6.29]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.28...2.6.29
 [2.6.27]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.26...2.6.27
