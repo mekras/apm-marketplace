@@ -53,7 +53,7 @@
       "id": "ait-routing-routing-positive-light-edit",
       "prompt": "Исправь опечатку в уже согласованном документе, не меняя смысл.",
       "should_trigger": true,
-      "rationale": "Локальная правка проходит видимую лёгкую классификацию корневого входа."
+      "rationale": "Локальная правка проходит лёгкую классификацию корневого входа."
     },
     {
       "id": "ait-routing-role-obligation-new-ux-delta",

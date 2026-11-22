@@ -836,10 +836,10 @@
       "input_files": [
         {
           "path": ".apm/skills/ait-writing/SKILL.md",
-          "purpose": "задаёт локальную связь фрагмента с обязательным источником"
+          "purpose": "требует проверить метку источника по общему правилу"
         },
         {
-          "path": ".apm/instructions/ai-dev-team-connection.instructions.md",
+          "path": ".apm/context/primary-data.context.md",
           "purpose": "задаёт общее правило прослеживаемости источников"
         }
       ],
@@ -903,10 +903,10 @@
       "input_files": [
         {
           "path": ".apm/skills/ait-writing/SKILL.md",
-          "purpose": "задаёт условие применения и локальную форму связи"
+          "purpose": "требует найти фрагменты с обязательным источником и проверить их метки"
         },
         {
-          "path": ".apm/instructions/ai-dev-team-connection.instructions.md",
+          "path": ".apm/context/primary-data.context.md",
           "purpose": "задаёт правило для постоянных артефактов разных форматов"
         }
       ],
@@ -973,7 +973,7 @@
           "purpose": "правило локальных перекрёстных ссылок"
         },
         {
-          "path": ".apm/instructions/ai-dev-team-connection.instructions.md",
+          "path": ".agents/skills/ai-human-communication/SKILL.md",
           "purpose": "общее правило обозначения человека"
         }
       ],
@@ -1098,7 +1098,7 @@
           "purpose": "правило акцента в парах свойства и значения"
         },
         {
-          "path": ".apm/instructions/ai-dev-team-connection.instructions.md",
+          "path": ".agents/skills/ai-human-communication/SKILL.md",
           "purpose": "общее правило текстов для человека"
         }
       ],

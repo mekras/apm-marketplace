@@ -22,8 +22,7 @@
   профильных проверок
 
 Полный состав и назначение специализаций описаны в
-[обзоре продукта](docs/04-product/README.md) и
-[справочнике ролей](docs/04-product/roles.md).
+[обзоре продукта][product-overview] и [справочнике ролей][team-roles].
 
 ## Подключение к проекту
 
@@ -37,14 +36,14 @@
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#1.3.1 --dev --target claude
+apm install ai-dev-team@mekras#1.4.0 --dev --target claude
 ```
 
 Для Codex:
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#1.3.1 --dev --target codex
+apm install ai-dev-team@mekras#1.4.0 --dev --target codex
 ```
 
 После установки откройте выбранный инструмент для общения с агентами в корне
@@ -118,8 +117,6 @@ apm install ai-dev-team@mekras#1.3.1 --dev --target codex
 Подробности можно запросить отдельно. Проверка сама по себе не разрешает
 исправления. Подробнее — [выбор программы проверки][project-check].
 
-[project-check]: docs/05-requirements/functional/ft-72.md
-
 ### Полная проверка проекта
 
 Для периодической перепроверки всего репозитория дайте агенту команду:
@@ -129,7 +126,7 @@ apm install ai-dev-team@mekras#1.3.1 --dev --target codex
 ```
 
 Продукт сам подберёт применимые проверки. Подробное описание находится в
-[требовании к полной проверке](docs/05-requirements/user/pt-7.md).
+[требовании к полной проверке][full-project-check].
 
 ### Выпуск версии
 
@@ -201,9 +198,26 @@ apm update ai-dev-team@mekras --target codex
 
 ## Документация
 
-- [Концепция](docs/01-concept/README.md)
-- [Обзор продукта](docs/04-product/README.md)
-- [Роли команды](docs/04-product/roles.md)
-- [Требования к продукту](docs/05-requirements/README.md)
-- [Корпус знаний проекта](docs/user/knowledge.md)
-- [Разработка продукта](docs/operations/development.md)
+- [Концепция][product-concept]
+- [Обзор продукта][product-overview]
+- [Роли команды][team-roles]
+- [Требования к продукту][product-requirements]
+- [Корпус знаний проекта][project-knowledge]
+- [Разработка продукта][product-development]
+
+[product-concept]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/01-concept/README.md
+[product-overview]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/04-product/README.md
+[team-roles]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/04-product/roles.md
+[product-requirements]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/05-requirements/README.md
+[project-knowledge]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/user/knowledge.md
+[product-development]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/operations/development.md
+[project-check]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/05-requirements/functional/ft-72.md
+[full-project-check]:
+  https://github.com/mekras/ai-dev-team/blob/HEAD/docs/05-requirements/user/pt-7.md

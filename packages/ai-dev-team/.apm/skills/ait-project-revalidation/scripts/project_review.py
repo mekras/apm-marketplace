@@ -294,7 +294,7 @@ def ordered_stages(state: dict[str, Any]) -> list[str]:
     return configured
 
 
-def dependency_owners(lock_path: Path) -> dict[str, str]:
+def deployment_owners(lock_path: Path) -> dict[str, str]:
     if not lock_path.is_file():
         return {}
     owners: dict[str, str] = {}
@@ -304,6 +304,12 @@ def dependency_owners(lock_path: Path) -> dict[str, str]:
         stripped = line.strip()
         if line.startswith("- repo_url:"):
             owner = stripped.split(":", 1)[1].strip().strip("'\"")
+            in_files = False
+        elif line == "local_deployed_files:":
+            owner = "."
+            in_files = True
+        elif line and not line[0].isspace() and not line.startswith("- "):
+            owner = None
             in_files = False
         elif stripped == "deployed_files:":
             in_files = True
@@ -369,36 +375,33 @@ def component_description(path: Path) -> str | None:
     return frontmatter_description(text) or first_paragraph(text)
 
 
-def candidate_components(
-    repo: Path,
-    classification: dict[str, Any],
-) -> list[tuple[str, str, Path]]:
-    candidates: list[tuple[str, str, Path]] = []
-    deployed = dependency_owners(repo / "apm.lock.yaml")
-    snapshot = repository_snapshot(repo)
-    available = {
-        repo / relative
-        for relative in {*deployed, *snapshot["files"]}
-        if (repo / relative).is_file()
+def component_key(path: Path) -> tuple[str, str] | None:
+    parts = path.parts
+    if (
+        len(parts) == 4
+        and parts[0] in {".apm", ".agents", ".claude", ".codex"}
+        and parts[1] == "skills"
+        and path.name == "SKILL.md"
+    ):
+        return "skill", parts[2]
+    if len(parts) == 1 and path.name in {"AGENTS.md", "CLAUDE.md"}:
+        return "rule", path.stem
+    if len(parts) != 3:
+        return None
+    formats = {
+        (".apm", "agents"): ("role", ".agent.md"),
+        (".claude", "agents"): ("role", ".md"),
+        (".codex", "agents"): ("role", ".toml"),
+        (".apm", "instructions"): ("rule", ".instructions.md"),
+        (".claude", "rules"): ("rule", ".md"),
+        (".codex", "rules"): ("rule", ".rules"),
     }
-    for entry in classification["capabilities"]:
-        kind = entry["kind"]
-        name = classification_name(entry)
-        for path in sorted(available):
-            is_skill = path.name == "SKILL.md" and path.parent.name == name
-            is_named_file = path.stem == name
-            if path.is_file() and (
-                (kind == "skill" and is_skill)
-                or (kind in {"role", "rule"} and is_named_file)
-            ):
-                candidates.append((kind, name, path))
-    known = {(kind, name, path) for kind, name, path in candidates}
-    for path in sorted(available):
-        if path.name == "SKILL.md":
-            candidate = ("skill", path.parent.name, path)
-            if candidate not in known:
-                candidates.append(candidate)
-    return candidates
+    format_entry = formats.get(parts[:2])
+    if format_entry:
+        kind, suffix = format_entry
+        if path.name.endswith(suffix) and len(path.name) > len(suffix):
+            return kind, path.name.removesuffix(suffix)
+    return None
 
 
 def inventory(
@@ -410,11 +413,15 @@ def inventory(
         (entry["kind"], classification_name(entry)): entry
         for entry in core["capabilities"]
     }
-    owners = dependency_owners(repo / "apm.lock.yaml")
+    owners = deployment_owners(repo / "apm.lock.yaml")
+    available = set(owners) | set(repository_snapshot(repo)["files"])
     merged: dict[tuple[str, str], dict[str, Any]] = {}
-    for kind, name, path in candidate_components(repo, core):
-        key = (kind, name)
-        relative = path.relative_to(repo).as_posix()
+    for relative in sorted(available):
+        key = component_key(Path(relative))
+        path = repo / relative
+        if key is None or not path.is_file():
+            continue
+        kind, name = key
         item = merged.setdefault(
             key,
             {
@@ -434,7 +441,7 @@ def inventory(
             item["descriptions"].append(description)
         if key in core_by_key:
             origin = "core"
-        elif relative in owners:
+        elif relative in owners and owners[relative] != ".":
             origin = f"dependency:{owners[relative]}"
         else:
             origin = "project"
@@ -1958,6 +1965,16 @@ def start_application(
     knowledge_status = knowledge.get("status")
     knowledge_proven = knowledge_review_is_proven(state)
     knowledge_phase = getattr(args, "knowledge_phase", None)
+    finding = state["findings"].get(args.finding)
+    pending = state.get("pending_snapshot")
+    verifying_pending_fix = bool(
+        state["status"] == "interrupted"
+        and pending
+        and finding
+        and finding["status"] == "approved"
+        and (finding.get("decision") or {}).get("value") == "fix"
+        and args.capability is None
+    )
     if knowledge_phase is not None:
         if knowledge_phase not in {"technical", "semantic"}:
             raise ReviewError("неизвестная фаза проверки корпуса знаний")
@@ -2052,7 +2069,11 @@ def start_application(
             )
         else:
             required_phase = None
-        if not is_knowledge_attempt and not is_knowledge_finding:
+        if not (
+            is_knowledge_attempt
+            or is_knowledge_finding
+            or (verifying_pending_fix and finding["blocking"])
+        ):
             raise ReviewError(
                 "до других областей завершите обязательную проверку "
                 "корпуса знаний",
@@ -2081,7 +2102,7 @@ def start_application(
         raise ReviewError(
             "применение должно ссылаться ровно на одну возможность или проблему",
         )
-    if state.get("active_application"):
+    if state.get("active_application") and not verifying_pending_fix:
         raise ReviewError(
             "сначала завершите активное применение "
             + state["active_application"],
@@ -2132,7 +2153,6 @@ def start_application(
         capability_hash = decision["input_hash"]
         contract_paths = item["paths"]
     else:
-        finding = state["findings"].get(args.finding)
         if not finding:
             raise ReviewError(f"неизвестная проблема {args.finding}")
         if finding["stage"] != args.stage:
@@ -2161,7 +2181,7 @@ def start_application(
                 "до проверки зависимой вершины не подтверждены её основания: "
                 + ", ".join(missing_prerequisites),
             )
-    if state["status"] != "running":
+    if state["status"] != "running" and not verifying_pending_fix:
         raise ReviewError("начать применение можно только в состоянии running")
 
     open_blocking_findings = [
@@ -2196,6 +2216,17 @@ def start_application(
         )
     )
     current = repository_snapshot(repo)
+    if verifying_pending_fix:
+        if current["id"] != pending["id"]:
+            raise ReviewError(
+                "область Git изменилась после сохранения снимка",
+            )
+        changed = changed_paths(state["snapshot"], current)
+        if not set(finding["allowed_paths"]).intersection(changed):
+            raise ReviewError("в снимке нет изменений согласованного исправления")
+        active = state["applications"].get(state["active_application"])
+        if active and active["input_snapshot"] == current["id"]:
+            raise ReviewError("сначала завершите активную проверку снимка")
     subject_indexes = getattr(args, "subject_index", [])
     subject_patterns = getattr(args, "subject_pattern", [])
     if (
@@ -2329,6 +2360,10 @@ def start_application(
             "смысловая проверка требует явной предметной области через --subject",
         )
 
+    if verifying_pending_fix:
+        invalidate_active_application(
+            state, current["id"], reason="pending_snapshot_verification",
+        )
     for name, stage in state["stages"].items():
         if name != args.stage and stage["status"] == "running":
             stage["status"] = "pending"
@@ -3742,6 +3777,8 @@ def approved_paths(state: dict[str, Any]) -> set[str]:
 def invalidate_active_application(
     state: dict[str, Any],
     accepted_snapshot: str,
+    *,
+    reason: str = "accepted_snapshot_changed",
 ) -> str | None:
     application_id = state.get("active_application")
     if not application_id:
@@ -3755,7 +3792,7 @@ def invalidate_active_application(
             "status": "invalidated",
             "invalidated_at": now(),
             "invalidated_snapshot": accepted_snapshot,
-            "invalidation_reason": "accepted_snapshot_changed",
+            "invalidation_reason": reason,
         },
     )
     state["active_application"] = None

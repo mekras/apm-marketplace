@@ -849,7 +849,7 @@
           "purpose": "задаёт структуру разделов записи решения"
         },
         {
-          "path": ".apm/instructions/ai-dev-team-connection.instructions.md",
+          "path": ".agents/skills/ai-human-communication/SKILL.md",
           "purpose": "распространяет правило понятных названий на документацию и записи решений"
         }
       ],
