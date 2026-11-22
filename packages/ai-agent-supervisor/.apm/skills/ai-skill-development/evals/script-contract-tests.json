@@ -48,6 +48,75 @@
       }
     },
     {
+      "id": "learning-state-refuses-git-backup",
+      "script": "scripts/learning-state.py",
+      "fixture": "evals/script-fixtures/learning-state",
+      "covers": [
+        "learning-state-initiate"
+      ],
+      "prepare": [
+        [
+          "{python}",
+          "-c",
+          "import json\nfrom pathlib import Path\np = Path('initiate.json')\ndata = json.loads(p.read_text(encoding='utf-8'))\ndata['backup_dir'] = '.git/learning/before'\np.write_text(json.dumps(data), encoding='utf-8')"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/initiate.json",
+        "--workspace",
+        "{fixture}"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "backup_dir: каталог метаданных Git"
+        ]
+      }
+    },
+    {
+      "id": "learning-state-refuses-separate-git-directory",
+      "script": "scripts/learning-state.py",
+      "fixture": "evals/script-fixtures/learning-state",
+      "covers": [
+        "learning-state-initiate"
+      ],
+      "requires": [
+        "git"
+      ],
+      "prepare": [
+        [
+          "git",
+          "init",
+          "--quiet",
+          "--separate-git-dir",
+          "git-metadata",
+          "."
+        ],
+        [
+          "{python}",
+          "-c",
+          "import json\nfrom pathlib import Path\np = Path('initiate.json')\ndata = json.loads(p.read_text(encoding='utf-8'))\ndata['state_path'] = 'git-metadata/learning/improvement.json'\np.write_text(json.dumps(data), encoding='utf-8')"
+        ]
+      ],
+      "command": [
+        "{python}",
+        "{script}",
+        "--input",
+        "{fixture}/initiate.json",
+        "--workspace",
+        "{fixture}"
+      ],
+      "expect": {
+        "exit_code": 2,
+        "stderr_contains": [
+          "state_path: каталог метаданных Git"
+        ]
+      }
+    },
+    {
       "id": "learning-gate-new-signal",
       "script": "scripts/learning-gate.py",
       "fixture": "evals/script-fixtures/learning-gate",

@@ -689,7 +689,7 @@ def main() -> int:
         qualifier = (
             "неопубликованной локальной версией"
             if args.allow_unpublished_local_version
-            else "локальной версией, не внесённой в файл блокировки"
+            else "локальными переопределениями"
         )
         print(f"APM-аудит пройден с {qualifier}: подтверждено файлов — {accepted}{suffix}.")
         return 0

@@ -6,7 +6,9 @@ import hashlib
 import json
 import os
 import shutil
+import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 # Русские сообщения не должны падать на консоли с однобайтовой кодировкой.
@@ -38,6 +40,36 @@ def relative_path(value, label):
     return path
 
 
+def git_metadata_dirs(root):
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--git-dir", "--git-common-dir"],
+            capture_output=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return ()
+    if result.returncode:
+        return ()
+    return tuple((root / os.fsdecode(path)).resolve() for path in result.stdout.splitlines())
+
+
+def storage_path(root, value, label, git_dirs):
+    relative = relative_path(value, label)
+    destination = root / relative
+    resolved = destination.resolve()
+    if not resolved.is_relative_to(root) or resolved == root:
+        raise ValueError(f"{label}: фактический путь должен быть внутри рабочей области")
+    if (
+        any(part.lower() == ".git" for part in (*relative.parts, *resolved.relative_to(root).parts))
+        or any(resolved.is_relative_to(directory) for directory in git_dirs)
+    ):
+        raise ValueError(f"{label}: каталог метаданных Git нельзя использовать для состояния обучения")
+    if destination.is_symlink():
+        raise ValueError(f"{label}: используйте путь к файлу или каталогу без конечной ссылки")
+    return destination
+
+
 def unique_object(pairs):
     result = {}
     for key, value in pairs:
@@ -52,9 +84,17 @@ def load_json(path):
 
 
 def write_json(path, value):
-    temporary = path.with_name(f".{path.name}.tmp")
-    temporary.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    # Для атомарной замены временный файл должен быть на той же файловой системе.
+    stream = tempfile.NamedTemporaryFile(
+        mode="w", encoding="utf-8", prefix=f".{path.name}.", dir=path.parent, delete=False
+    )
+    temporary = Path(stream.name)
+    try:
+        with stream:
+            stream.write(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def validate_record(record):
@@ -97,10 +137,10 @@ def fingerprint(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def initiate(root, request):
+def initiate(root, request, git_dirs):
     record = validate_record(request.get("record"))
-    state = root / relative_path(request.get("state_path"), "state_path")
-    backup = root / relative_path(request.get("backup_dir"), "backup_dir")
+    state = storage_path(root, request.get("state_path"), "state_path", git_dirs)
+    backup = storage_path(root, request.get("backup_dir"), "backup_dir", git_dirs)
     if state.exists() or backup.exists():
         raise ValueError("state_path и backup_dir должны отсутствовать до подготовки")
     sources = source_paths(root, record)
@@ -116,8 +156,8 @@ def initiate(root, request):
     return {"action": "initiated", "state_path": state.relative_to(root).as_posix(), "backup_dir": backup.relative_to(root).as_posix(), "write_authorized": False}
 
 
-def complete(root, request):
-    state = root / relative_path(request.get("state_path"), "state_path")
+def complete(root, request, git_dirs):
+    state = storage_path(root, request.get("state_path"), "state_path", git_dirs)
     record = validate_record(load_json(state))
     if record.get("status") != "applying":
         raise ValueError("Запись должна иметь status: applying")
@@ -139,9 +179,10 @@ def main():
         root = args.workspace.resolve()
         request = object_value(load_json(args.input), "Вход")
         action = request.get("action")
-        result = initiate(root, request) if action == "initiate" else complete(root, request) if action == "complete" else None
-        if result is None:
+        if action not in ("initiate", "complete"):
             raise ValueError("action: ожидается initiate или complete")
+        operation = initiate if action == "initiate" else complete
+        result = operation(root, request, git_metadata_dirs(root))
     except (OSError, ValueError, RecursionError, json.JSONDecodeError) as error:
         print(f"Запись обучения не подготовлена: {error}", file=sys.stderr)
         return 2
