@@ -485,19 +485,28 @@ def tool_fingerprint(
     }
 
 
-def git_cache_dir(repo: Path) -> Path:
-    raw = os.fsdecode(
-        git_output(
-            repo,
-            "rev-parse",
-            "--git-path",
-            "ai-dev-team/selective-verification",
-        ),
-    ).strip()
-    path = Path(raw)
-    if not path.is_absolute():
-        path = repo / path
-    return path.resolve()
+def prepare_cache_dir(repo: Path) -> Path:
+    cache = repo / ".ai-dev-team/cache/selective-verification"
+    relative = cache.relative_to(repo).as_posix()
+    if (cache / "entries").resolve() != cache / "entries":
+        raise ContractError(f"каталог кеша содержит символьную ссылку: {relative}")
+    if git_output(repo, "ls-files", "--cached", "--", relative):
+        raise ContractError(f"в каталоге кеша есть отслеживаемые файлы: {relative}")
+
+    cache.mkdir(parents=True, exist_ok=True)
+    try:
+        with (cache / ".gitignore").open("x", encoding="utf-8") as ignore:
+            ignore.write("*\n")
+    except FileExistsError:
+        pass
+
+    paths = [f"{relative}/{name}" for name in (".gitignore", "entries/", "state.json")]
+    ignored = run_command(["git", "check-ignore", "--", *paths], cwd=repo)
+    if ignored.returncode not in (0, 1) or set(ignored.stdout.splitlines()) != {
+        os.fsencode(path) for path in paths
+    }:
+        raise ContractError(f"исключите каталог кеша из Git: {relative}")
+    return cache
 
 
 def load_json_file(path: Path) -> dict[str, Any] | None:
@@ -510,16 +519,20 @@ def load_json_file(path: Path) -> dict[str, Any] | None:
 
 def write_json(path: Path, value: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.NamedTemporaryFile(
+    handle = tempfile.NamedTemporaryFile(
         "w",
         encoding="utf-8",
         dir=path.parent,
         delete=False,
-    ) as handle:
-        json.dump(value, handle, ensure_ascii=False, indent=2, sort_keys=True)
-        handle.write("\n")
-        temporary = Path(handle.name)
-    temporary.replace(path)
+    )
+    temporary = Path(handle.name)
+    try:
+        with handle:
+            json.dump(value, handle, ensure_ascii=False, indent=2, sort_keys=True)
+            handle.write("\n")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def limit_text(raw: bytes, limit: int) -> dict[str, Any]:
@@ -756,7 +769,7 @@ def run_selective_verification(
     changes = collect_changes(repo, base)
     graph_path = repo / config["verification"]["impact_graph"]
     planner = planner_fingerprint(config_digest, graph_path)
-    cache_root = git_cache_dir(repo)
+    cache_root = prepare_cache_dir(repo)
     prior_state = load_json_file(cache_root / "state.json")
     planner_changed = prior_state is not None and prior_state.get("planner") != planner
     impact, impact_error = impact_result(config, repo, changes["paths"])
@@ -881,7 +894,7 @@ def main() -> int:
             exit_code = 0
         else:
             report, exit_code = run_selective_verification(repo, config_path, args.base)
-    except ContractError as exc:
+    except (ContractError, OSError) as exc:
         report = {"schema_version": SCHEMA_VERSION, "status": "error", "error": str(exc)}
         exit_code = 2
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))

@@ -36,14 +36,14 @@
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#1.4.1 --dev --target claude
+apm install ai-dev-team@mekras#1.4.2 --dev --target claude
 ```
 
 Для Codex:
 
 ```shell
 apm marketplace add mekras/apm-marketplace --ref master
-apm install ai-dev-team@mekras#1.4.1 --dev --target codex
+apm install ai-dev-team@mekras#1.4.2 --dev --target codex
 ```
 
 После установки откройте выбранный инструмент для общения с агентами в корне
@@ -178,6 +178,10 @@ apm update ai-dev-team@mekras --target codex
 Агент прочитает разделы «Действия при обновлении» для всех пропущенных версий,
 покажет их списком и проведёт по каждому применимому действию. Отдельно
 запускать названные в журнале навыки не нужно.
+
+При пересмотре агент также проверит, как в проекте создаются и хранятся
+временные файлы, кеши, отчёты и другие рабочие файлы. Он сообщит о расхождениях
+с правилами проекта и предложит согласовать исправления.
 
 Что изменилось между версиями, описано в [журнале изменений](CHANGELOG.md).
 
