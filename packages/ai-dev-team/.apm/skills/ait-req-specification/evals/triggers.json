@@ -2,6 +2,12 @@
   "skill_name": "ait-req-specification",
   "cases": [
     {
+      "id": "ait-req-specification-positive-storage",
+      "prompt": "Где закрепить обязательное поведение продукта, если пока оно описано в инструкции для агента?",
+      "should_trigger": true,
+      "rationale": "Предстоит выбрать место для требования к продукту."
+    },
+    {
       "id": "ait-req-specification-requirements-specification-positive-write-srs",
       "prompt": "Оформи согласованные требования в спецификацию требований к ПО: введение, функции, данные, интерфейсы и ограничения.",
       "should_trigger": true,
