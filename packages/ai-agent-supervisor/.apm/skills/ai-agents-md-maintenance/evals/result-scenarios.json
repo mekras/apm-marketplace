@@ -78,7 +78,7 @@
     },
     {
       "id": "ai-agents-md-maintenance-result-claude-reads-agents-md-without-entrypoint",
-      "prompt": "В проекте правила уже живут в AGENTS.md, но команда работает через Claude Code. Обнови машинные инструкции так, чтобы Claude тоже читал эти правила, не создавая второй расходящийся текст.",
+      "prompt": "В проекте правила уже живут в AGENTS.md, но команда работает через Claude Code. Обнови машинные инструкции так, чтобы Claude тоже читал эти правила, не создавая второй расходящийся текст. Используем Claude Code 2.1.311. Настройка «Project instructions» действует по умолчанию. Собственных файлов инструкций Claude и других точек входа нет.",
       "input_files": [
         {
           "path": "AGENTS.md",
@@ -88,7 +88,7 @@
       ],
       "expected_output": {
         "report_structure": [
-          "сказано, что новый CLAUDE.md не нужен: Claude Code загружает AGENTS.md сам, если у проекта нет собственного CLAUDE.md, .claude/CLAUDE.md или CLAUDE.local.md",
+          "Сказано, что отдельный файл не нужен при заданных точках входа и настройках.",
           "предложено подтвердить загрузку наблюдением, например списком файлов из claude -p \"/context\"",
           "сказано, что если файл инструкций Claude понадобится по другой причине, он должен подключить AGENTS.md"
         ],
@@ -96,7 +96,7 @@
           {
             "severity": "high",
             "observed_problem": "правила проекта живут в AGENTS.md, команда работает через Claude Code",
-            "expected_conclusion": "отдельная точка входа для Claude не нужна: без собственного CLAUDE.md Claude загружает AGENTS.md сам, а лишний CLAUDE.md выключил бы эту загрузку",
+            "expected_conclusion": "В заданной конфигурации Claude может загрузить AGENTS.md автоматически.",
             "acceptable_fix_direction": "не создавать CLAUDE.md, сохранить AGENTS.md единственным источником и подтвердить загрузку наблюдением"
           }
         ]
@@ -125,7 +125,8 @@
       "evaluation_surface": "точка входа Claude без лишнего файла (REQ-0051.1, критерий 6)",
       "assertions": [
         "AGENTS.md остаётся каноническим файлом с правилами.",
-        "Отсутствие CLAUDE.md не считается дефектом, пока Claude загружает AGENTS.md."
+        "Отсутствие CLAUDE.md не считается дефектом, пока Claude загружает AGENTS.md.",
+        "Без наблюдения загрузка названа ожидаемой по конфигурации."
       ],
       "must_not": [
         "не копировать текст AGENTS.md в отдельный CLAUDE.md",
@@ -1438,7 +1439,7 @@
     },
     {
       "id": "ai-agents-md-maintenance-result-local-notes-disable-agents-md",
-      "prompt": "Claude в этом проекте игнорирует правила из AGENTS.md. Разберись и поправь инструкции.",
+      "prompt": "Claude в этом проекте игнорирует правила из AGENTS.md. Разберись и поправь инструкции. Используем Claude Code 2.1.311. Настройка «Project instructions» действует по умолчанию.",
       "input_files": [
         {
           "path": "AGENTS.md",
@@ -1453,15 +1454,15 @@
       ],
       "expected_output": {
         "report_structure": [
-          "Названа причина: CLAUDE.local.md выключает загрузку AGENTS.md, потому что это собственный файл инструкций Claude.",
-          "Предложено подключить AGENTS.md строкой @AGENTS.md в файле инструкций Claude.",
+          "Причина установлена по CLAUDE.local.md и действующей настройке «Project instructions».",
+          "При разрешённой правке AGENTS.md подключён в существующем CLAUDE.local.md, содержимое личных инструкций сохранено.",
           "Загрузку предложено подтвердить списком загруженных файлов, например claude -p \"/context\"."
         ],
         "findings": [
           {
             "severity": "high",
             "observed_problem": "У проекта есть CLAUDE.local.md без подключения AGENTS.md.",
-            "expected_conclusion": "Claude Code загружает AGENTS.md только при отсутствии собственного CLAUDE.md, .claude/CLAUDE.md или CLAUDE.local.md, поэтому правила проекта до Claude не доходят.",
+            "expected_conclusion": "С текущей настройкой CLAUDE.local.md отключает автоматическую загрузку, а другого пути для AGENTS.md нет.",
             "acceptable_fix_direction": "Подключить AGENTS.md строкой @AGENTS.md в файле инструкций Claude и подтвердить загрузку наблюдением."
           }
         ]
@@ -1474,7 +1475,8 @@
         "success_criteria": [
           "Причина связана с CLAUDE.local.md.",
           "AGENTS.md остаётся единственным источником правил.",
-          "Загрузку предложено подтвердить наблюдением."
+          "Загрузку предложено подтвердить наблюдением.",
+          "Личный файл сохранён и содержит подключение AGENTS.md."
         ],
         "failure_indicators": [
           "Агент ищет причину в формулировках AGENTS.md.",
@@ -1489,7 +1491,8 @@
       "evaluation_surface": "Личный файл инструкций Claude выключает загрузку AGENTS.md (REQ-0051.1, критерий 7).",
       "assertions": [
         "Причина установлена по условию загрузки AGENTS.md в Claude Code.",
-        "Исправление подключает AGENTS.md без копии текста."
+        "Исправление подключает AGENTS.md без копии текста.",
+        "Без наблюдения загрузка названа ожидаемой по конфигурации."
       ],
       "must_not": [
         "Не копировать текст AGENTS.md в другой файл инструкций."

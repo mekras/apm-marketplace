@@ -58,7 +58,7 @@ apm marketplace add mekras/apm-marketplace --ref master
 Выполните **в корне проекта** команду для используемого агента.
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.11.4 --target <цель>
+apm install ai-agent-supervisor@mekras#2.11.5 --target <цель>
 ```
 
 `<цель>` — это `claude` для Claude Code или `codex` для Codex CLI.
@@ -66,7 +66,7 @@ apm install ai-agent-supervisor@mekras#2.11.4 --target <цель>
 Пример для Codex:
 
 ```bash
-apm install ai-agent-supervisor@mekras#2.11.4 --target codex
+apm install ai-agent-supervisor@mekras#2.11.5 --target codex
 ```
 
 ### Настройка проекта
@@ -164,12 +164,11 @@ apm install ai-agent-supervisor@mekras#2.11.4 --target codex
 
 #### [ai-human-communication](.apm/skills/ai-human-communication/README.md)
 
-Задаёт общие правила понятных сообщений и документов для человека, включая
-промежуточные сообщения, требования и записи решений. Перед отправкой каждого
-сообщения агент проверяет его: понятные названия вместо внутренних кодов, без
-пересказа хода работы. При проблеме предлагает решение или следующий шаг для
-его поиска. Учитывает запрошенные подробность и формат, результат поручения
-и уже полученные разрешения.
+Навык «Тексты для человека» помогает агенту ясно и кратко писать сообщения
+и документы.
+Агент проверяет, видны ли главная мысль, существенные условия и нужное
+действие, а в длинном тексте помогает найти нужный раздел. Поясняет незнакомые
+обозначения. При проблеме предлагает решение или следующий шаг для его поиска.
 
 #### [ai-model-analysis](.apm/skills/ai-model-analysis/README.md)
 

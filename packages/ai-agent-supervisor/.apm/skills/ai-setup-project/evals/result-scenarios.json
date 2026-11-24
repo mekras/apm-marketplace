@@ -86,7 +86,7 @@
     },
     {
       "id": "ai-setup-project-result-claude-target-without-extra-entrypoint",
-      "prompt": "Настрой проект. В apm.yml уже указана цель claude, но отдельного CLAUDE.md нет.",
+      "prompt": "Настрой проект. В apm.yml уже указана цель claude, но отдельного CLAUDE.md нет. Используем Claude Code 2.1.311 с настройкой «Project instructions» по умолчанию и без других точек входа Claude.",
       "input_files": [
         {
           "path": "AGENTS.md",
@@ -100,7 +100,7 @@
       "expected_output": {
         "report_structure": [
           "названо текущее состояние машинных инструкций проекта",
-          "объяснено, что цель claude в apm.yml не требует отдельного CLAUDE.md: Claude Code загружает AGENTS.md сам",
+          "Объяснено, что новый CLAUDE.md не нужен при заданных точках входа и настройках.",
           "шаг машинных инструкций делегирован навыку сопровождения AGENTS.md",
           "сказано, что AGENTS.md остаётся каноническим источником правил"
         ],
@@ -108,7 +108,7 @@
           {
             "severity": "medium",
             "observed_problem": "в проекте заявлена цель `claude`, отдельного CLAUDE.md нет",
-            "expected_conclusion": "отсутствие CLAUDE.md не требует шага настройки: без собственного CLAUDE.md Claude загружает AGENTS.md сам",
+            "expected_conclusion": "В заданной конфигурации работает автоматическая доставка из AGENTS.md.",
             "acceptable_fix_direction": "не предлагать CLAUDE.md ради подключения AGENTS.md, делегировать проверку точки входа навыку сопровождения AGENTS.md, а при зависимостях APM — проверку правил разработки пакетов навыку ai-setup-apm"
           }
         ]
