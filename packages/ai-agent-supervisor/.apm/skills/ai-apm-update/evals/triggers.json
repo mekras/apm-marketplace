@@ -1,0 +1,41 @@
+{
+  "skill_name": "ai-apm-update",
+  "cases": [
+    {
+      "id": "ai-apm-update-trigger-latest",
+      "prompt": "Обнови зависимости APM в этом проекте до последних опубликованных версий.",
+      "should_trigger": true,
+      "rationale": "Запрошено обновление APM до опубликованных версий."
+    },
+    {
+      "id": "ai-apm-update-trigger-preview",
+      "prompt": "Какие зависимости APM можно обновить и что сломается после обновления?",
+      "should_trigger": true,
+      "rationale": "Запрошен предварительный анализ обновлений."
+    },
+    {
+      "id": "ai-apm-update-trigger-impact",
+      "prompt": "План обновления APM применён. Согласен проверить его влияние на инструкции и команды проекта.",
+      "should_trigger": true,
+      "rationale": "Продолжение согласованной проверки после обновления APM."
+    },
+    {
+      "id": "ai-apm-update-trigger-cli",
+      "prompt": "Обнови сам APM CLI до новой версии.",
+      "should_trigger": false,
+      "rationale": "Запрошено обновление программы APM, а не её зависимостей."
+    },
+    {
+      "id": "ai-apm-update-trigger-install",
+      "prompt": "Установи зависимости APM из зафиксированного файла блокировки.",
+      "should_trigger": false,
+      "rationale": "Запрошено воспроизведение установленного графа."
+    },
+    {
+      "id": "ai-apm-update-trigger-setup",
+      "prompt": "Настрой проект для публикации коллекции навыков APM.",
+      "should_trigger": false,
+      "rationale": "Запрошена настройка публикуемого пакета."
+    }
+  ]
+}

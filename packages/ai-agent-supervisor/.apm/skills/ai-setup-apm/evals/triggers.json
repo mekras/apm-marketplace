@@ -176,10 +176,10 @@
       "rationale": "Содержание навыка, пакет APM и риск взаимодействия правил проверяются по явно заданному предмету задачи."
     },
     {
-      "id": "ai-setup-apm-positive-dependency-update",
+      "id": "ai-setup-apm-negative-dependency-update",
       "prompt": "Обнови зависимости APM в этом проекте до последних опубликованных версий.",
-      "should_trigger": true,
-      "rationale": "Запрос поручает обновить зависимости APM, порядок обновления и проверки задаёт навык настройки APM."
+      "should_trigger": false,
+      "rationale": "Самостоятельный запрос на обновление зависимостей ведёт ai-apm-update."
     }
   ]
 }

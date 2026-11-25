@@ -29,12 +29,12 @@ capabilities:
         status: documented
         basis:
           - apm.yml#L1-L17
-          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L105-L143
+          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L64-L106
       claude_code:
         status: documented
         basis:
           - apm.yml#L1-L17
-          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L130-L143
+          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L64-L106
       hermes_agent:
         status: documented
         basis:
@@ -47,18 +47,18 @@ capabilities:
       status: included
       basis:
         - apm.yml#L1-L17
-        - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L141-L143
+        - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L81-L91
     declared_implementation:
       codex_cli:
         status: documented
         basis:
-          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L141-L143
-          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L364-L371
+          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L81-L91
+          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L306-L313
       claude_code:
         status: documented
         basis:
-          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L141-L143
-          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L364-L371
+          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L81-L91
+          - .apm/skills/ai-setup-apm/references/apm-collection-settings.md#L306-L313
       hermes_agent:
         status: documented
         basis:
