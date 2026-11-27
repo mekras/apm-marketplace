@@ -7,6 +7,15 @@
 
 ## [Невыпущено]
 
+## [2.12.2] - 2026-11-27
+
+- Навык «Тексты для человека» явно требует перечитать правила проверки после
+  работы с инструментами и дать прямую ссылку с полным заголовком при первом
+  упоминании созданной записи решения. Перед отправкой агент проверяет,
+  можно ли открыть основные результаты из самого сообщения.
+- В среде разработки коллекции зависимость APM `ai-dev-team` обновлена с 1.5.0
+  до 1.5.4, а её зависимость `ai-agent-supervisor` — с 2.12.0 до 2.12.1.
+
 ## [2.12.1] - 2026-11-26
 
 - Навык «Тексты для человека» помещает решения рядом с проблемами, а ссылки
@@ -1888,7 +1897,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.5...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.12.2...HEAD
+[2.12.2]: https://github.com/mekras/ai-agent-supervisor/compare/2.12.1...2.12.2
 [2.11.5]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.4...2.11.5
 [2.11.2]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.1...2.11.2
 [2.11.1]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.0...2.11.1

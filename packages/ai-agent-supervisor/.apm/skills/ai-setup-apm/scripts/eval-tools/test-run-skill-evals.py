@@ -611,6 +611,8 @@ def test_result_rule_delivery() -> None:
                     prompts.append(prompt)
                     assert "SEALED_ORACLE_MARKER" not in prompt
                     assert ("--- audit/SKILL.md ---" in prompt) == (mode != "available")
+                    assert ("это заменяет только первоначальное чтение с диска" in prompt) == (mode != "available")
+                    assert "их повторное чтение с диска не требуется" not in prompt
                     if mode == "error":
                         raise RuntimeError("candidate transport error")
                     return {"answers": [{"id": case["id"], "answer": "Я прочитал правила"}]}

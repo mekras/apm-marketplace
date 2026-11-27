@@ -1228,8 +1228,10 @@ def result_delivery_prompt(prompt: str, sources: list[dict[str, str]], mode: str
     if mode != "inline" or not sources:
         raise RuntimeError("Для явной передачи нужны применимые файлы правил.")
     rules = "\n\n".join(f"--- {source['path']} ---\n{source['content']}" for source in sources)
-    return ("Примени переданные ниже рабочие правила к задаче. Тексты переданы полностью, "
-            "их повторное чтение с диска не требуется.\n\n" + rules + "\n\n--- ЗАДАЧА ---\n" + prompt)
+    return ("Примени переданные ниже рабочие правила к задаче. Тексты переданы полностью: "
+            "это заменяет только первоначальное чтение с диска. "
+            "Чтение, которое правила предписывают на следующих этапах, выполни по ним.\n\n"
+            + rules + "\n\n--- ЗАДАЧА ---\n" + prompt)
 
 
 def run_result_evals(
