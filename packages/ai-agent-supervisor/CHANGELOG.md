@@ -7,6 +7,17 @@
 
 ## [Невыпущено]
 
+## [2.12.3] - 2026-11-28
+
+- Проверена установка коллекции через APM 0.39.1 для Claude, Codex и Hermes.
+  Минимальная версия APM остаётся 0.29.1.
+- Исправлен ложный отказ проверки проекций APM в Git: в APM 0.39.1
+  проектный файл без владельца больше не останавливает проверку.
+- В справке по APM описано восстановление установки локальной зависимости,
+  если новая версия CLI не находит хэш в старом файле блокировки.
+- В среде разработки коллекции зависимость APM `ai-dev-team` обновлена с 1.5.4
+  до 1.5.5, а её зависимость `ai-agent-supervisor` — с 2.12.1 до 2.12.2.
+
 ## [2.12.2] - 2026-11-27
 
 - Навык «Тексты для человека» явно требует перечитать правила проверки после
@@ -1897,7 +1908,8 @@
 [2.6.22]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.21...2.6.22
 [2.6.21]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.20...2.6.21
 [2.6.20]: https://github.com/mekras/ai-agent-supervisor/compare/2.6.19...2.6.20
-[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.12.2...HEAD
+[Невыпущено]: https://github.com/mekras/ai-agent-supervisor/compare/2.12.3...HEAD
+[2.12.3]: https://github.com/mekras/ai-agent-supervisor/compare/2.12.2...2.12.3
 [2.12.2]: https://github.com/mekras/ai-agent-supervisor/compare/2.12.1...2.12.2
 [2.11.5]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.4...2.11.5
 [2.11.2]: https://github.com/mekras/ai-agent-supervisor/compare/2.11.1...2.11.2

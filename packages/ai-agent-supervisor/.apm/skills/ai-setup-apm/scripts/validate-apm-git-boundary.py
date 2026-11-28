@@ -53,14 +53,20 @@ def package_owners(project_root: Path, path: str) -> list[str] | None:
     result = run(project_root, "apm", "find", path)
     if result is None:
         return None
-    decoded = result.stdout.decode("utf-8", errors="replace")
-    if result.returncode == 1 and decoded.lstrip().startswith("[x]"):
-        return []
+    stdout = result.stdout.decode("utf-8", errors="replace")
+    stderr = result.stderr.decode("utf-8", errors="replace")
     if result.returncode != 0:
-        details = result.stderr.decode("utf-8", errors="replace").strip()
+        details = (stderr or stdout).strip()
+        message = " ".join(details.split())
+        if (
+            result.returncode == 1
+            and message.startswith("[x] '")
+            and message.endswith("' is not tracked by any installed package in apm.lock.yaml.")
+        ):
+            return []
         error(f"apm find не смог проверить {path!r}: {details}")
         return None
-    lines = decoded.splitlines()
+    lines = stdout.splitlines()
     return [
         line.strip()
         for line in lines
