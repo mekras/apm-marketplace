@@ -2228,12 +2228,13 @@ def build_owner_summary(
     source_quality: dict[str, Any],
     statement_baseline: dict[str, dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    findings = load_impact_findings(root, operations, required=False)
-    validate_impact_findings(
-        root, corpus_root, operations, findings, index_sync,
-        require_coverage="impact_audit" in result.completed_global_stages,
-        statement_baseline=statement_baseline,
-    )
+    findings = []
+    if "impact_audit" in result.completed_global_stages:
+        findings = load_impact_findings(root, operations, required=False)
+        validate_impact_findings(
+            root, corpus_root, operations, findings, index_sync,
+            statement_baseline=statement_baseline,
+        )
     if result.status in {"completed", "environment_limited"} and index_sync is not None:
         if index_sync.get("impact_review_hash") != impact_review_digest(root, corpus_root, operations, index_sync):
             raise OperationsError("Основания или отчёт анализа влияния изменились после проверки.")
@@ -4595,6 +4596,15 @@ def complete_global_stage(
                 f"{', '.join(evidence_paths)})."
             ),
         }
+        summary = previous_state.get("owner_summary")
+        if (
+            "impact_audit" not in previous_state.get("completed_global_stages", [])
+            and isinstance(summary, dict)
+            and summary.get("reason_code") == "impact_report_invalid"
+            and previous_state.get("reason_code") != "impact_report_invalid"
+        ):
+            # Older versions could save a false failure before impact review.
+            updated_state["owner_summary"] = None
         write_run_state(destination_state, updated_state)
     print(f"Глобальная стадия {stage} закрыта вручную.")
     print(render_report(corpus_root, updated_state["queues"], [], None, [], None, updated_state))
